@@ -1,0 +1,7 @@
+// Example 1.56 — (ab ∪ a)* becomes an NFA with eight states (Lemma 1.55).
+regex R over { a, b } = (ab ∪ a)*
+
+let N = nfa(R)
+
+check R accepts "", "a", "ab", "aab", "abab"
+check R rejects "b", "ba", "abb"

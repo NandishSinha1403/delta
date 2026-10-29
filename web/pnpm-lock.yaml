@@ -166,24 +166,54 @@ importers:
 
   .:
     dependencies:
+      '@codemirror/autocomplete':
+        specifier: ^6.20.4
+        version: 6.20.4
+      '@codemirror/commands':
+        specifier: ^6.11.1
+        version: 6.11.1
+      '@codemirror/language':
+        specifier: ^6.13.1
+        version: 6.13.1
+      '@codemirror/lint':
+        specifier: ^6.9.7
+        version: 6.9.7
+      '@codemirror/search':
+        specifier: ^6.7.2
+        version: 6.7.2
       '@codemirror/state':
         specifier: ^6.7.6
         version: 6.7.6
       '@codemirror/view':
         specifier: ^6.43.15
         version: 6.43.15
-      '@fontsource-variable/inter':
+      '@fontsource/dotgothic16':
+        specifier: ^5.3.1
+        version: 5.3.1
+      '@fontsource/ibm-plex-sans':
         specifier: ^5.3.0
         version: 5.3.0
-      '@fontsource-variable/jetbrains-mono':
-        specifier: ^5.3.0
-        version: 5.3.0
+      '@hpcc-js/wasm-graphviz':
+        specifier: ^1.30.0
+        version: 1.30.0
+      '@ibm/plex-mono':
+        specifier: 2.5.0
+        version: 2.5.0
+      '@lezer/highlight':
+        specifier: ^1.2.5
+        version: 1.2.5
       codemirror:
         specifier: ^6.0.2
         version: 6.0.2
       comlink:
         specifier: ^4.4.2
         version: 4.4.2
+      jetbrains-mono:
+        specifier: 1.0.6
+        version: 1.0.6
+      katex:
+        specifier: ^0.19.1
+        version: 0.19.1
       react:
         specifier: ^19.3.1
         version: 19.3.1
@@ -381,11 +411,14 @@ packages:
     resolution: {integrity: sha512-IkO+/KEUvwbVpiURZg+P7zF74z5Jxe0UgJxVni+RtoHQ6IZieXaO02kmadomap/q+l6bc/jdPGGqTjhuZnuz1Q==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
 
-  '@fontsource-variable/inter@5.3.0':
-    resolution: {integrity: sha512-OupL48va4JNofb97w6NYeF9S7W/kHNKM0Er8Dem5nqi4jeOLrVJDoE8tZEpnMJmtkvNbB1EIPPwHcdkF6b1oUA==}
+  '@fontsource/dotgothic16@5.3.1':
+    resolution: {integrity: sha512-alvxJchrFDFohce0s8YfHsFiRm2zUM+FrwEeWtLyc14WIl3heSG1/8BPD7Sm001YuVPL1bU14UmM5P2KO5/gnQ==}
 
-  '@fontsource-variable/jetbrains-mono@5.3.0':
-    resolution: {integrity: sha512-F32xpS2NsGYoQi2ADSkKTgpJj7ozajsGgDJ8woTnqjmIB+dxDIqImjl4pXZVEExu8UFZ2ndhmX18EBS/hdz3Lw==}
+  '@fontsource/ibm-plex-sans@5.3.0':
+    resolution: {integrity: sha512-CbE4CbbEEZJX860XyUiRpsksXIQR8Rp2XDva2VO53NJox9tVNtusrysd2x5YkUEY3ErQ66W1IiiQL8/wihhw5w==}
+
+  '@hpcc-js/wasm-graphviz@1.30.0':
+    resolution: {integrity: sha512-T20IKosOZuex2qV049fQokVJy2MWv8w9Md5V/4mRKCXDf49fBCR50VD1yBlPYHaQlHPsFGRdqXN//r59vZliWQ==}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -406,6 +439,13 @@ packages:
   '@humanwhocodes/retry@0.4.3':
     resolution: {integrity: sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==}
     engines: {node: '>=18.18'}
+
+  '@ibm/plex-mono@2.5.0':
+    resolution: {integrity: sha512-STBJIPxPomOYPmBMO7z5TKPJUotAF9u3gAUumTqVgwgrAO+K4FRNh0MlhsoJjKhJKsMbBJR10/bk4inkj/wc1w==}
+
+  '@ibm/telemetry-js@1.12.0':
+    resolution: {integrity: sha512-tNgmk2k8loNDTnPInlu7yMP9YOCr9UMwSnXN7SCEsGIV8xHfTawhXlDnp1PV0Lbv+2GoLQKSgkShlJeGPi4jTg==}
+    hasBin: true
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -811,6 +851,10 @@ packages:
   comlink@4.4.2:
     resolution: {integrity: sha512-OxGdvBmJuNKSCMO4NTl1L47VRp6xn2wG4F/2hYzB6tiCb709otOxtEYCSvK80PtjODfXXZu8ds+Nw5kVCjqd2g==}
 
+  commander@15.0.0:
+    resolution: {integrity: sha512-z67u4ZhzCL/Tydu1lJARtEZYWbWaN7oYLHbsuzocr6y4N6WZAagG3RQ4FW61V1/0+jImpj293XfrcYnd1qxtPg==}
+    engines: {node: '>=22.12.0'}
+
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
 
@@ -1008,6 +1052,9 @@ packages:
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
 
+  jetbrains-mono@1.0.6:
+    resolution: {integrity: sha512-nVHwukZwQHKEQ3ZP1qlXFyFoUyBnonwrqLQf/ZlsoDPgTHm7T0EL0m1KJQ9U4ghu4emYuSR21uqmZalzNvvoUA==}
+
   jiti@2.7.0:
     resolution: {integrity: sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==}
     hasBin: true
@@ -1029,6 +1076,10 @@ packages:
   json5@2.2.3:
     resolution: {integrity: sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==}
     engines: {node: '>=6'}
+    hasBin: true
+
+  katex@0.19.1:
+    resolution: {integrity: sha512-jG8uKntjSEcm2EpQOh0XturpPuuC9r3Sq5HLHdsFdWZT27E672SF19QEi+of0/YeOy15lDgRhKvr5614uRrEfA==}
     hasBin: true
 
   keyv@5.6.0:
@@ -1704,9 +1755,11 @@ snapshots:
       '@eslint/core': 1.2.1
       levn: 0.4.1
 
-  '@fontsource-variable/inter@5.3.0': {}
+  '@fontsource/dotgothic16@5.3.1': {}
 
-  '@fontsource-variable/jetbrains-mono@5.3.0': {}
+  '@fontsource/ibm-plex-sans@5.3.0': {}
+
+  '@hpcc-js/wasm-graphviz@1.30.0': {}
 
   '@humanfs/core@0.19.2':
     dependencies:
@@ -1723,6 +1776,12 @@ snapshots:
   '@humanwhocodes/module-importer@1.0.1': {}
 
   '@humanwhocodes/retry@0.4.3': {}
+
+  '@ibm/plex-mono@2.5.0':
+    dependencies:
+      '@ibm/telemetry-js': 1.12.0
+
+  '@ibm/telemetry-js@1.12.0': {}
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
@@ -2071,6 +2130,8 @@ snapshots:
 
   comlink@4.4.2: {}
 
+  commander@15.0.0: {}
+
   convert-source-map@2.0.0: {}
 
   crelt@1.0.7: {}
@@ -2259,6 +2320,8 @@ snapshots:
 
   isexe@2.0.0: {}
 
+  jetbrains-mono@1.0.6: {}
+
   jiti@2.7.0: {}
 
   js-tokens@4.0.0: {}
@@ -2270,6 +2333,10 @@ snapshots:
   json-stable-stringify-without-jsonify@1.0.1: {}
 
   json5@2.2.3: {}
+
+  katex@0.19.1:
+    dependencies:
+      commander: 15.0.0
 
   keyv@5.6.0:
     dependencies:

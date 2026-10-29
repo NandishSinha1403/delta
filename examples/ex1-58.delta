@@ -1,0 +1,9 @@
+// Example 1.58 — (a ∪ b)*aba becomes an NFA with twelve states (Lemma 1.55),
+// then a DFA by the subset construction (Theorem 1.39).
+regex R over { a, b } = (a ∪ b)*aba
+
+let N = nfa(R)
+let D = dfa(N)
+
+check D accepts "aba", "babaaba"
+check D rejects "", "ab", "abab"

@@ -1,0 +1,21 @@
+// A tour of Phase 1: write an NFA, convert it to a DFA, then to a regular expression.
+// Open the Steps tab to scrub through each construction.
+
+nfa N {
+  Q = { q1, q2, q3 }
+  Σ = { a, b }
+  δ {
+    q1 -[a,b]-> q1
+    q1 -a-> q2
+    q2 -b-> q3
+  }
+  q0 = q1
+  F  = { q3 }
+}
+
+let D = dfa(N)                          // Theorem 1.39, subset construction
+let R = regex(D, mode: simplified)      // Lemma 1.60, state elimination
+
+check N accepts "ab", "aab", "bab"
+check N rejects "", "a", "ba", "abb"
+run N on "aab"

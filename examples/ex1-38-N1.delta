@@ -1,0 +1,21 @@
+// Example 1.38 — N1 accepts every string containing 101 or 11 as a substring.
+nfa N1 {
+  Q  = { q1, q2, q3, q4 }
+  Σ  = { 0, 1 }
+  δ {
+    q1 -[0,1]-> q1
+    q1 -1-> q2
+    q2 -[0,ε]-> q3
+    q3 -1-> q4
+    q4 -[0,1]-> q4
+  }
+  q0 = q1
+  F  = { q4 }
+}
+
+check N1 accepts "11", "101", "010110"
+check N1 rejects "", "0", "10", "100100"
+run N1 on "010110"
+
+// Theorem 1.39: the equivalent DFA (reachable subsets only).
+let D1 = dfa(N1)
