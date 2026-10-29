@@ -1,52 +1,113 @@
 @import 'tailwindcss';
 
-/* Theme tokens (docs/plan/05-PLAYGROUND-UX.md §7): calm, technical, textbook-like.
-   One accent for "active", one for "accepting", one for "rejected/dead". */
-:root {
-  color-scheme: light;
-  --bg: #f6f7f9;
-  --surface: #ffffff;
-  --surface-2: #f1f3f6;
-  --border: #e3e6eb;
-  --text: #16191f;
-  --muted: #5d6573;
-  --accent: #4338ca;
-  --accept: #047857;
-  --reject: #b91c1c;
-  --active-line: #f5f6fa;
-  --selection: #dfe3ff;
+/* Fonts. IBM Plex Mono's "complete" build is the only Plex Mono cut with ε Σ δ ∅ ⊔ →; the
+   fontsource build lacks them. JetBrains Mono fills the few glyphs Plex lacks (∘ ⁺ ⊣) and
+   replaces Plex's ∪, which is too easy to misread as a "u" in regular expressions. Plex skips
+   U+222A via its unicode-range; the browser downloads JetBrains Mono only when needed. */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-weight: 400;
+  font-display: swap;
+  src: url('../node_modules/@ibm/plex-mono/fonts/complete/woff2/IBMPlexMono-Regular.woff2') format('woff2');
+  unicode-range: U+0000-2229, U+222B-FFFF;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-    --bg: #0d1016;
-    --surface: #141820;
-    --surface-2: #1c212b;
-    --border: #2a303c;
-    --text: #e7eaf0;
-    --muted: #949cab;
-    --accent: #a5b4fc;
-    --accept: #34d399;
-    --reject: #f87171;
-    --active-line: #181d26;
-    --selection: #2d3561;
-  }
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-weight: 600;
+  font-display: swap;
+  src: url('../node_modules/@ibm/plex-mono/fonts/complete/woff2/IBMPlexMono-SemiBold.woff2') format('woff2');
+  unicode-range: U+0000-2229, U+222B-FFFF;
+}
+
+@font-face {
+  font-family: 'Delta Mono Fallback';
+  font-weight: 400;
+  font-display: swap;
+  src: url('../node_modules/jetbrains-mono/fonts/webfonts/JetBrainsMono-Regular.woff2') format('woff2');
+  unicode-range: U+2218, U+222A, U+207A-207B, U+22A3;
+}
+
+/* Theme tokens (docs/plan/05-PLAYGROUND-UX.md §7). Dark is the default (a neutral, VS Code Dark
+   Modern-style palette); light is a toggle. One accent for "active", one for "accepting", one
+   for "rejected/dead". */
+:root {
+  color-scheme: dark;
+  --bg: #181818;
+  --surface: #1f1f1f;
+  --surface-2: #2a2a2a;
+  --editor: #1f1f1f;
+  --canvas: #1f1f1f;
+  --border: #333333;
+  --text: #d4d4d4;
+  --muted: #9d9d9d;
+  --accent: #4daafc;
+  --on-accent: #0b1a2a;
+  --accept: #6ccf8e;
+  --reject: #f47174;
+  --warn: #e0b85a;
+  --node: #b8b8b8;
+  --edge: #8f8f8f;
+  --active-line: #262626;
+  --selection: #264f78;
+  --search-match: #623315;
+  --syn-comment: #6a9955;
+  --syn-keyword: #569cd6;
+  --syn-string: #ce9178;
+  --syn-number: #b5cea8;
+  --syn-type: #4ec9b0;
+  --syn-name: #9cdcfe;
+  --syn-operator: #d4d4d4;
+  --syn-punct: #b0b0b0;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f3f3f3;
+  --surface: #ffffff;
+  --surface-2: #f0f0f0;
+  --editor: #ffffff;
+  --canvas: #ffffff;
+  --border: #e0e0e0;
+  --text: #1f1f1f;
+  --muted: #616161;
+  --accent: #005fb8;
+  --on-accent: #ffffff;
+  --accept: #1f7a3d;
+  --reject: #c42b1c;
+  --warn: #8a5a00;
+  --node: #3b3b3b;
+  --edge: #6b6b6b;
+  --active-line: #f5f5f5;
+  --selection: #add6ff;
+  --search-match: #f8c9a8;
+  --syn-comment: #008000;
+  --syn-keyword: #0000ff;
+  --syn-string: #a31515;
+  --syn-number: #098658;
+  --syn-type: #267f99;
+  --syn-name: #001080;
+  --syn-operator: #1f1f1f;
+  --syn-punct: #555555;
 }
 
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-editor: var(--editor);
   --color-border: var(--border);
   --color-text: var(--text);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
   --color-accept: var(--accept);
   --color-reject: var(--reject);
-  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
-  /* Must render ε ∅ ∪ ⊔ Σ Γ δ; the system fallbacks cover anything JetBrains Mono lacks. */
-  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace;
+  --color-warn: var(--warn);
+  --color-selection: var(--selection);
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Delta Mono Fallback', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-logo: 'DotGothic16', var(--font-mono);
 }
 
 html,

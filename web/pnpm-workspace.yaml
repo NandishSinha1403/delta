@@ -1,0 +1,4 @@
+# Dependency install scripts that may (true) or may not (false) run. pnpm refuses unlisted ones
+# in CI. @ibm/plex-mono's postinstall only sends IBM telemetry; the font files need no build.
+allowBuilds:
+  '@ibm/plex-mono': false

@@ -1,0 +1,21 @@
+// Example 1.41 — N4, and the DFA the subset construction builds from it.
+nfa N4 {
+  Q = { 1, 2, 3 }
+  Σ = { a, b }
+  δ {
+    1 -b-> 2
+    1 -ε-> 3
+    2 -a-> 2
+    2 -a-> 3
+    2 -b-> 3
+    3 -a-> 1
+  }
+  q0 = 1
+  F  = { 1 }
+}
+
+let D4     = dfa(N4)              // Figure 1.44: the 6 reachable subsets
+let D4full = dfa(N4, full: true)  // Figure 1.43: all 2³ = 8 subsets
+
+check D4 accepts "", "a", "baba", "baa"
+check D4 rejects "b", "bb", "babba"

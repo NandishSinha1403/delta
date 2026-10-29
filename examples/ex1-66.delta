@@ -1,0 +1,18 @@
+// Example 1.66 — a two-state DFA becomes a GNFA, then a regular expression (Lemma 1.60).
+dfa M {
+  Q = { 1, 2 }
+  Σ = { a, b }
+  δ {
+    1 -a-> 1
+    1 -b-> 2
+    2 -[a,b]-> 2
+  }
+  q0 = 1
+  F  = { 2 }
+}
+
+let G = gnfa(M)
+let R = regex(G, order: [2, 1], mode: simplified)   // the book's answer: a*b(a∪b)*
+
+check R accepts "b", "ab", "aabba"
+check R rejects "", "a", "aa"

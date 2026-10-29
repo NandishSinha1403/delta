@@ -80,6 +80,13 @@ Code ranges: `E0xx` lexical · `E1xx` syntax · `E2xx` DFA · `E3xx` NFA · `E4x
 | W111 | warning | State unreachable from the start state | — | remove state |
 | W112 | warning | F is empty, so the machine accepts nothing (legal, p. 36) | Def 1.5 allows F = ∅ | — |
 | I113 | info | Dead state (no path to an accept state) | — | — |
+| E114 | error | Multi-character symbol written bare (`ab` in Σ or a string) | symbols are single characters | write `<ab>` |
+| W117 | warning (lenient) | `q0` not written; the first state of Q is used | q₀ ∈ Q is the start state | insert `q0 = …` |
+| I115 | info (lenient) | Σ not written; inferred from δ | — | write Σ explicitly |
+| I116 | info (lenient) | Q not written; inferred from δ, q0 and F | — | write Q explicitly |
+| E120 | error | A state name is not a plain name (e.g. a string or a symbol) | — | — |
+| E121 | error | A machine, set or δ block is missing its closing `}` | — | insert `}` |
+| E122 | error | Unknown field in a machine (`Qs = …`), with an edit-distance suggestion | the fields are Q, Σ, δ, q0, F | rename |
 
 ### 4.1 DFA rules (Definition 1.5: δ : Q × Σ → Q)
 | Code | Severity | Rule | Why | Quick fix |
@@ -89,6 +96,7 @@ Code ranges: `E0xx` lexical · `E1xx` syntax · `E2xx` DFA · `E3xx` NFA · `E4x
 | E203 | error | ε-transition in a DFA | DFA δ takes Σ, not Σ_ε | change to `nfa` |
 | E204 | error | Transition to a *set* of states, e.g. `δ(q1,0) = {q1,q2}` | DFA δ returns a state, not a set | change to `nfa` |
 | E205 | error | δ-table has a wrong number of columns / unknown row | table shape must be \|Q\| × \|Σ\| | — |
+| W201 | warning (lenient) | δ is not total; an implicit trap state is added and drawn dashed (E201 in strict mode) | p. 36 | add trap state / add transition / mark `partial` |
 | I206 | info | DFA is not minimal (k states could be merged) | Myhill–Nerode | run `minimize` |
 
 ### 4.2 NFA rules (Definition 1.37: δ : Q × Σ_ε → P(Q))
@@ -110,6 +118,7 @@ Code ranges: `E0xx` lexical · `E1xx` syntax · `E2xx` DFA · `E3xx` NFA · `E4x
 | W405 | warning | `a+b`: in Sipser, `+` means one-or-more (R⁺ = RR*), not union | replace with `a ∪ b` |
 | W406 | warning | Concatenation with ∅ makes the whole term ∅ (R∅ = ∅, Example 1.53) | — |
 | I407 | info | Redundant: `R ∪ ∅` = R, `Rε` = R, `∅*` = ε (p. 66) | simplify |
+| E408 | error | Expression nested more than 400 levels deep (keeps the engine's recursion bounded) | — |
 
 ### 4.4 GNFA rules (Definition 1.64 + the special form, p. 70)
 | Code | Severity | Rule | Quick fix |
@@ -183,6 +192,8 @@ Code ranges: `E0xx` lexical · `E1xx` syntax · `E2xx` DFA · `E3xx` NFA · `E4x
 | I808 | info | `complement(N)` on an NFA | "Converted to a DFA first (Theorem 1.39). Swapping accept states of an NFA does not complement it" |
 | E809 | error | `let A = union(B, A)` | "`A` refers to itself" |
 | E810 | error | `check equivalent(G1, G2)` on two CFGs | "EQ_CFG is undecidable (Problem 5.1). Use `check equivalent(G1, G2) up to 10` for a bounded check" |
+| I811 | info | `let D = dfa(N)` where `N` has errors | "Skipped: depends on `N`, which has errors" (one root error, not a cascade) |
+| E123 | info | `let C = cnf(G)`, `pda P { … }` before Phase 3 | "`cnf()` arrives in Phase 3. This statement is skipped for now." (an `E` code, but reported as info so planned features never look like user mistakes) |
 
 ### 4.9 Runtime outcomes (R9xx): what happens while running
 | Code | Kind | Situation | Behaviour |
@@ -195,6 +206,7 @@ Code ranges: `E0xx` lexical · `E1xx` syntax · `E2xx` DFA · `E3xx` NFA · `E4x
 | R906 | outcome | Trace longer than `max_trace` | Result complete; trace truncated, with a note |
 | R907 | outcome | User pressed Stop | **CANCELLED**: worker restarted, document re-evaluated, nothing lost |
 | R908 | error | Input string too long for the chosen mode (e.g. NTM tree view > node limit) | Suggests the non-tree mode |
+| R910 | warning | A `check` case fails: `check M1 accepts "10"` but M1 rejects it | Squiggle on the failing string; the Tests panel lists it, and clicking the row opens the run on that string |
 
 ### 4.10 Internal errors (X999)
 A bug in the engine itself. See §8.

@@ -9,3 +9,7 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
+delta-core = { version = "0.0.1", path = "../delta-core" }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+ts-rs = "12.0.1"
