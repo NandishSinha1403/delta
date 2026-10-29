@@ -47,9 +47,12 @@ Everything in Sipser §1.1–1.3 can now be done in the playground. Added on top
   Exercise 1.15 counterexample; DSL dispatch, misuse diagnostics and W807; Playwright opens the
   gallery examples on phone, tablet and desktop.
 - Regular expressions are typeset with KaTeX like the book: ∪ as `\cup`, stars as superscripts.
-- `docs/DELTA-FOR-AI.md`: a compact syntax guide to give AI models, written from the actual parser.
-  Its code blocks are tests (`crates/delta-dsl/src/guide_tests.rs`): valid blocks must evaluate with
-  no errors or warnings and passing checks; error blocks must report their listed codes.
+- `docs/DELTA-FOR-AI.md`: the complete guide for AI models (~2500 lines): instructions, notation
+  translation, full syntax, every error code with a failing example, design recipes, 27 worked
+  examples, common mistakes, and a response template. `docs/DELTA-FOR-AI-SHORT.md` (~130 lines) is
+  the pasteable version. Both are tests (`crates/delta-dsl/src/guide_tests.rs`, run in CI): every
+  Delta block must evaluate cleanly with ≥ 5 accepts, ≥ 5 rejects including "", and a run line;
+  every error block must report its listed codes.
 - UI credit: "A project by Nandish Sinha" in the status bar and the examples dialog.
 
 ## Playground redesign ✅ (branch `redesign`)
