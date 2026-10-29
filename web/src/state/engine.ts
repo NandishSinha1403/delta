@@ -20,6 +20,8 @@ interface EngineStore {
   run: RunView | null;
   runError: string | null;
   runPos: number;
+  /** A run was requested and its result has not arrived yet (stepping now would step the old one). */
+  runPending: boolean;
   setRunInput: (input: string) => void;
   setRunPos: (pos: number) => void;
   startRun: (source: string, object: string, input: string) => Promise<void>;
@@ -59,18 +61,19 @@ export const useEngineStore = create<EngineStore>()((set, get) => ({
   run: null,
   runError: null,
   runPos: 0,
+  runPending: false,
   setRunInput: (runInput) => set({ runInput }),
   setRunPos: (runPos) => set({ runPos }),
   startRun: async (source, object, input) => {
     const ticket = ++latestRun;
-    set({ runObject: object, runInput: input });
+    set({ runObject: object, runInput: input, runPending: true });
     try {
       const result = await engine.run(source, object, input);
       if (ticket !== latestRun) return;
-      set({ run: result.run, runError: result.error, runPos: 0 });
+      set({ run: result.run, runError: result.error, runPos: 0, runPending: false });
     } catch (err) {
       if (ticket !== latestRun) return;
-      set({ run: null, runError: message(err), runPos: 0 });
+      set({ run: null, runError: message(err), runPos: 0, runPending: false });
     }
   },
   showRun: (run) =>

@@ -15,6 +15,7 @@ export function RunPanel({ compact = false }: { compact?: boolean }) {
   const runObject = useEngineStore((s) => s.runObject);
   const runInput = useEngineStore((s) => s.runInput);
   const runError = useEngineStore((s) => s.runError);
+  const pending = useEngineStore((s) => s.runPending);
   const setRunInput = useEngineStore((s) => s.setRunInput);
   const setRunPos = useEngineStore((s) => s.setRunPos);
   const startRun = useEngineStore((s) => s.startRun);
@@ -27,7 +28,7 @@ export function RunPanel({ compact = false }: { compact?: boolean }) {
   const input = runObject === object?.name ? runInput : (run?.input.join('') ?? '');
 
   const go = (i: number) => {
-    if (!run) return;
+    if (!run || pending) return;
     if (storeRun !== run) showRun(run);
     setRunPos(Math.max(0, Math.min(n, i)));
   };
@@ -112,10 +113,10 @@ export function RunPanel({ compact = false }: { compact?: boolean }) {
           </button>
         </form>
         <div className="flex items-center gap-1">
-          <StepButton label="Back to start" onClick={() => go(0)} disabled={!run || pos === 0}>
+          <StepButton label="Back to start" onClick={() => go(0)} disabled={!run || pending || pos === 0}>
             ⏮
           </StepButton>
-          <StepButton label="Step back" onClick={() => go(pos - 1)} disabled={!run || pos === 0}>
+          <StepButton label="Step back" onClick={() => go(pos - 1)} disabled={!run || pending || pos === 0}>
             ◀
           </StepButton>
           <StepButton
@@ -125,14 +126,14 @@ export function RunPanel({ compact = false }: { compact?: boolean }) {
               else if (storeRun !== run && run) showRun(run);
               setPlaying(!playing);
             }}
-            disabled={!run}
+            disabled={!run || pending}
           >
             {playing ? '⏸' : '▶'}
           </StepButton>
-          <StepButton label="Step forward" onClick={() => go(pos + 1)} disabled={!run || done}>
+          <StepButton label="Step forward" onClick={() => go(pos + 1)} disabled={!run || pending || done}>
             ⏭
           </StepButton>
-          <StepButton label="Jump to end" onClick={() => go(n)} disabled={!run || done}>
+          <StepButton label="Jump to end" onClick={() => go(n)} disabled={!run || pending || done}>
             ⏩
           </StepButton>
           {done && run && (
