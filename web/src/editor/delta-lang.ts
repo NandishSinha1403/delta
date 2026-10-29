@@ -10,6 +10,7 @@ import {
   HighlightStyle,
   LanguageSupport,
   StreamLanguage,
+  StringStream,
   syntaxHighlighting,
   type StreamParser,
 } from '@codemirror/language';
@@ -20,59 +21,169 @@ import type { OutlineView } from '../engine/api';
 const DECLARATIONS = ['dfa', 'nfa', 'gnfa', 'regex'];
 const COMMANDS = ['let', 'check', 'run'];
 const OPERATIONS = ['union', 'intersect', 'concat', 'star'];
-const WORDS = ['accepts', 'rejects', 'on', 'over', 'table', 'mode', 'order', 'strict', 'lenient', 'simplified', 'faithful', 'full'];
-const TUPLE = ['Q', 'F', 'q0', 'Sigma', 'delta'];
+const WORDS = [
+  'accepts',
+  'rejects',
+  'on',
+  'over',
+  'table',
+  'partial',
+  'mode',
+  'order',
+  'strict',
+  'lenient',
+  'simplified',
+  'faithful',
+  'full',
+  'true',
+  'false',
+];
+/** The names of a tuple's components (Q Σ Γ δ q0 F start accept reject, plus ASCII spellings). */
+const FIELDS = ['Q', 'F', 'q0', 'Sigma', 'Gamma', 'delta', 'start', 'accept', 'reject'];
 const ASCII_SYMBOLS = ['eps', 'empty'];
+/** Fields whose set lists alphabet symbols rather than states. */
+const SET_OF_SYMBOLS = ['Σ', 'Sigma', 'Γ', 'Gamma'];
 
-// The tokenizer needs no state between lines.
-const parser: StreamParser<object> = {
+/**
+ * What the next words are: plain names, or symbols of the alphabet (inside `Σ = { … }` and
+ * `over { … }`, between `-` and `->` on an arrow, in a δ table's header row, and in a regex body).
+ */
+interface State {
+  ctx: 'none' | 'set' | 'label' | 'regex' | 'header';
+  /** The previous significant token, to recognise `Σ =`, `over`, `table {` and `regex R … =`. */
+  prev: string;
+  /** Inside `regex NAME …` before its `=`. */
+  regexHead: boolean;
+  /** A `table {` was just opened, so the next line starting with `|` is the header. */
+  tableOpen: boolean;
+  /** The word before the last `=`, so `{` after `Σ =` opens a set of symbols but `Q = {` does not. */
+  field: string;
+}
+
+const parser: StreamParser<State> = {
   name: 'delta',
-  startState: () => ({}),
-  token(stream) {
+  startState: () => ({ ctx: 'none', prev: '', regexHead: false, tableOpen: false, field: '' }),
+  copyState: (s) => ({ ...s }),
+  token(stream, state) {
+    if (stream.sol()) {
+      // Statements are lines: a regex body or a table header ends with its line.
+      if (state.ctx === 'regex' || state.ctx === 'header' || state.ctx === 'label') state.ctx = 'none';
+      if (state.tableOpen && stream.match(/^\s*\|/, false)) {
+        state.ctx = 'header';
+        state.tableOpen = false;
+      }
+    }
     if (stream.eatSpace()) return null;
-    if (stream.match('//')) {
-      stream.skipToEnd();
-      return 'comment';
-    }
-    if (stream.match(/^"(?:[^"\\]|\\.)*"?/)) return 'string';
-    if (stream.match(/^<[A-Za-z0-9_]+>/)) return 'atom';
-    if (stream.match(/^(?:->|→|-\[|\]->|-)/)) return 'operator';
-    if (stream.match(/^[εΣδ∅]/)) return 'keyword';
-    if (stream.match(/^[∪∘*+|^]/)) return 'operator';
-    if (stream.match(/^[{}]/)) return 'brace';
-    if (stream.match(/^[A-Za-z0-9_']+/)) {
-      const w = stream.current();
-      if (DECLARATIONS.includes(w) || COMMANDS.includes(w) || OPERATIONS.includes(w)) return 'keyword';
-      if (WORDS.includes(w)) return 'keyword';
-      if (TUPLE.includes(w)) return 'keyword';
-      if (ASCII_SYMBOLS.includes(w)) return 'keyword';
-      if (w === 'true' || w === 'false') return 'atom';
-      if (/^\d+$/.test(w)) return 'number';
-      if (/^[A-Z]/.test(w)) return 'typeName';
-      return 'variableName';
-    }
-    stream.next();
-    return 'punctuation';
+    const style = next(stream, state);
+    const text = stream.current();
+    if (style !== 'comment') state.prev = text;
+    return style;
+  },
+  tokenTable: {
+    field: t.propertyName,
+    func: t.function(t.variableName),
+    symbol: t.string,
   },
   languageData: {
-    commentTokens: { line: '//' },
+    commentTokens: { line: '//', block: { open: '/*', close: '*/' } },
     closeBrackets: { brackets: ['(', '[', '{', '"'] },
   },
 };
 
+function next(stream: StringStream, state: State): string | null {
+  if (stream.match('//')) {
+    stream.skipToEnd();
+    return 'comment';
+  }
+  if (stream.match('/*')) {
+    if (!stream.skipTo('*/')) stream.skipToEnd();
+    else stream.match('*/');
+    return 'comment';
+  }
+  if (stream.match(/^"(?:[^"\\]|\\.)*"?/)) return 'string';
+  const symbols = state.ctx !== 'none';
+  if (stream.match(/^<[A-Za-z0-9_]+>/)) return 'symbol';
+  // Arrows: `-a->`, `-[a,b]->`, `→`. The label between `-` and `->` is made of symbols.
+  if (stream.match(/^(?:->|→)/)) {
+    if (state.ctx === 'label') state.ctx = 'none';
+    return 'operator';
+  }
+  if (stream.match(/^-(?!>)/)) {
+    if (state.ctx === 'none' && state.prev !== '') state.ctx = 'label';
+    return 'operator';
+  }
+  if (stream.match(/^[Σδ]/)) {
+    if (stream.current() === 'Σ' && state.ctx === 'regex') return 'symbol';
+    return 'field';
+  }
+  if (stream.match(/^Γ/)) return 'field';
+  if (stream.match(/^[ε∅]/)) return symbols ? 'symbol' : 'keyword';
+  if (stream.match(/^[∪∘*+|^]/)) return 'operator';
+  if (stream.match('{')) {
+    if (state.prev === '=' && SET_OF_SYMBOLS.includes(state.field)) state.ctx = 'set';
+    if (state.prev === 'over') state.ctx = 'set';
+    if (state.prev === 'table') state.tableOpen = true;
+    return 'brace';
+  }
+  if (stream.match('}')) {
+    if (state.ctx === 'set') state.ctx = 'none';
+    return 'brace';
+  }
+  if (stream.match('=')) {
+    if (state.regexHead) {
+      state.regexHead = false;
+      state.ctx = 'regex';
+    }
+    state.field = state.prev;
+    return 'operator';
+  }
+  if (stream.match(/^[A-Za-z0-9_']+/)) {
+    const w = stream.current();
+    if (state.ctx === 'set' || state.ctx === 'label' || state.ctx === 'header') return 'symbol';
+    // In R^k the k is a count, not a symbol.
+    if (state.ctx === 'regex' && state.prev === '^' && /^\d+$/.test(w)) return 'number';
+    if (state.ctx === 'regex') return w === 'Sigma' ? 'symbol' : w === 'eps' || w === 'empty' ? 'keyword' : 'symbol';
+    if (w === 'regex' && state.prev !== '=' && !stream.match(/^\s*\(/, false)) state.regexHead = true;
+    // A word followed by `(` is a function call: dfa(N), union(A, B).
+    if (stream.match(/^\s*\(/, false)) return 'func';
+    if (COMMANDS.includes(w) || OPERATIONS.includes(w)) return 'func';
+    if (DECLARATIONS.includes(w) || WORDS.includes(w) || ASCII_SYMBOLS.includes(w)) return 'keyword';
+    if (FIELDS.includes(w)) return 'field';
+    if (/^\d+$/.test(w)) return 'number';
+    return 'variableName';
+  }
+  stream.next();
+  return 'punctuation';
+}
+
 export const deltaLanguage = StreamLanguage.define(parser);
 
-/** Token colors from the theme's CSS variables, so both themes share one style. */
+/** VS Code Dark+ / Light+ token colors (the UI palette is not used for code). */
 export const deltaHighlight = HighlightStyle.define([
   { tag: t.comment, color: 'var(--syn-comment)', fontStyle: 'italic' },
   { tag: t.keyword, color: 'var(--syn-keyword)' },
+  { tag: t.propertyName, color: 'var(--syn-field)' },
+  { tag: t.function(t.variableName), color: 'var(--syn-function)' },
   { tag: t.string, color: 'var(--syn-string)' },
-  { tag: [t.number, t.atom, t.bool], color: 'var(--syn-number)' },
-  { tag: t.typeName, color: 'var(--syn-type)' },
-  { tag: t.variableName, color: 'var(--syn-name)' },
-  { tag: t.operator, color: 'var(--syn-operator)' },
-  { tag: [t.brace, t.punctuation], color: 'var(--syn-punct)' },
+  { tag: t.number, color: 'var(--syn-number)' },
+  { tag: [t.operator, t.punctuation, t.brace, t.variableName], color: 'var(--syn-text)' },
 ]);
+
+/** Splits source into (text, token style) pairs with the real tokenizer; for tests. */
+export function tokenize(src: string): [string, string | null][] {
+  const state = parser.startState?.(2) ?? { ctx: 'none', prev: '', regexHead: false, tableOpen: false, field: '' };
+  const out: [string, string | null][] = [];
+  for (const line of src.split('\n')) {
+    const stream = new StringStream(line, 2, 2);
+    while (!stream.eol()) {
+      const style = parser.token(stream, state);
+      const text = stream.current();
+      if (text.trim()) out.push([text, style]);
+      stream.start = stream.pos;
+    }
+  }
+  return out;
+}
 
 // --- Hover docs (docs/plan/05-PLAYGROUND-UX.md §5): the book line behind each keyword. ---
 
@@ -212,7 +323,7 @@ const SNIPPETS: Completion[] = [
   snippetCompletion('run ${M} on "${w}"', { label: 'run … on', type: 'keyword' }),
 ];
 
-const PLAIN: Completion[] = [...OPERATIONS, ...WORDS, ...TUPLE, ...ASCII_SYMBOLS, 'Σ', 'δ', 'ε', '∅'].map((w) => ({
+const PLAIN: Completion[] = [...OPERATIONS, ...WORDS, ...FIELDS, ...ASCII_SYMBOLS, 'Σ', 'δ', 'ε', '∅'].map((w) => ({
   label: w,
   type: 'keyword',
   ...(KEYWORD_DOCS[w] ? { info: KEYWORD_DOCS[w].body } : {}),
