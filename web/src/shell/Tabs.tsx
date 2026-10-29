@@ -68,11 +68,11 @@ export function Tabs<T extends string>({
             onClick={() => onChange(t.id)}
             className={
               variant === 'bar'
-                ? `flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-xs ${
-                    selected ? 'font-semibold text-accent' : 'text-muted'
+                ? `flex min-h-14 flex-1 flex-col items-center justify-center gap-1 border-t-2 text-xs ${
+                    selected ? 'border-accent font-semibold text-text' : 'border-transparent text-muted'
                   }`
-                : `min-h-9 rounded-md px-3 text-sm ${
-                    selected ? 'bg-surface-2 font-semibold text-text' : 'text-muted hover:text-text'
+                : `-mb-px min-h-11 shrink-0 border-b-2 px-2.5 text-[13px] whitespace-nowrap ${
+                    selected ? 'border-accent font-medium text-text' : 'border-transparent text-muted hover:text-text'
                   }`
             }
           >

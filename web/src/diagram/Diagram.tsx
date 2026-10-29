@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { MachineView } from '../engine/api';
+import { StoppedError } from '../engine/api';
 import { engine } from '../engine/client';
 import { describeMachine, parseLayout, toDot, type Layout, type Point } from './layout';
 
@@ -12,6 +13,8 @@ export interface Overlay {
   focus?: readonly number[];
   /** The run's active states ("fingers"). */
   active?: readonly number[];
+  /** Arrows the run just took. */
+  taken?: ReadonlySet<number>;
   /** Overrides for constructions whose start/accept states change as they go. */
   start?: number | null;
   accept?: readonly number[] | null;
@@ -29,6 +32,8 @@ function useLayout(machine: MachineView): { layout: Layout | null; error: string
     layout: null,
     error: null,
   });
+  // Bumped when Stop cancels a layout in flight, so it is requested again from the new worker.
+  const [retry, setRetry] = useState(0);
   useEffect(() => {
     let live = true;
     let pending = cache.get(dot);
@@ -39,13 +44,16 @@ function useLayout(machine: MachineView): { layout: Layout | null; error: string
     }
     pending.then(
       (json) => live && setState({ dot, layout: parseLayout(json, machine), error: null }),
-      (err: unknown) =>
-        live && setState({ dot, layout: null, error: err instanceof Error ? err.message : String(err) }),
+      (err: unknown) => {
+        if (!live) return;
+        if (err instanceof StoppedError) setRetry((r) => r + 1);
+        else setState({ dot, layout: null, error: err instanceof Error ? err.message : String(err) });
+      },
     );
     return () => {
       live = false;
     };
-  }, [dot, machine]);
+  }, [dot, machine, retry]);
   // Until the new layout arrives, keep showing the previous one (no flicker while typing).
   return { layout: state.layout, error: state.dot === dot ? state.error : null };
 }
@@ -57,7 +65,7 @@ interface View {
 }
 
 function fit(layout: Layout, box: { w: number; h: number }): View {
-  const k = Math.min(box.w / layout.width, box.h / layout.height, 1.75) * 0.94;
+  const k = Math.min(box.w / layout.width, box.h / layout.height, 1.75) * 0.9;
   return { k, x: (box.w - layout.width * k) / 2, y: (box.h - layout.height * k) / 2 };
 }
 
@@ -73,18 +81,47 @@ function arrowHead(tip: Point, base: Point): string {
   return `${tip.x},${tip.y} ${bx - uy * half},${by + ux * half} ${bx + uy * half},${by - ux * half}`;
 }
 
+/** A state name as the book sets it: q1 → italic q with subscript 1; anything else in mono. */
+function StateLabel({ name, x, y }: { name: string; x: number; y: number }) {
+  const sub = /^([A-Za-z])(\d+)$/.exec(name);
+  if (sub) {
+    return (
+      <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fill="var(--text)">
+        <tspan fontFamily="var(--font-serif)" fontStyle="italic" fontSize={19}>
+          {sub[1]}
+        </tspan>
+        <tspan fontFamily="var(--font-serif)" fontSize={12} dy={5}>
+          {sub[2]}
+        </tspan>
+      </text>
+    );
+  }
+  return (
+    <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize={13} fill="var(--text)">
+      {name}
+    </text>
+  );
+}
+
+/** Rough width of a mono label, for its pill (Graphviz already left room for the text). */
+function pillWidth(label: string): number {
+  return [...label].length * 7.6 + 12;
+}
+
 interface Props {
   name: string;
   machine: MachineView;
   overlay?: Overlay;
-  selectedState?: number | null;
-  onSelectState?: (i: number) => void;
+  /** Show the finger/accept/edge legend (off where space is tight). */
+  legend?: boolean;
 }
 
 /** A state diagram in the book's style: circles, double circles for accept states, a start arrow. */
-export function Diagram({ name, machine, overlay = {}, selectedState = null, onSelectState }: Props) {
+export function Diagram({ name, machine, overlay = {}, legend = true }: Props) {
   const { layout, error } = useLayout(machine);
   const host = useRef<HTMLDivElement>(null);
+  // useId gives ids with ":" which are awkward in url(#…); strip them.
+  const glowId = `glow${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const [box, setBox] = useState({ w: 0, h: 0 });
   // null = fit to the box; refits on new layouts and resizes until the user pans or zooms.
   const [view, setView] = useState<View | null>(null);
@@ -128,17 +165,22 @@ export function Diagram({ name, machine, overlay = {}, selectedState = null, onS
     return () => el.removeEventListener('wheel', onWheel);
   });
 
+  const machineStart = machine.states.findIndex((s) => s.start);
   const accept = new Set(overlay.accept ?? machine.states.flatMap((s, i) => (s.accept ? [i] : [])));
-  const start = overlay.start ?? machine.states.findIndex((s) => s.start);
+  const start = overlay.start ?? machineStart;
   const focus = new Set(overlay.focus ?? []);
   const active = new Set(overlay.active ?? []);
-  const hiddenStates = overlay.hiddenStates;
-  const hiddenEdges = overlay.hiddenEdges;
-  const verdictColor =
-    overlay.verdict === 'accept' ? 'var(--accept)' : overlay.verdict === 'reject' ? 'var(--reject)' : 'var(--accent)';
+  const taken = overlay.taken ?? new Set<number>();
+  const ring = overlay.verdict === 'reject' ? 'var(--reject)' : 'var(--accent)';
 
   return (
-    <div className="relative h-full min-h-32 w-full overflow-hidden">
+    <div
+      className="relative h-full min-h-32 w-full overflow-hidden bg-canvas"
+      style={{
+        backgroundImage: 'radial-gradient(var(--grid-dot) 1px, transparent 1px)',
+        backgroundSize: '18px 18px',
+      }}
+    >
       <div
         ref={host}
         className="absolute inset-0 cursor-grab touch-none select-none active:cursor-grabbing"
@@ -151,8 +193,7 @@ export function Diagram({ name, machine, overlay = {}, selectedState = null, onS
           const prev = pointers.current.get(e.pointerId);
           if (!prev || !shown) return;
           const now = local(e);
-          const others = [...pointers.current.entries()].filter(([id]) => id !== e.pointerId);
-          const other = others[0]?.[1];
+          const other = [...pointers.current.entries()].find(([id]) => id !== e.pointerId)?.[1];
           if (other) {
             // Pinch: scale by the change in finger distance, around the midpoint.
             const before = Math.hypot(prev.x - other.x, prev.y - other.y) || 1;
@@ -175,38 +216,59 @@ export function Diagram({ name, machine, overlay = {}, selectedState = null, onS
             height={box.h}
             className="block font-mono"
           >
+            <defs>
+              {/* The soft powder-blue glow around active states. */}
+              <filter id={glowId} x="-60%" y="-60%" width="220%" height="220%">
+                <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="blur" />
+                <feFlood floodColor="#a8dadc" floodOpacity="0.45" />
+                <feComposite in2="blur" operator="in" />
+                <feMerge>
+                  <feMergeNode />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
             <g transform={`translate(${shown.x},${shown.y}) scale(${shown.k})`}>
-              {layout.start && start === machine.states.findIndex((s) => s.start) && (
-                <g className="text-muted">
-                  <path d={layout.start.path} fill="none" stroke="currentColor" strokeWidth={1.4} />
-                  <polygon points={arrowHead(layout.start.tip, layout.start.base)} fill="currentColor" />
+              {layout.start && start === machineStart && (
+                <g>
+                  <path d={layout.start.path} fill="none" stroke="var(--edge)" strokeWidth={1.4} />
+                  <polygon points={arrowHead(layout.start.tip, layout.start.base)} fill="var(--edge)" />
                 </g>
               )}
-              {start >= 0 && start !== machine.states.findIndex((s) => s.start) && layout.nodes[start] && (
-                <ManualStart node={layout.nodes[start]} />
-              )}
+              {start >= 0 && start !== machineStart && layout.nodes[start] && <ManualStart node={layout.nodes[start]} />}
               {machine.edges.map((e, i) => {
                 const shape = layout.edges[i];
                 if (!shape) return null;
-                const faint = hiddenEdges?.has(i) ?? false;
+                const faint = overlay.hiddenEdges?.has(i) ?? false;
+                const hot = taken.has(i);
+                const stroke = hot ? 'var(--accent)' : 'var(--edge)';
+                const w = pillWidth(e.label);
                 return (
-                  <g key={i} opacity={faint ? 0.12 : 1} data-edge={i}>
-                    <path d={shape.path} fill="none" stroke="var(--edge)" strokeWidth={1.4} />
-                    <polygon points={arrowHead(shape.tip, shape.base)} fill="var(--edge)" />
+                  <g key={i} opacity={faint ? 0.12 : 1} data-edge={i} data-taken={hot || undefined}>
+                    <path d={shape.path} fill="none" stroke={stroke} strokeWidth={hot ? 2.2 : 1.4} />
+                    <polygon points={arrowHead(shape.tip, shape.base)} fill={stroke} />
                     {shape.label && (
-                      <text
-                        x={shape.label.x}
-                        y={shape.label.y}
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        fontSize={13}
-                        fill="var(--text)"
-                        stroke="var(--canvas)"
-                        strokeWidth={4}
-                        paintOrder="stroke"
-                      >
-                        {e.label}
-                      </text>
+                      <g>
+                        <rect
+                          x={shape.label.x - w / 2}
+                          y={shape.label.y - 10}
+                          width={w}
+                          height={20}
+                          rx={5}
+                          fill={hot ? 'var(--navy)' : 'var(--surface-3)'}
+                          stroke={hot ? 'var(--accent)' : 'none'}
+                        />
+                        <text
+                          x={shape.label.x}
+                          y={shape.label.y}
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          fontSize={12}
+                          fill={hot ? 'var(--accent)' : 'var(--text-2)'}
+                        >
+                          {e.label}
+                        </text>
+                      </g>
                     )}
                   </g>
                 );
@@ -217,9 +279,8 @@ export function Diagram({ name, machine, overlay = {}, selectedState = null, onS
                 const isAccept = accept.has(i);
                 const isActive = active.has(i);
                 const isFocus = focus.has(i);
-                const faint = hiddenStates?.has(i) ?? false;
-                const ring = isActive ? verdictColor : isFocus || selectedState === i ? 'var(--accent)' : 'var(--node)';
-                const r = n.r;
+                const faint = overlay.hiddenStates?.has(i) ?? false;
+                const stroke = isActive ? ring : isFocus ? 'var(--accent)' : isAccept ? 'var(--accept)' : 'var(--node)';
                 return (
                   <g
                     key={i}
@@ -227,32 +288,32 @@ export function Diagram({ name, machine, overlay = {}, selectedState = null, onS
                     data-state={s.name}
                     data-active={isActive || undefined}
                     data-focus={isFocus || undefined}
-                    onClick={() => onSelectState?.(i)}
-                    className={onSelectState ? 'cursor-pointer' : undefined}
                   >
                     {s.origin && <title>{`${s.name}: ${s.origin}`}</title>}
                     <circle
                       cx={n.x}
                       cy={n.y}
-                      r={r}
-                      fill={isActive ? `color-mix(in srgb, ${verdictColor} 22%, var(--canvas))` : 'var(--canvas)'}
-                      stroke={ring}
-                      strokeWidth={isActive || isFocus ? 2.6 : 1.4}
+                      r={n.r}
+                      fill={isActive ? 'var(--navy)' : 'var(--node-fill)'}
+                      stroke={stroke}
+                      strokeWidth={isActive || isFocus ? 2.6 : 1.6}
                       strokeDasharray={s.trap ? '4 3' : undefined}
+                      filter={isActive ? `url(#${glowId})` : undefined}
                     />
-                    {isAccept && (
-                      <circle cx={n.x} cy={n.y} r={r - 4} fill="none" stroke={ring} strokeWidth={1.2} />
+                    {isAccept && <circle cx={n.x} cy={n.y} r={n.r - 4.5} fill="none" stroke={stroke} strokeWidth={1.4} />}
+                    <StateLabel name={s.name} x={n.x} y={n.y} />
+                    {isActive && (
+                      // The finger on this state.
+                      <circle
+                        cx={n.x + n.r * 0.72}
+                        cy={n.y - n.r * 0.72}
+                        r={6}
+                        fill={ring}
+                        stroke="var(--canvas)"
+                        strokeWidth={2}
+                        data-finger
+                      />
                     )}
-                    <text
-                      x={n.x}
-                      y={n.y}
-                      textAnchor="middle"
-                      dominantBaseline="central"
-                      fontSize={14}
-                      fill="var(--text)"
-                    >
-                      {s.name}
-                    </text>
                   </g>
                 );
               })}
@@ -266,7 +327,30 @@ export function Diagram({ name, machine, overlay = {}, selectedState = null, onS
           The diagram could not be laid out: {error}
         </p>
       )}
-      <div className="absolute right-2 bottom-2 flex gap-1">
+      {legend && layout && (
+        <div
+          aria-label="Legend"
+          className="absolute bottom-3 left-3 hidden gap-3.5 rounded-lg border border-border bg-surface/90 px-3 py-2 text-[11px] text-text-2 sm:flex"
+        >
+          <span className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-accent" />
+            finger (active)
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full border-2 border-[var(--accept)]" />
+            accept state
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-0.5 w-4 bg-accent" />
+            edge just taken
+          </span>
+        </div>
+      )}
+      <div
+        role="toolbar"
+        aria-label="Zoom"
+        className="absolute right-3 bottom-3 flex items-center gap-0.5 rounded-lg border border-border bg-surface/90 p-1"
+      >
         <ZoomButton label="Zoom in" onClick={() => zoomAt(1.25, { x: box.w / 2, y: box.h / 2 })}>
           +
         </ZoomButton>
@@ -274,7 +358,7 @@ export function Diagram({ name, machine, overlay = {}, selectedState = null, onS
           −
         </ZoomButton>
         <ZoomButton label="Fit to view" onClick={refit}>
-          ⤢
+          Fit
         </ZoomButton>
       </div>
     </div>
@@ -286,9 +370,9 @@ function ManualStart({ node }: { node: { x: number; y: number; r: number } }) {
   const tip = { x: node.x - node.r, y: node.y };
   const base = { x: tip.x - 26, y: tip.y };
   return (
-    <g className="text-muted">
-      <path d={`M${base.x},${base.y} L${tip.x - 8},${tip.y}`} stroke="currentColor" strokeWidth={1.4} />
-      <polygon points={arrowHead(tip, base)} fill="currentColor" />
+    <g>
+      <path d={`M${base.x},${base.y} L${tip.x - 8},${tip.y}`} stroke="var(--edge)" strokeWidth={1.4} />
+      <polygon points={arrowHead(tip, base)} fill="var(--edge)" />
     </g>
   );
 }
@@ -308,7 +392,7 @@ function ZoomButton({
       aria-label={label}
       title={label}
       onClick={onClick}
-      className="grid h-9 w-9 place-items-center rounded-md border border-border bg-surface/90 font-mono text-base text-text hover:bg-surface-2 pointer-coarse:h-11 pointer-coarse:w-11"
+      className="grid h-8 min-w-8 place-items-center rounded-md px-2 text-[13px] text-text hover:bg-surface-3 pointer-coarse:h-10 pointer-coarse:min-w-10"
     >
       {children}
     </button>

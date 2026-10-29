@@ -13,7 +13,10 @@ use ts_rs::TS;
 pub struct RunStepView {
     pub pos: u32,
     pub active: Vec<u32>,
+    /// The step as a formula, e.g. "Read a: δ({q1, q2}, a) = {q1, q2}, then E(…) = {q1, q2}."
     pub message: String,
+    /// The same step in one plain-English sentence, e.g. "q2 has no a-arrow, so its finger drops."
+    pub explain: String,
 }
 
 /// A whole run, ready to animate.

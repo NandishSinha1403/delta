@@ -139,14 +139,17 @@ Controls everywhere: ▶ play, ⏸ pause, ⏭ step, ⏮ step back (history is ke
 ---
 
 ## 7. Visual design
-- **Look:** calm, technical, textbook-like. Neutral background, one accent color for "active", a second for "accepting", a third for "rejected/dead". Diagrams use the book's conventions (start arrow, double circles, self-loops on top).
-- **Themes:** **dark is the default**, a neutral palette in the style of VS Code's Dark Modern (no blue-tinted greys); **light** is a toggle in the header, remembered per browser. High-contrast is still planned. Every color is a CSS variable (`web/src/index.css`), including the syntax colors, so the editor, diagram and panels switch together. Exported SVGs will use the light theme unless the user asks otherwise.
+- **Palette (UI only):** powder blue `#A8DADC` for anything active (current tab, active states, the run head, Execute), navy `#1D3557` / `#16263D` tints behind it, steel blue `#457B9D` as the secondary, near-white `#F1FAEE` text and accept-state double rings, on near-black surfaces (`#0D0E10`, `#111215`, `#17191C`). Brand red `#E63946` appears only on the δ logo tile (and on Share once it exists). Errors use a softer coral; warnings are steel blue; no ochre. Light theme: the same roles on paper, with navy carrying text.
+- **Code colors:** VS Code Dark+ (Light+ in the light theme), independent of the UI palette: keywords `#569CD6`, tuple fields (Q Σ Γ δ q0 F start accept reject) `#9CDCFE`, functions/commands `#DCDCAA`, strings and alphabet symbols `#CE9178`, comments `#6A9955` italic, numbers `#B5CEA8`, everything else `#D4D4D4`. Code lines are a fixed 24px.
 - **Type:**
-  - Code and math-like text: **IBM Plex Mono**, the *complete* build from `@ibm/plex-mono`. The fontsource build is missing ε Σ δ ∅ ⊔ →, so it cannot be used.
-  - **JetBrains Mono** fills only the glyphs Plex lacks (∘ ⁺ ⊣) and replaces Plex's ∪, which reads as a "u" in expressions like `bb*a∪a`. It is a separate `@font-face` with a `unicode-range`, so it is downloaded only when one of those characters is on screen. Whole regular expressions are also displayed with spaces around ∪, as the book prints them.
-  - UI: **IBM Plex Sans** (Latin, 400/500/600). Logo only: **DotGothic16** (Latin subset).
-  - The formal tuple is typeset with **KaTeX** (q1 → q₁, {q1,q3} → {q₁, q₃}); each line carries a plain-text accessible name.
-- **Editor (CodeMirror 6):** Delta highlighting (a stream tokenizer; the engine stays the only real parser), completion (keywords, snippets for `dfa`/`nfa`/`regex`/`let`/`check`/`run`, the program's objects, and the states and symbols of the machine under the cursor), hover docs quoting the book for keywords and showing how each object was made, engine diagnostics as squiggles with the book quote and quick fixes, a lint gutter, `Cmd/Ctrl+/` line comments, find/replace (`Cmd/Ctrl+F`).
+  - Code: **IBM Plex Mono** (the *complete* build from `@ibm/plex-mono`; the fontsource build lacks ε Σ δ ∅ ⊔ →). **JetBrains Mono** fills ∘ ⁺ ⊣ only. The union sign comes from **KaTeX's math font**: Plex's ∪ reads as "u" and JetBrains Mono's as "U". Each fallback is a `unicode-range` face, downloaded only when needed.
+  - UI: **IBM Plex Sans**. Logo: **DotGothic16** next to a red δ tile.
+  - The formal tuple and regular expressions are typeset with **KaTeX** (∪ as `\cup`, stars as superscripts, q1 → q₁); diagram state labels use the same italic q₁ style.
+- **Layout (desktop):** top bar (logo, open-file tabs, ⌘K search, "Sipser 3e · Ch 1.1–1.3" badge, theme), a left icon rail (Files, Book examples, Conversions, Tests, Settings) whose drawers open over the editor, code | diagram | inspector, the run strip, and the status bar.
+- **Editor (CodeMirror 6):** Delta highlighting, completion with a doc line and book reference, hover docs, engine diagnostics with book quotes and quick fixes, codelens hints above `let` lines ("Theorem 1.39 · subset construction · 4 states ▶ open steps") and `check` lines ("✓ 3 / 3 accepted"), `Cmd/Ctrl+/`, find/replace.
+- **Execute:** "▶ Execute" (⌘↵ / Ctrl+Enter) re-evaluates the whole file; the "Auto" switch (on by default, remembered per browser) re-evaluates 150 ms after typing stops. With Auto off, a dot on Execute and a banner on the diagram say the results are stale. Evaluations over 300 ms show a thin progress bar with Stop (kills and restarts the worker) and dim the previous diagram; faster ones show nothing. The status bar reports "Executed in N ms".
+- **Command palette (⌘K):** examples, the conversions that apply to the file's objects, and jump-to-object; nothing that does not exist yet.
+- **Not shown until Phase 2:** Share, Export, SVG download, `minimize()`.
 - **Motion:** 150–250 ms transitions; respects `prefers-reduced-motion` (animations become instant highlights).
 
 ## 8. Accessibility (WCAG 2.2 AA)

@@ -42,12 +42,28 @@ export function traceFrame(object: ObjectView, step: number): Frame | null {
   };
 }
 
-/** The run's active states at position `pos`, colored by the verdict once the input is read. */
-export function runOverlay(run: RunView, pos: number): Overlay {
+/**
+ * The run's active states at position `pos`, colored by the verdict once the input is read, and
+ * the arrows just taken: from a state active before the last symbol to one active after it, with
+ * that symbol in the arrow's label.
+ */
+export function runOverlay(run: RunView, pos: number, machine?: MachineView): Overlay {
   const at = run.steps[Math.min(pos, run.steps.length - 1)];
   const done = pos >= run.input.length;
-  return {
+  const overlay: Overlay = {
     active: at?.active ?? [],
     verdict: done ? (run.accepted ? 'accept' : 'reject') : null,
   };
+  const before = run.steps[pos - 1];
+  const symbol = run.input[pos - 1];
+  if (machine && before && at && symbol !== undefined) {
+    const from = new Set(before.active);
+    const to = new Set(at.active);
+    overlay.taken = new Set(
+      machine.edges.flatMap((e, i) =>
+        from.has(e.from) && to.has(e.to) && e.label.split(',').map((l) => l.trim()).includes(symbol) ? [i] : [],
+      ),
+    );
+  }
+  return overlay;
 }

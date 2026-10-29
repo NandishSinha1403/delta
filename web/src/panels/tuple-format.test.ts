@@ -81,11 +81,14 @@ describe('diagram frames', () => {
       input: ['1'],
       accepted: true,
       steps: [
-        { pos: 0, active: [0], message: '' },
-        { pos: 1, active: [1], message: '' },
+        { pos: 0, active: [0], message: '', explain: '' },
+        { pos: 1, active: [1], message: '', explain: '' },
       ],
     };
     expect(runOverlay(run, 0)).toEqual({ active: [0], verdict: null });
     expect(runOverlay(run, 1)).toEqual({ active: [1], verdict: 'accept' });
+    // M1 reads 1 from q1 to q2: edge 1 (q1 -1-> q2) is the one just taken.
+    expect([...(runOverlay(run, 1, M1).taken ?? [])]).toEqual([1]);
+    expect(runOverlay(run, 0, M1).taken).toBeUndefined();
   });
 });

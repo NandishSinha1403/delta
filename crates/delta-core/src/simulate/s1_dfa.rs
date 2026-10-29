@@ -32,6 +32,7 @@ pub fn run_view(name: &str, m: &Dfa, input: &[SymId]) -> RunView {
         pos: 0,
         active: vec![m.start.0],
         message: format!("Start in q₀ = {}.", m.name(m.start)),
+        explain: format!("{name} starts in its start state {}.", m.name(m.start)),
     }];
     // `.windows(2)` yields overlapping pairs [r₀, r₁], [r₁, r₂], …
     for (i, (pair, &a)) in p.windows(2).zip(input).enumerate() {
@@ -46,6 +47,21 @@ pub fn run_view(name: &str, m: &Dfa, input: &[SymId]) -> RunView {
                     m.sigma.display(a),
                     m.name(*to)
                 ),
+                explain: if from == to {
+                    format!(
+                        "On {}, {} stays in {}.",
+                        m.sigma.display(a),
+                        m.name(*from),
+                        m.name(*to)
+                    )
+                } else {
+                    format!(
+                        "On {}, {name} moves from {} to {}.",
+                        m.sigma.display(a),
+                        m.name(*from),
+                        m.name(*to)
+                    )
+                },
             });
         }
     }
@@ -57,6 +73,18 @@ pub fn run_view(name: &str, m: &Dfa, input: &[SymId]) -> RunView {
         } else {
             format!(" End in {} ∉ F: reject.", m.name(end))
         });
+        last.explain.push_str(&if accepted {
+            format!(
+                " The input is used up in {}, an accept state, so {name} accepts.",
+                m.name(end)
+            )
+        } else {
+            format!(
+                " The input is used up in {}, which is not an accept state, so {name} rejects.",
+                m.name(end)
+            )
+        });
+        last.explain = last.explain.trim_start().to_string();
     }
     RunView {
         object: name.to_string(),

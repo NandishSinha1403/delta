@@ -4,4 +4,12 @@
  * The configuration after reading `pos` symbols: the active states (one for a DFA, the
  * "fingers" for an NFA).
  */
-export type RunStepView = { pos: number, active: Array<number>, message: string, };
+export type RunStepView = { pos: number, active: Array<number>, 
+/**
+ * The step as a formula, e.g. "Read a: δ({q1, q2}, a) = {q1, q2}, then E(…) = {q1, q2}."
+ */
+message: string, 
+/**
+ * The same step in one plain-English sentence, e.g. "q2 has no a-arrow, so its finger drops."
+ */
+explain: string, };

@@ -1,3 +1,4 @@
+import { addLet, type Conversion } from '../conversions';
 import type { ObjectView, RunView } from '../engine/api';
 import { pickObject, useEngineStore, useObjects } from '../state/engine';
 import { useUiStore } from '../state/ui';
@@ -38,4 +39,17 @@ export function useActiveRun(object: ObjectView | null): { run: RunView | null; 
   if (run && run.object === object.name) return { run, pos: Math.min(runPos, run.input.length) };
   const fromProgram = results?.find((r) => r.kind === 'run' && r.object === object.name)?.run ?? null;
   return { run: fromProgram, pos: 0 };
+}
+
+/**
+ * Adds `let X = fn(args)` to the program and selects X: the Convert buttons, the command palette
+ * and the Conversions drawer all go through here.
+ */
+export function applyConversion(c: Conversion, args: readonly string[]): void {
+  const { source, setSource } = useUiStore.getState();
+  const doc = useEngineStore.getState().doc;
+  const taken = [...(doc?.outline.map((o) => o.name) ?? []), ...(doc?.objects.map((o) => o.name) ?? [])];
+  const next = addLet(source, c, args, taken);
+  setSource(next.source);
+  useUiStore.setState({ selected: next.name, step: null });
 }

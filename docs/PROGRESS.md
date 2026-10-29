@@ -52,6 +52,15 @@ Everything in Sipser §1.1–1.3 can now be done in the playground. Added on top
   no errors or warnings and passing checks; error blocks must report their listed codes.
 - UI credit: "A project by Nandish Sinha" in the status bar and the examples dialog.
 
+## Playground redesign ✅ (branch `redesign`)
+The redesign's target look, for everything that exists today (docs/plan/05-PLAYGROUND-UX.md §7):
+new palette, top bar with real multi-file tabs, ⌘K palette, icon rail with drawers, codelens hints,
+book-referenced completions, the redesigned diagram (grid, glow, finger dots, edge pills, legend,
+segmented switcher, Convert buttons), the run strip (tape with an ε cell for empty input, finger
+timeline, formula plus a plain-English sentence from the engine), status bar, and the phone Run tab.
+Execute (⌘↵ / Ctrl+Enter) with an Auto switch, stale banner, slow-only loader with Stop, and
+"Executed in N ms". Share, Export, SVG and `minimize()` stay hidden until Phase 2.
+
 ## Next steps
 1. Phase 2 (remaining): C8–C10, D1–D5/D8/D9, Conversion Studio, exports (share link, SVG/PNG, TikZ,
    DOT, JSON), PWA. (C6 and C7 shipped early with Chapter 1.1–1.3.)

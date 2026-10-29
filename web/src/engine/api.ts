@@ -30,4 +30,15 @@ export interface EngineApi {
   layout(dot: string): Promise<string>;
   /** The engine's version, for the status bar and bug reports. */
   version(): Promise<string>;
+  /** Stop: terminates the worker (WASM cannot be interrupted) and starts a fresh one. Calls in
+   * flight reject with `StoppedError`. */
+  restart(): void;
+}
+
+/** A call that was cancelled by `restart()` (the user pressed Stop). */
+export class StoppedError extends Error {
+  constructor() {
+    super('Stopped.');
+    this.name = 'StoppedError';
+  }
 }
