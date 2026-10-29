@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react';
 import type { DiagnosticView } from '../engine/api';
 import { useEngineStore } from '../state/engine';
 import { useUiStore } from '../state/ui';
+import { codelens, lensesFor, setLenses } from './codelens';
 import { delta, deltaCompletion, deltaHover, deltaLanguage } from './delta-lang';
 
 const theme = EditorView.theme({
@@ -40,6 +41,7 @@ const theme = EditorView.theme({
   '.cm-matchingBracket': { backgroundColor: 'var(--selection)', outline: 'none' },
   '.cm-delta-doc': { maxWidth: '360px', padding: '6px 10px', fontFamily: 'var(--font-sans)', fontSize: '13px' },
   '.cm-delta-doc p': { margin: '4px 0 0', color: 'var(--muted)' },
+  '.cm-delta-doc p.cm-delta-book': { color: 'var(--accent)', fontSize: '12px' },
   '.cm-diagnostic': { fontFamily: 'var(--font-sans)', fontSize: '13px', maxWidth: '420px' },
   '.cm-diagnostic-book': { display: 'block', marginTop: '4px', color: 'var(--muted)', fontStyle: 'italic' },
 });
@@ -85,41 +87,54 @@ export function CodeEditor({ onView }: Props) {
 
   useEffect(() => {
     if (!host.current) return;
-    const { source, setSource, setEditorFocused } = useUiStore.getState();
+    const { source, setSource, setEditorFocused, setCursor } = useUiStore.getState();
     const objects = () => useEngineStore.getState().doc?.objects ?? [];
     const outline = () => useEngineStore.getState().doc?.outline ?? [];
-    const view = new EditorView({
-      parent: host.current,
-      state: EditorState.create({
-        doc: source,
-        extensions: [
-          basicSetup,
-          delta(),
-          deltaLanguage.data.of({ autocomplete: deltaCompletion(outline) }),
-          deltaHover(objects),
-          lintGutter(),
-          theme,
-          EditorView.contentAttributes.of({ 'aria-label': 'Delta code', autocapitalize: 'off', spellcheck: 'false' }),
-          EditorView.updateListener.of((u) => {
-            if (u.docChanged) setSource(u.state.doc.toString());
-            if (u.focusChanged) setEditorFocused(u.view.hasFocus);
-          }),
-        ],
+    // "▶ open steps" on a codelens: show that object's construction from step 1.
+    const openSteps = (name: string) => {
+      useUiStore.setState({
+        selected: name,
+        step: 0,
+        inspectorTab: 'steps',
+        sheetTab: 'steps',
+        sheetOpen: true,
+        phoneView: 'more',
+      });
+    };
+    const extensions = [
+      basicSetup,
+      delta(),
+      deltaLanguage.data.of({ autocomplete: deltaCompletion(outline) }),
+      deltaHover(objects),
+      lintGutter(),
+      codelens(openSteps),
+      theme,
+      EditorView.contentAttributes.of({ 'aria-label': 'Delta code', autocapitalize: 'off', spellcheck: 'false' }),
+      EditorView.updateListener.of((u) => {
+        if (u.docChanged) setSource(u.state.doc.toString());
+        if (u.focusChanged) setEditorFocused(u.view.hasFocus);
+        if (u.selectionSet || u.docChanged) {
+          const head = u.state.selection.main.head;
+          const line = u.state.doc.lineAt(head);
+          setCursor({ line: line.number, col: head - line.from + 1, offset: head });
+        }
       }),
-    });
+    ];
+    const view = new EditorView({ parent: host.current, state: EditorState.create({ doc: source, extensions }) });
 
-    // Diagnostics belong to the source they were computed from; skip stale ones.
-    const showDiagnostics = () => {
+    // Diagnostics and hints belong to the source they were computed from; skip stale ones.
+    const showEngineResults = () => {
       const { doc, docSource } = useEngineStore.getState();
       if (!doc || docSource !== view.state.doc.toString()) return;
       view.dispatch(setDiagnostics(view.state, toDiagnostics(doc.diagnostics, view.state.doc.length)));
+      view.dispatch({ effects: setLenses.of(lensesFor(doc)) });
     };
-    showDiagnostics();
+    showEngineResults();
     const unsubEngine = useEngineStore.subscribe((s, prev) => {
-      if (s.doc !== prev.doc) showDiagnostics();
+      if (s.doc !== prev.doc) showEngineResults();
     });
 
-    // The program can change from outside the editor (examples, quick fixes from panels).
+    // The program can change from outside the editor (quick fixes, Convert buttons, the palette).
     const sync = (text: string) => {
       if (text === view.state.doc.toString()) return;
       view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: text } });
@@ -136,7 +151,9 @@ export function CodeEditor({ onView }: Props) {
     };
     reveal();
     const unsubUi = useUiStore.subscribe((s, prev) => {
-      if (s.source !== prev.source) sync(s.source);
+      // Another file: a fresh editor state, so undo history never crosses files.
+      if (s.activeId !== prev.activeId) view.setState(EditorState.create({ doc: s.source, extensions }));
+      else if (s.source !== prev.source) sync(s.source);
       if (s.reveal && s.reveal !== prev.reveal) reveal();
     });
 

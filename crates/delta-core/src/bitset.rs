@@ -91,6 +91,36 @@ impl BitSet {
         })
     }
 
+    /// A ∩ B.
+    pub fn intersection(&self, other: &BitSet) -> BitSet {
+        let words = self
+            .words
+            .iter()
+            .zip(&other.words)
+            .map(|(a, b)| a & b)
+            .collect();
+        BitSet::trimmed(words)
+    }
+
+    /// A − B: the members of A that are not in B.
+    pub fn difference(&self, other: &BitSet) -> BitSet {
+        let words = self
+            .words
+            .iter()
+            .enumerate()
+            .map(|(i, a)| a & !other.words.get(i).copied().unwrap_or(0))
+            .collect();
+        BitSet::trimmed(words)
+    }
+
+    /// Restores the no-trailing-zero-words invariant.
+    fn trimmed(mut words: Vec<u64>) -> BitSet {
+        while words.last() == Some(&0) {
+            words.pop();
+        }
+        BitSet { words }
+    }
+
     /// Is this ∅?
     pub fn is_empty(&self) -> bool {
         self.words.is_empty()
@@ -145,5 +175,14 @@ mod tests {
         assert!(b.is_subset(&a));
         assert!(!a.is_subset(&b));
         assert!(BitSet::new().is_empty());
+    }
+
+    #[test]
+    fn intersection_and_difference_keep_the_invariant() {
+        let a = BitSet::of([1, 70, 130]);
+        let b = BitSet::of([1, 130]);
+        assert_eq!(a.intersection(&b), b);
+        assert_eq!(a.difference(&b), BitSet::of([70]));
+        assert_eq!(b.difference(&a), BitSet::new());
     }
 }

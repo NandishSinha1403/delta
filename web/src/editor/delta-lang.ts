@@ -222,6 +222,22 @@ export const KEYWORD_DOCS: Record<string, Doc> = {
   empty: { title: 'Definition 1.52', body: 'ASCII spelling of ∅, the empty language.' },
   '∪': { title: 'Definition 1.52 — union', body: '(R₁ ∪ R₂). ASCII: |. Note: + means R⁺ = RR*, not union (p. 65).' },
   let: { title: 'let', body: 'Names the result of a conversion: let D = dfa(N).' },
+  'dfa(': {
+    title: 'Theorem 1.39 — subset construction',
+    body: 'Every NFA has an equivalent DFA. Its states are the reachable subsets of the NFA’s states, ε-closed.',
+  },
+  'nfa(': {
+    title: 'Lemma 1.55 — regular expression to NFA',
+    body: 'If a language is described by a regular expression, then it is regular. A DFA argument is used as an NFA (p. 47).',
+  },
+  'gnfa(': {
+    title: 'Lemma 1.60 — GNFA in special form',
+    body: 'Adds a new start state with an ε-arrow in and a new accept state with ε-arrows from the old accept states.',
+  },
+  'regex(': {
+    title: 'Lemma 1.60 — CONVERT(G)',
+    body: 'If a language is regular, it is described by a regular expression. Rips states one at a time; mode: simplified applies the identities of p. 66.',
+  },
   union: {
     title: 'Theorem 1.25 / Theorem 1.45 — union',
     body: 'union(D1, D2) on two DFAs is the product construction: Q₁ × Q₂ (reachable pairs), start (q₁, q₂), F = (F₁ × Q₂) ∪ (Q₁ × F₂). With an NFA it is Theorem 1.45: a new start with ε-arrows to both starts.',
@@ -287,46 +303,74 @@ export function deltaHover(objects: () => readonly { name: string; kind: string;
 
 // --- Completion ---
 
+/** A completion's side panel: one doc line and the book reference it comes from. */
+function info(key: string): () => Node {
+  const doc = KEYWORD_DOCS[key] ?? { title: key, body: '' };
+  return () => {
+    const dom = document.createElement('div');
+    dom.className = 'cm-delta-doc';
+    const body = document.createElement('p');
+    body.textContent = doc.body;
+    const book = document.createElement('p');
+    book.className = 'cm-delta-book';
+    book.textContent = `Sipser · ${doc.title}`;
+    dom.append(body, book);
+    return dom;
+  };
+}
+
+/** A snippet completion carrying its doc line and book reference. */
+function snippet(template: string, label: string, detail: string, doc: string, boost = 0): Completion {
+  return snippetCompletion(template, { label, detail, type: 'keyword', boost, info: info(doc) });
+}
+
 const SNIPPETS: Completion[] = [
-  snippetCompletion(
+  snippet(
     'dfa ${M} {\n  Q  = { ${q1}, ${q2} }\n  Σ  = { ${0}, ${1} }\n  δ  = table {\n         | 0  | 1\n      q1 | q1 | q2\n      q2 | q1 | q2\n  }\n  q0 = q1\n  F  = { q2 }\n}',
-    { label: 'dfa', detail: 'Definition 1.5', type: 'keyword', boost: 2 },
+    'dfa',
+    'Definition 1.5',
+    'dfa',
+    2,
   ),
-  snippetCompletion(
+  snippet(
     'nfa ${N} {\n  Q = { ${q1}, ${q2} }\n  Σ = { ${a}, ${b} }\n  δ {\n    q1 -[a,b]-> q1\n    q1 -a-> q2\n  }\n  q0 = q1\n  F  = { q2 }\n}',
-    { label: 'nfa', detail: 'Definition 1.37', type: 'keyword', boost: 2 },
+    'nfa',
+    'Definition 1.37',
+    'nfa',
+    2,
   ),
-  snippetCompletion('regex ${R} over { ${a}, ${b} } = ${(a ∪ b)*}', {
-    label: 'regex',
-    detail: 'Definition 1.52',
-    type: 'keyword',
-    boost: 2,
-  }),
-  snippetCompletion('let ${D} = dfa(${N})', { label: 'let … = dfa(…)', detail: 'Theorem 1.39', type: 'keyword' }),
-  snippetCompletion('let ${N} = nfa(${R})', { label: 'let … = nfa(…)', detail: 'Lemma 1.55', type: 'keyword' }),
-  snippetCompletion('let ${G} = gnfa(${D})', { label: 'let … = gnfa(…)', detail: 'Lemma 1.60', type: 'keyword' }),
-  snippetCompletion('let ${R} = regex(${D}, mode: simplified)', {
-    label: 'let … = regex(…)',
-    detail: 'Lemma 1.60',
-    type: 'keyword',
-  }),
-  snippetCompletion('let ${M} = union(${M1}, ${M2})', { label: 'let … = union(…, …)', detail: 'Theorem 1.25 / 1.45', type: 'keyword' }),
-  snippetCompletion('let ${M} = intersect(${D1}, ${D2})', {
-    label: 'let … = intersect(…, …)',
-    detail: 'Theorem 1.25',
-    type: 'keyword',
-  }),
-  snippetCompletion('let ${N} = concat(${N1}, ${N2})', { label: 'let … = concat(…, …)', detail: 'Theorem 1.47', type: 'keyword' }),
-  snippetCompletion('let ${N} = star(${N1})', { label: 'let … = star(…)', detail: 'Theorem 1.49', type: 'keyword' }),
-  snippetCompletion('check ${M} accepts "${w}"', { label: 'check … accepts', type: 'keyword' }),
-  snippetCompletion('check ${M} rejects "${w}"', { label: 'check … rejects', type: 'keyword' }),
-  snippetCompletion('run ${M} on "${w}"', { label: 'run … on', type: 'keyword' }),
+  snippet('regex ${R} over { ${a}, ${b} } = ${(a ∪ b)*}', 'regex', 'Definition 1.52', 'regex', 2),
+  snippet('let ${D} = dfa(${N})', 'let … = dfa(…)', 'Theorem 1.39', 'dfa('),
+  snippet('let ${N} = nfa(${R})', 'let … = nfa(…)', 'Lemma 1.55', 'nfa('),
+  snippet('let ${G} = gnfa(${D})', 'let … = gnfa(…)', 'Lemma 1.60', 'gnfa('),
+  snippet('let ${R} = regex(${D}, mode: simplified)', 'let … = regex(…)', 'Lemma 1.60', 'regex('),
+  snippet('let ${M} = union(${M1}, ${M2})', 'let … = union(…, …)', 'Theorem 1.25 / 1.45', 'union'),
+  snippet('let ${M} = intersect(${D1}, ${D2})', 'let … = intersect(…, …)', 'Theorem 1.25', 'intersect'),
+  snippet('let ${N} = concat(${N1}, ${N2})', 'let … = concat(…, …)', 'Theorem 1.47', 'concat'),
+  snippet('let ${N} = star(${N1})', 'let … = star(…)', 'Theorem 1.49', 'star'),
+  snippet('check ${M} accepts "${w}"', 'check … accepts', 'test', 'check'),
+  snippet('check ${M} rejects "${w}"', 'check … rejects', 'test', 'check'),
+  snippet('run ${M} on "${w}"', 'run … on', 'step through', 'run'),
 ];
 
-const PLAIN: Completion[] = [...OPERATIONS, ...WORDS, ...FIELDS, ...ASCII_SYMBOLS, 'Σ', 'δ', 'ε', '∅'].map((w) => ({
+/** Function calls, offered after `=` or inside arguments: ƒ dfa(N), ƒ union(A, B) … */
+const FUNCTIONS: Completion[] = [
+  ['dfa', 'dfa(${N})', 'Theorem 1.39', 'dfa('],
+  ['nfa', 'nfa(${R})', 'Lemma 1.55', 'nfa('],
+  ['gnfa', 'gnfa(${D})', 'Lemma 1.60', 'gnfa('],
+  ['regex', 'regex(${D}, mode: simplified)', 'Lemma 1.60', 'regex('],
+  ['union', 'union(${A}, ${B})', 'Theorem 1.25 / 1.45', 'union'],
+  ['intersect', 'intersect(${D1}, ${D2})', 'Theorem 1.25', 'intersect'],
+  ['concat', 'concat(${A}, ${B})', 'Theorem 1.47', 'concat'],
+  ['star', 'star(${N})', 'Theorem 1.49', 'star'],
+].map(([name = '', template = '', detail = '', doc = '']) =>
+  snippetCompletion(template, { label: `${name}(…)`, detail, type: 'function', info: info(doc) }),
+);
+
+const PLAIN: Completion[] = [...WORDS, ...FIELDS, ...ASCII_SYMBOLS, 'Σ', 'δ', 'ε', '∅'].map((w) => ({
   label: w,
   type: 'keyword',
-  ...(KEYWORD_DOCS[w] ? { info: KEYWORD_DOCS[w].body } : {}),
+  ...(KEYWORD_DOCS[w] ? { info: info(w) } : {}),
 }));
 
 /** Keywords, snippets, the program's objects, and the states/symbols of the machine under the cursor. */
@@ -347,7 +391,7 @@ export function deltaCompletion(outline: () => readonly OutlineView[]) {
     const atLineStart = /^\s*$/.test(ctx.state.doc.lineAt(from).text.slice(0, from - ctx.state.doc.lineAt(from).from));
     return {
       from,
-      options: [...(atLineStart ? SNIPPETS : []), ...local, ...objects, ...PLAIN],
+      options: [...(atLineStart ? SNIPPETS : FUNCTIONS), ...local, ...objects, ...PLAIN],
       validFor: /^[A-Za-z0-9_']*$/,
     };
   };

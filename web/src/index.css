@@ -1,9 +1,10 @@
 @import 'tailwindcss';
 
 /* Fonts. IBM Plex Mono's "complete" build is the only Plex Mono cut with ε Σ δ ∅ ⊔ →; the
-   fontsource build lacks them. JetBrains Mono fills the few glyphs Plex lacks (∘ ⁺ ⊣) and
-   replaces Plex's ∪, which is too easy to misread as a "u" in regular expressions. Plex skips
-   U+222A via its unicode-range; the browser downloads JetBrains Mono only when needed. */
+   fontsource build lacks them. JetBrains Mono fills the few glyphs Plex lacks (∘ ⁺ ⊣). The union
+   sign comes from KaTeX's math font: Plex's ∪ reads as a "u" and JetBrains Mono's as a "U", while
+   the math cup is unmistakable. Plex skips U+222A via its unicode-range; the other faces download
+   only when one of their characters is on screen. */
 @font-face {
   font-family: 'IBM Plex Mono';
   font-weight: 400;
@@ -25,32 +26,55 @@
   font-weight: 400;
   font-display: swap;
   src: url('../node_modules/jetbrains-mono/fonts/webfonts/JetBrainsMono-Regular.woff2') format('woff2');
-  unicode-range: U+2218, U+222A, U+207A-207B, U+22A3;
+  unicode-range: U+2218, U+207A-207B, U+22A3;
 }
 
-/* Theme tokens (docs/plan/05-PLAYGROUND-UX.md §7). Dark is the default (a neutral, VS Code Dark
-   Modern-style palette); light is a toggle. One accent for "active", one for "accepting", one
-   for "rejected/dead". */
+@font-face {
+  font-family: 'Delta Cup';
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('../node_modules/katex/dist/fonts/KaTeX_Main-Regular.woff2') format('woff2');
+  unicode-range: U+222A;
+}
+
+/* Theme tokens (docs/plan/05-PLAYGROUND-UX.md §7). The UI palette: powder blue for anything
+   active, navy tints behind it, steel blue as the secondary, near-white text. Brand red is only
+   for the δ logo tile. Errors use a softer coral so the brand red stays unique; warnings are
+   steel blue (no ochre). Code keeps VS Code Dark+ / Light+ (the --syn-* tokens). */
 :root {
   color-scheme: dark;
-  --bg: #181818;
-  --surface: #1f1f1f;
-  --surface-2: #2a2a2a;
-  --editor: #1f1f1f;
-  --canvas: #1f1f1f;
-  --border: #333333;
-  --text: #d4d4d4;
-  --muted: #9d9d9d;
-  --accent: #4daafc;
-  --on-accent: #0b1a2a;
-  --accept: #6ccf8e;
-  --reject: #f47174;
-  --warn: #e0b85a;
-  --node: #b8b8b8;
-  --edge: #8f8f8f;
-  --active-line: #262626;
-  --selection: #264f78;
-  --search-match: #623315;
+  --bg: #0d0e10;
+  --surface: #111215;
+  --surface-2: #17191c;
+  --surface-3: #1b1d21;
+  --raised: #2a2d33;
+  --editor: #111215;
+  --canvas: #0d0e10;
+  --grid-dot: #23262b;
+  --border: #23262b;
+  --border-strong: #2a2d33;
+  --text: #f1faee;
+  --text-2: #c6c5c0;
+  --muted: #8c9199;
+  --faint: #7a7f87;
+  --dim: #5e636b;
+  --accent: #a8dadc;
+  --on-accent: #0d0e10;
+  --navy: #1d3557;
+  --navy-2: #16263d;
+  --steel: #457b9d;
+  --steel-soft: #7fa9bc;
+  --brand: #e63946;
+  --accept: #f1faee;
+  --reject: #ff8a80;
+  --warn: #7fa9bc;
+  --node: #c6c5c0;
+  --node-fill: #111215;
+  --edge: #7a7f87;
+  --active-line: #17191c;
+  --selection: #1d3557;
+  --search-match: #16263d;
+  --status-bg: #0a0b0c;
   /* Code colors are VS Code Dark+, not the UI palette. */
   --syn-comment: #6a9955;
   --syn-keyword: #569cd6;
@@ -61,26 +85,42 @@
   --syn-text: #d4d4d4;
 }
 
+/* Light: the same roles on paper. Navy carries text and "active" (powder blue is too pale on
+   white to read), powder blue becomes the active fill. */
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: #f3f3f3;
+  --bg: #f4f6f6;
   --surface: #ffffff;
-  --surface-2: #f0f0f0;
+  --surface-2: #eef2f3;
+  --surface-3: #e5ecee;
+  --raised: #dbe4e7;
   --editor: #ffffff;
-  --canvas: #ffffff;
-  --border: #e0e0e0;
-  --text: #1f1f1f;
-  --muted: #616161;
-  --accent: #005fb8;
+  --canvas: #f8fafa;
+  --grid-dot: #d5dde0;
+  --border: #dde3e6;
+  --border-strong: #cdd6da;
+  --text: #1d3557;
+  --text-2: #2f4058;
+  --muted: #5b6b7a;
+  --faint: #6b7884;
+  --dim: #8a96a1;
+  --accent: #2f6f8f;
   --on-accent: #ffffff;
-  --accept: #1f7a3d;
-  --reject: #c42b1c;
-  --warn: #8a5a00;
-  --node: #3b3b3b;
-  --edge: #6b6b6b;
-  --active-line: #f5f5f5;
-  --selection: #add6ff;
-  --search-match: #f8c9a8;
+  --navy: #a8dadc;
+  --navy-2: #dcefef;
+  --steel: #457b9d;
+  --steel-soft: #457b9d;
+  --brand: #e63946;
+  --accept: #1d3557;
+  --reject: #c0392b;
+  --warn: #457b9d;
+  --node: #1d3557;
+  --node-fill: #ffffff;
+  --edge: #6b7884;
+  --active-line: #f2f6f7;
+  --selection: #cfe8ea;
+  --search-match: #dcefef;
+  --status-bg: #eef2f3;
   /* Code colors are VS Code Light+. */
   --syn-comment: #008000;
   --syn-keyword: #0000ff;
@@ -105,8 +145,22 @@
   --color-reject: var(--reject);
   --color-warn: var(--warn);
   --color-selection: var(--selection);
+  --color-surface-3: var(--surface-3);
+  --color-raised: var(--raised);
+  --color-border-strong: var(--border-strong);
+  --color-text-2: var(--text-2);
+  --color-faint: var(--faint);
+  --color-dim: var(--dim);
+  --color-navy: var(--navy);
+  --color-navy-2: var(--navy-2);
+  --color-steel: var(--steel);
+  --color-steel-soft: var(--steel-soft);
+  --color-brand: var(--brand);
+  --color-canvas: var(--canvas);
+  --color-status: var(--status-bg);
+  --font-serif: 'KaTeX_Main', 'Times New Roman', serif;
   --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'Delta Mono Fallback', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-mono: 'IBM Plex Mono', 'Delta Cup', 'Delta Mono Fallback', ui-monospace, 'SF Mono', Menlo, monospace;
   --font-logo: 'DotGothic16', var(--font-mono);
 }
 
