@@ -140,11 +140,14 @@ Controls everywhere: ▶ play, ⏸ pause, ⏭ step, ⏮ step back (history is ke
 
 ## 7. Visual design
 - **Look:** calm, technical, textbook-like. Neutral background, one accent color for "active", a second for "accepting", a third for "rejected/dead". Diagrams use the book's conventions (start arrow, double circles, self-loops on top).
-- **Type:** a clean sans for UI (e.g. Inter) and a monospace with good Unicode coverage for code (e.g. JetBrains Mono; it must render ε ∅ ∪ ⊔ Σ Γ δ correctly).
-- **Themes:** light, dark (follows system, with manual override), high-contrast. Diagram colors are theme tokens, and exported SVGs use the light theme unless the user asks otherwise.
+- **Themes:** **dark is the default**, a neutral palette in the style of VS Code's Dark Modern (no blue-tinted greys); **light** is a toggle in the header, remembered per browser. High-contrast is still planned. Every color is a CSS variable (`web/src/index.css`), including the syntax colors, so the editor, diagram and panels switch together. Exported SVGs will use the light theme unless the user asks otherwise.
+- **Type:**
+  - Code and math-like text: **IBM Plex Mono**, the *complete* build from `@ibm/plex-mono`. The fontsource build is missing ε Σ δ ∅ ⊔ →, so it cannot be used.
+  - **JetBrains Mono** fills only the glyphs Plex lacks (∘ ⁺ ⊣) and replaces Plex's ∪, which reads as a "u" in expressions like `bb*a∪a`. It is a separate `@font-face` with a `unicode-range`, so it is downloaded only when one of those characters is on screen. Whole regular expressions are also displayed with spaces around ∪, as the book prints them.
+  - UI: **IBM Plex Sans** (Latin, 400/500/600). Logo only: **DotGothic16** (Latin subset).
+  - The formal tuple is typeset with **KaTeX** (q1 → q₁, {q1,q3} → {q₁, q₃}); each line carries a plain-text accessible name.
+- **Editor (CodeMirror 6):** Delta highlighting (a stream tokenizer; the engine stays the only real parser), completion (keywords, snippets for `dfa`/`nfa`/`regex`/`let`/`check`/`run`, the program's objects, and the states and symbols of the machine under the cursor), hover docs quoting the book for keywords and showing how each object was made, engine diagnostics as squiggles with the book quote and quick fixes, a lint gutter, `Cmd/Ctrl+/` line comments, find/replace (`Cmd/Ctrl+F`).
 - **Motion:** 150–250 ms transitions; respects `prefers-reduced-motion` (animations become instant highlights).
-
----
 
 ## 8. Accessibility (WCAG 2.2 AA)
 - Never color-only: active states get a thicker ring + glow; accept states keep the double circle; dead states are dashed.

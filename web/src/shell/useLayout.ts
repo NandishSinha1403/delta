@@ -24,3 +24,27 @@ function subscribe(onChange: () => void): () => void {
 export function useLayout(): Layout {
   return useSyncExternalStore(subscribe, getLayout);
 }
+
+// The tallest viewport seen so far; the on-screen keyboard shrinks the viewport well below it.
+let tallest = 0;
+
+function viewportHeight(): number {
+  const h = window.visualViewport?.height ?? window.innerHeight;
+  tallest = Math.max(tallest, h);
+  return h;
+}
+
+function subscribeViewport(onChange: () => void): () => void {
+  const vv = window.visualViewport;
+  vv?.addEventListener('resize', onChange);
+  window.addEventListener('resize', onChange);
+  return () => {
+    vv?.removeEventListener('resize', onChange);
+    window.removeEventListener('resize', onChange);
+  };
+}
+
+/** True while a phone's on-screen keyboard is open (the viewport lost over a quarter of its height). */
+export function useKeyboardOpen(): boolean {
+  return useSyncExternalStore(subscribeViewport, () => viewportHeight() < tallest * 0.75);
+}

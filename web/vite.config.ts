@@ -8,8 +8,11 @@ export default defineConfig({
   base: '/',
   plugins: [react(), tailwindcss()],
   worker: { format: 'es' },
+  // The example gallery imports ../examples/*.delta (the golden-test corpus) from the repo root.
+  server: { fs: { allow: ['..'] } },
   // The real budget is gzipped first load ≤ 350 KB (docs/plan/05-PLAYGROUND-UX.md §9);
-  // React + CodeMirror alone are ~600 KB minified, so the default 500 KB warning is noise.
-  build: { chunkSizeWarningLimit: 800 },
+  // React + CodeMirror + KaTeX are ~950 KB minified (and lazy Graphviz ~820 KB), so the default
+  // 500 KB warning is noise.
+  build: { chunkSizeWarningLimit: 1000 },
   test: { include: ['src/**/*.test.ts'] },
 });
