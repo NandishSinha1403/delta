@@ -1,0 +1,18 @@
+# Reference textbook (copyrighted) — never commit
+/*.pdf
+
+# Rust
+target/
+
+# Node / web
+node_modules/
+web/dist/
+web/src/engine/pkg/
+web/test-results/
+web/playwright-report/
+
+# Local-only notes
+/to-run.md
+
+# OS / editor
+.DS_Store
