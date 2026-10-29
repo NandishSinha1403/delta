@@ -1,0 +1,79 @@
+@import 'tailwindcss';
+
+/* Theme tokens (docs/plan/05-PLAYGROUND-UX.md §7): calm, technical, textbook-like.
+   One accent for "active", one for "accepting", one for "rejected/dead". */
+:root {
+  color-scheme: light;
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #f1f3f6;
+  --border: #e3e6eb;
+  --text: #16191f;
+  --muted: #5d6573;
+  --accent: #4338ca;
+  --accept: #047857;
+  --reject: #b91c1c;
+  --active-line: #f5f6fa;
+  --selection: #dfe3ff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #0d1016;
+    --surface: #141820;
+    --surface-2: #1c212b;
+    --border: #2a303c;
+    --text: #e7eaf0;
+    --muted: #949cab;
+    --accent: #a5b4fc;
+    --accept: #34d399;
+    --reject: #f87171;
+    --active-line: #181d26;
+    --selection: #2d3561;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accept: var(--accept);
+  --color-reject: var(--reject);
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  /* Must render ε ∅ ∪ ⊔ Σ Γ δ; the system fallbacks cover anything JetBrains Mono lacks. */
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}
