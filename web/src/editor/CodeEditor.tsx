@@ -9,8 +9,11 @@ import { useUiStore } from '../state/ui';
 import { delta, deltaCompletion, deltaHover, deltaLanguage } from './delta-lang';
 
 const theme = EditorView.theme({
-  '&': { height: '100%', backgroundColor: 'var(--editor)', color: 'var(--text)' },
-  '.cm-scroller': { fontFamily: 'var(--font-mono)', fontSize: '14px', lineHeight: '1.6' },
+  '&': { height: '100%', backgroundColor: 'var(--editor)', color: 'var(--syn-text)' },
+  // A fixed 24px line box with no extra spacing between lines (the gutter uses the same box).
+  '.cm-scroller': { fontFamily: 'var(--font-mono)', fontSize: '14px', lineHeight: '24px' },
+  '.cm-line': { padding: '0 4px', lineHeight: '24px' },
+  '.cm-gutterElement': { lineHeight: '24px' },
   '.cm-content': { caretColor: 'var(--accent)' },
   '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--accent)' },
   '.cm-gutters': {

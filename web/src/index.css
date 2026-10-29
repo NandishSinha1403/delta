@@ -51,14 +51,14 @@
   --active-line: #262626;
   --selection: #264f78;
   --search-match: #623315;
+  /* Code colors are VS Code Dark+, not the UI palette. */
   --syn-comment: #6a9955;
   --syn-keyword: #569cd6;
+  --syn-field: #9cdcfe;
+  --syn-function: #dcdcaa;
   --syn-string: #ce9178;
   --syn-number: #b5cea8;
-  --syn-type: #4ec9b0;
-  --syn-name: #9cdcfe;
-  --syn-operator: #d4d4d4;
-  --syn-punct: #b0b0b0;
+  --syn-text: #d4d4d4;
 }
 
 :root[data-theme='light'] {
@@ -81,14 +81,14 @@
   --active-line: #f5f5f5;
   --selection: #add6ff;
   --search-match: #f8c9a8;
+  /* Code colors are VS Code Light+. */
   --syn-comment: #008000;
   --syn-keyword: #0000ff;
+  --syn-field: #001080;
+  --syn-function: #795e26;
   --syn-string: #a31515;
   --syn-number: #098658;
-  --syn-type: #267f99;
-  --syn-name: #001080;
-  --syn-operator: #1f1f1f;
-  --syn-punct: #555555;
+  --syn-text: #000000;
 }
 
 @theme inline {
