@@ -85,7 +85,9 @@ export function StepsPanel() {
         </p>
         {shown && (
           <div className="rounded-md bg-surface-2 p-2.5" data-testid="step-message">
-            <p className="text-xs font-semibold text-accent">{shown.rule}</p>
+            <p className="text-xs font-semibold text-accent" data-testid="step-title">
+              {shown.title}
+            </p>
             <p className="mt-1 font-mono text-[13px] whitespace-pre-line text-text">{shown.message}</p>
           </div>
         )}
@@ -102,7 +104,10 @@ export function StepsPanel() {
               }`}
             >
               <span className="w-6 shrink-0 text-right font-mono tabular-nums">{i + 1}</span>
-              <span className="line-clamp-2 font-mono whitespace-pre-line">{s.message}</span>
+              <span className="min-w-0">
+                <span className="block font-sans text-xs font-medium text-text-2">{s.title}</span>
+                <span className="line-clamp-2 font-mono whitespace-pre-line">{s.message}</span>
+              </span>
             </button>
           </li>
         ))}

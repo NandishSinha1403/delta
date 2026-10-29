@@ -356,3 +356,36 @@ check U rejects \"ab\", \"ba\"";
             .all(|c| c.expected == c.actual)
     );
 }
+
+#[test]
+fn nfa_of_a_regex_is_the_books_construction_and_nothing_more() {
+    let doc = evaluate(&read_example("lemma1-55.delta"));
+    assert!(errors(&doc).is_empty(), "{:?}", errors(&doc));
+    // Only what the code asks for: the expression and its NFA, no DFA.
+    let kinds: Vec<(&str, &str)> = doc
+        .objects
+        .iter()
+        .map(|o| (o.name.as_str(), o.kind.as_str()))
+        .collect();
+    assert_eq!(kinds, [("R", "regex"), ("N", "nfa")]);
+    let n = object(&doc, "N");
+    let m = n.machine.as_ref().unwrap();
+    let names: Vec<&str> = m.states.iter().map(|s| s.name.as_str()).collect();
+    assert_eq!(names.first(), Some(&"q0"));
+    assert_eq!(names.len(), 13);
+    assert!(m.states[0].start);
+    let accept: Vec<&str> = m
+        .states
+        .iter()
+        .filter(|s| s.accept)
+        .map(|s| s.name.as_str())
+        .collect();
+    assert_eq!(accept, ["q10", "q12"]);
+    let eps = m.edges.iter().filter(|e| e.label == "ε").count();
+    assert_eq!(eps, 12, "every ε-arrow of the construction is kept");
+    assert_eq!(m.edges.len(), 17);
+    let steps = &n.trace.as_ref().unwrap().steps;
+    assert_eq!(steps.len(), 11);
+    assert_eq!(steps[2].title, "Theorem 1.45 · 0∪1");
+    assert_eq!(m.groups.len(), 3);
+}

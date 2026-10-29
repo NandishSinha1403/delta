@@ -61,6 +61,10 @@ timeline, formula plus a plain-English sentence from the engine), status bar, an
 Execute (⌘↵ / Ctrl+Enter) with an Auto switch, stale banner, slow-only loader with Stop, and
 "Executed in N ms". Share, Export, SVG and `minimize()` stay hidden until Phase 2.
 
+## Faithful regex → NFA ✅
+`nfa(R)` is Lemma 1.55 exactly (Theorems 1.45, 1.47, 1.49), numbered q0, q1, … left to right; golden
+test for (0 ∪ 1)*010*; nested sub-expression boxes with dashed ε-arrows; one titled step per theorem.
+
 ## Next steps
 1. Phase 2 (remaining): C8–C10, D1–D5/D8/D9, Conversion Studio, exports (share link, SVG/PNG, TikZ,
    DOT, JSON), PWA. (C6 and C7 shipped early with Chapter 1.1–1.3.)

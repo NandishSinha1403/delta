@@ -6,7 +6,7 @@
 use crate::dfa::Dfa;
 use crate::gnfa::Gnfa;
 use crate::ids::StateId;
-use crate::nfa::{Label, Nfa};
+use crate::nfa::{Label, Nfa, StateGroup};
 use crate::object::Object;
 use crate::state::{Origin, StateInfo};
 use crate::trace::Trace;
@@ -51,6 +51,15 @@ pub struct TableView {
     pub rows: Vec<TableRowView>,
 }
 
+/// A box around the states one sub-expression produced (regex → NFA, Lemma 1.55).
+#[derive(Debug, Clone, PartialEq, Serialize, TS)]
+#[ts(export)]
+pub struct GroupView {
+    pub label: String,
+    pub states: Vec<u32>,
+    pub parent: Option<u32>,
+}
+
 /// A machine ready to draw: diagram data plus its δ-table.
 #[derive(Debug, Clone, PartialEq, Serialize, TS)]
 #[ts(export)]
@@ -61,6 +70,8 @@ pub struct MachineView {
     pub sigma: Vec<String>,
     pub edges: Vec<EdgeView>,
     pub table: TableView,
+    /// Layout clusters (empty except for NFAs built from regular expressions).
+    pub groups: Vec<GroupView>,
 }
 
 /// One trace step, with edges given as indices into the final machine's `edges`.
@@ -68,6 +79,8 @@ pub struct MachineView {
 #[ts(export)]
 pub struct StepView {
     pub rule: String,
+    /// The step's heading, e.g. "Theorem 1.45 · 0∪1".
+    pub title: String,
     pub message: String,
     pub add_states: Vec<u32>,
     pub add_edges: Vec<u32>,
@@ -144,6 +157,7 @@ fn dfa_view(m: &Dfa) -> MachineView {
         });
     }
     MachineView {
+        groups: Vec::new(),
         kind: "dfa".into(),
         states,
         sigma: m.sigma.names().to_vec(),
@@ -200,6 +214,7 @@ fn nfa_view(m: &Nfa) -> MachineView {
         });
     }
     MachineView {
+        groups: m.groups.iter().map(group_view).collect(),
         kind: "nfa".into(),
         states,
         sigma: m.sigma.names().to_vec(),
@@ -208,6 +223,14 @@ fn nfa_view(m: &Nfa) -> MachineView {
             columns: columns.into_iter().map(label_text).collect(),
             rows,
         },
+    }
+}
+
+fn group_view(g: &StateGroup) -> GroupView {
+    GroupView {
+        label: g.label.clone(),
+        states: g.states.iter().map(|q| q.0).collect(),
+        parent: g.parent.map(|p| p as u32),
     }
 }
 
@@ -246,6 +269,7 @@ fn gnfa_view(g: &Gnfa) -> MachineView {
         })
         .collect();
     MachineView {
+        groups: Vec::new(),
         kind: "gnfa".into(),
         states,
         sigma: g.sigma.names().to_vec(),
@@ -275,6 +299,7 @@ pub fn trace_view(title: &str, trace: &Trace, result: &MachineView) -> TraceView
         .iter()
         .map(|s| StepView {
             rule: s.rule.to_string(),
+            title: s.title.clone().unwrap_or_else(|| s.rule.to_string()),
             message: s.message.clone(),
             add_states: ids(&s.add_states),
             add_edges: s

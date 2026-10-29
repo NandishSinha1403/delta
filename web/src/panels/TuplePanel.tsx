@@ -13,7 +13,7 @@ export function Math({ line, block = false }: { line: TupleLine; block?: boolean
     [line.tex, block],
   );
   return (
-    <span role="math" aria-label={line.text} className="text-[1.05em]">
+    <span role="math" aria-label={line.text} className="inline-block max-w-full overflow-x-auto align-middle text-[1.05em]">
       <span aria-hidden="true" dangerouslySetInnerHTML={{ __html: html }} />
     </span>
   );

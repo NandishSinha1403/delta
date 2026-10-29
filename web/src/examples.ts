@@ -26,6 +26,7 @@ const ORDER = [
   'thm1-45-union',
   'thm1-47-concat',
   'thm1-49-star',
+  'lemma1-55',
   'ex1-56',
   'ex1-58',
   'ex1-66',

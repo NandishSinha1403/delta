@@ -229,6 +229,25 @@ export function Diagram({ name, machine, overlay = {}, legend = true }: Props) {
               </filter>
             </defs>
             <g transform={`translate(${shown.x},${shown.y}) scale(${shown.k})`}>
+              {layout.clusters.map((c, i) => (
+                // One box per sub-expression of a regex → NFA construction (Lemma 1.55).
+                <g key={`c${i}`} data-cluster={c.label}>
+                  <rect
+                    x={c.x}
+                    y={c.y}
+                    width={c.width}
+                    height={c.height}
+                    rx={10}
+                    fill="var(--surface)"
+                    fillOpacity={0.55}
+                    stroke="var(--border-strong)"
+                    strokeDasharray="5 4"
+                  />
+                  <text x={c.x + 10} y={c.labelAt.y} dominantBaseline="central" fontSize={11} fill="var(--faint)">
+                    {c.label}
+                  </text>
+                </g>
+              ))}
               {layout.start && start === machineStart && (
                 <g>
                   <path d={layout.start.path} fill="none" stroke="var(--edge)" strokeWidth={1.4} />
@@ -243,9 +262,18 @@ export function Diagram({ name, machine, overlay = {}, legend = true }: Props) {
                 const hot = taken.has(i);
                 const stroke = hot ? 'var(--accent)' : 'var(--edge)';
                 const w = pillWidth(e.label);
+                // ε-arrows are dashed, so the construction's glue is easy to tell from real input.
+                const epsilon = e.label === 'ε';
                 return (
                   <g key={i} opacity={faint ? 0.12 : 1} data-edge={i} data-taken={hot || undefined}>
-                    <path d={shape.path} fill="none" stroke={stroke} strokeWidth={hot ? 2.2 : 1.4} />
+                    <path
+                      d={shape.path}
+                      fill="none"
+                      stroke={stroke}
+                      strokeWidth={hot ? 2.2 : 1.4}
+                      strokeDasharray={epsilon ? '5 4' : undefined}
+                      data-epsilon={epsilon || undefined}
+                    />
                     <polygon points={arrowHead(shape.tip, shape.base)} fill={stroke} />
                     {shape.label && (
                       <g>

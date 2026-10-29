@@ -20,6 +20,7 @@ const M1: MachineView = {
     { from: 2, to: 1, label: '0,1' },
   ],
   table: { columns: ['0', '1'], rows: [] },
+  groups: [],
 };
 
 describe('tuple formatting', () => {
@@ -57,8 +58,8 @@ describe('diagram frames', () => {
       title: 'test',
       truncated: false,
       steps: [
-        { rule: 'r', message: 'a', add_states: [0], add_edges: [], focus: [0], start: null, accept: null, snapshot: null },
-        { rule: 'r', message: 'b', add_states: [1], add_edges: [1], focus: [0, 1], start: null, accept: [1], snapshot: null },
+        { rule: 'r', title: 'r', message: 'a', add_states: [0], add_edges: [], focus: [0], start: null, accept: null, snapshot: null },
+        { rule: 'r', title: 'r', message: 'b', add_states: [1], add_edges: [1], focus: [0, 1], start: null, accept: [1], snapshot: null },
       ],
     },
   };
