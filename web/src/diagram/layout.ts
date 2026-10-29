@@ -23,9 +23,20 @@ export interface EdgeShape {
   label: Point | null;
 }
 
+/** A sub-expression's box (regex → NFA): its rectangle and label position. */
+export interface ClusterBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  label: string;
+  labelAt: Point;
+}
+
 export interface Layout {
   width: number;
   height: number;
+  clusters: ClusterBox[];
   nodes: NodeBox[];
   /** Same order as `machine.edges`. */
   edges: (EdgeShape | null)[];
@@ -47,8 +58,37 @@ export function toDot(m: MachineView): string {
     '  edge [fontname="Courier" fontsize=13 arrowsize=0.8];',
     '  __start [shape=point style=invis width=0 height=0 label=""];',
   ];
-  m.states.forEach((s, i) => {
-    lines.push(`  s${i} [label=${quote(s.name)}${s.accept ? ' shape=doublecircle' : ''}];`);
+  const node = (i: number) => {
+    const s = m.states[i];
+    return s ? `s${i} [label=${quote(s.name)}${s.accept ? ' shape=doublecircle' : ''}];` : '';
+  };
+  // Sub-expression groups become nested clusters; each state goes in its innermost group.
+  const groups = m.groups ?? [];
+  const innermost = new Map<number, number>();
+  groups.forEach((g, gi) => {
+    for (const q of g.states) {
+      const prev = innermost.get(q);
+      if (prev === undefined || (groups[prev]?.states.length ?? 0) > g.states.length) innermost.set(q, gi);
+    }
+  });
+  const emit = (gi: number, indent: string) => {
+    const g = groups[gi];
+    if (!g) return;
+    lines.push(`${indent}subgraph cluster_${gi} {`);
+    lines.push(`${indent}  label=${quote(g.label)}; labeljust=l; fontname="Courier"; fontsize=11; margin=10;`);
+    m.states.forEach((_, i) => {
+      if (innermost.get(i) === gi) lines.push(`${indent}  ${node(i)}`);
+    });
+    groups.forEach((child, ci) => {
+      if (child.parent === gi) emit(ci, `${indent}  `);
+    });
+    lines.push(`${indent}}`);
+  };
+  groups.forEach((g, gi) => {
+    if (g.parent === null) emit(gi, '  ');
+  });
+  m.states.forEach((_, i) => {
+    if (!innermost.has(i)) lines.push(`  ${node(i)}`);
   });
   const start = m.states.findIndex((s) => s.start);
   if (start >= 0) lines.push(`  __start -> s${start};`);
@@ -60,6 +100,9 @@ export function toDot(m: MachineView): string {
 interface GvObject {
   _gvid: number;
   name: string;
+  bb?: string;
+  lp?: string;
+  label?: string;
   pos?: string;
   width?: string;
   height?: string;
@@ -119,9 +162,17 @@ export function parseLayout(json: string, m: MachineView): Layout {
   const flip = (p: Point): Point => ({ x: p.x + PAD, y: h - p.y + PAD });
 
   const nodes: NodeBox[] = m.states.map(() => ({ x: 0, y: 0, r: 18 }));
+  const clusters: ClusterBox[] = [];
   // Graphviz numbers objects by _gvid; our node names are s0, s1, … (and __start).
   const idOf = new Map<number, number | 'start'>();
   for (const o of g.objects ?? []) {
+    if (o.name.startsWith('cluster_')) {
+      const [x1 = 0, y1 = 0, x2 = 0, y2 = 0] = nums(o.bb ?? '0,0,0,0');
+      const [lx = 0, ly = 0] = nums(o.lp ?? '0,0');
+      const top = flip({ x: x1, y: y2 });
+      clusters.push({ x: top.x, y: top.y, width: x2 - x1, height: y2 - y1, label: o.label ?? '', labelAt: flip({ x: lx, y: ly }) });
+      continue;
+    }
     if (o.name === '__start') {
       idOf.set(o._gvid, 'start');
       continue;
@@ -158,7 +209,7 @@ export function parseLayout(json: string, m: MachineView): Layout {
       edges[k] = shape;
     }
   }
-  return { width: w + 2 * PAD, height: h + 2 * PAD, nodes, edges, start };
+  return { width: w + 2 * PAD, height: h + 2 * PAD, clusters, nodes, edges, start };
 }
 
 /** A sentence a screen reader can use in place of the picture (docs/plan/05 §8). */

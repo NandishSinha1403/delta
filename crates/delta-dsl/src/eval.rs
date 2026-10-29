@@ -1046,6 +1046,7 @@ fn eval_closure(
 
 fn empty_view() -> MachineView {
     MachineView {
+        groups: Vec::new(),
         kind: "regex".into(),
         states: Vec::new(),
         sigma: Vec::new(),

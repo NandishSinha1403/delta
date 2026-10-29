@@ -289,3 +289,30 @@ test('fast evaluations never flash the loader', async ({ page }) => {
   await page.waitForTimeout(800);
   expect(seen).toBe(false);
 });
+
+// Lemma 1.55, faithful: nfa(R) for (0 ∪ 1)*010* is the book's 13-state NFA, drawn left to right
+// with one box per sub-expression and dashed ε-arrows, and no DFA unless the code asks for one.
+test('regex → NFA is the book construction, boxed by sub-expression', async ({ page }, testInfo) => {
+  const layout = testInfo.project.name;
+  await palette(page, '1.55', /^Examples.*Lemma 1\.55/);
+  await pickObject(page, layout, 'N');
+  if (layout === 'phone') await page.getByRole('tab', { name: 'Diagram' }).click();
+  const diagram = page.getByTestId('diagram');
+  await expect(diagram).toHaveAttribute('aria-label', /^NFA N, 13 states, start q0, accept q10, q12/);
+  await expect(diagram.locator('[data-cluster]')).toHaveCount(3);
+  await expect(diagram.locator('[data-cluster="(0∪1)*"]')).toHaveCount(1);
+  await expect(diagram.locator('[data-epsilon]')).toHaveCount(12);
+  if (layout !== 'phone') {
+    await expect(page.getByRole('tablist', { name: 'Objects' }).getByRole('tab')).toHaveCount(2);
+  }
+
+  await openView(page, layout, 'Steps');
+  await expect(page.getByTestId('step-counter')).toHaveText('Result · 11 steps');
+  await page.getByRole('button', { name: 'Start from step 1' }).click();
+  await expect(page.getByTestId('step-title')).toHaveText('Lemma 1.55 (1) · 0');
+  await page.getByRole('button', { name: 'Next step' }).click();
+  await page.getByRole('button', { name: 'Next step' }).click();
+  await expect(page.getByTestId('step-title')).toHaveText('Theorem 1.45 · 0∪1');
+  await page.getByRole('button', { name: 'Next step' }).click();
+  await expect(page.getByTestId('step-title')).toHaveText('Theorem 1.49 · (0∪1)*');
+});

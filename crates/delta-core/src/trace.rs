@@ -14,6 +14,8 @@ use crate::object::Object;
 pub struct Step {
     /// The book rule applied, e.g. "Theorem 1.39".
     pub rule: &'static str,
+    /// A heading for the steps panel, e.g. "Theorem 1.45 · 0∪1" (defaults to `rule`).
+    pub title: Option<String>,
     /// A sentence for the steps panel.
     pub message: String,
     /// States of the final machine that appear at this step.
@@ -36,6 +38,7 @@ impl Step {
     pub fn new(rule: &'static str, message: impl Into<String>) -> Step {
         Step {
             rule,
+            title: None,
             message: message.into(),
             add_states: Vec::new(),
             add_edges: Vec::new(),
@@ -44,6 +47,12 @@ impl Step {
             start: None,
             snapshot: None,
         }
+    }
+
+    /// Builder: the heading shown for this step.
+    pub fn title(mut self, title: impl Into<String>) -> Step {
+        self.title = Some(title.into());
+        self
     }
 
     /// Builder: states added by this step (also focused).

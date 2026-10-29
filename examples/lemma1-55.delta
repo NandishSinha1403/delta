@@ -1,0 +1,9 @@
+// Lemma 1.55 — (0 ∪ 1)*010* becomes an NFA by Theorems 1.45, 1.47 and 1.49, nothing else.
+regex R over { 0, 1 } = (0 ∪ 1)* 0 1 0*
+
+// States q0 … q12, numbered left to right; start q0, F = {q10, q12}.
+// Open the Steps tab: each theorem application is one step.
+let N = nfa(R)
+
+check N accepts "01", "0010", "1101000"
+check N rejects "", "0", "10", "0110"

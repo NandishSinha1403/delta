@@ -156,7 +156,7 @@ export function DiagramPanel({
           {showCaption && caption && (
             <p className="shrink-0 border-b border-border bg-surface px-4 py-2 text-xs text-muted">
               <span className="font-semibold text-accent">
-                Step {step === null ? '' : step + 1} · {caption.rule}
+                Step {step === null ? '' : step + 1} · {caption.title}
               </span>{' '}
               <span className="line-clamp-2 whitespace-pre-line">{caption.message}</span>
             </p>

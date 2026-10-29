@@ -4,4 +4,8 @@ import type { MachineView } from "./MachineView";
 /**
  * One trace step, with edges given as indices into the final machine's `edges`.
  */
-export type StepView = { rule: string, message: string, add_states: Array<number>, add_edges: Array<number>, focus: Array<number>, start: number | null, accept: Array<number> | null, snapshot: MachineView | null, };
+export type StepView = { rule: string, 
+/**
+ * The step's heading, e.g. "Theorem 1.45 · 0∪1".
+ */
+title: string, message: string, add_states: Array<number>, add_edges: Array<number>, focus: Array<number>, start: number | null, accept: Array<number> | null, snapshot: MachineView | null, };

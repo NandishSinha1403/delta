@@ -14,6 +14,7 @@ const M: MachineView = {
     { from: 0, to: 1, label: 'a,ε' },
   ],
   table: { columns: [], rows: [] },
+  groups: [],
 };
 
 describe('toDot', () => {
@@ -23,6 +24,31 @@ describe('toDot', () => {
     expect(dot).toContain('__start -> s0;');
     expect(dot).toContain('s1 [label="q\\"2" shape=doublecircle];');
     expect(dot).toContain('s0 -> s1 [label="a,ε"];');
+  });
+});
+
+describe('clusters', () => {
+  it('nests sub-expression groups and puts each state in its innermost box', () => {
+    const states = Array.from({ length: 4 }, (_, i) => ({ name: `q${i}`, start: i === 0, accept: false, trap: false, origin: null }));
+    const dot = toDot({
+      ...M,
+      states,
+      edges: [],
+      groups: [
+        { label: '(0∪1)*', states: [0, 1, 2], parent: null },
+        { label: '0∪1', states: [1, 2], parent: 0 },
+      ],
+    });
+    const outer = dot.indexOf('subgraph cluster_0');
+    const inner = dot.indexOf('subgraph cluster_1');
+    expect(outer).toBeGreaterThan(-1);
+    expect(inner).toBeGreaterThan(outer);
+    // q0 sits in the outer box only, q1 in the inner one, q3 outside both.
+    expect(dot.indexOf('s0 [label="q0"]')).toBeLessThan(inner);
+    expect(dot.indexOf('s1 [label="q1"]')).toBeGreaterThan(inner);
+    expect(dot.match(/s1 \[label/g)).toHaveLength(1);
+    // q3 belongs to no group, so it is emitted after the outer cluster closes.
+    expect(dot.slice(dot.lastIndexOf('\n  }\n'))).toContain('s3 [label="q3"]');
   });
 });
 
@@ -51,6 +77,7 @@ describe('parseLayout', () => {
     expect(l.start?.tip).toEqual({ x: 24, y: 37 });
     expect(l.edges[0]?.label).toEqual({ x: 42, y: 10 });
     expect(l.edges[1]?.path).toBe('M60,37 C63,37 66,37 68,37');
+    expect(l.clusters).toEqual([]);
   });
 
   it('reads a spline without an arrowhead marker', () => {

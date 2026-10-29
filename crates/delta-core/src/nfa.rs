@@ -26,6 +26,19 @@ pub struct Nfa {
     pub delta: Vec<Vec<(Label, StateId)>>,
     pub start: StateId,
     pub accept: BitSet,
+    /// Layout hint only (not part of the tuple): the states built for each sub-expression, when
+    /// the NFA came from a regular expression (Lemma 1.55). Drawn as nested boxes.
+    pub groups: Vec<StateGroup>,
+}
+
+/// The states one sub-expression's construction produced, e.g. all states of `(0∪1)*`.
+#[derive(Debug, Clone, PartialEq)]
+pub struct StateGroup {
+    /// The sub-expression, printed with minimal parentheses.
+    pub label: String,
+    pub states: Vec<StateId>,
+    /// The enclosing group (groups nest like the expression).
+    pub parent: Option<usize>,
 }
 
 impl Nfa {
@@ -37,6 +50,7 @@ impl Nfa {
             delta: Vec::new(),
             start: StateId(0),
             accept: BitSet::new(),
+            groups: Vec::new(),
         }
     }
 

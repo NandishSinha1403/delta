@@ -89,6 +89,8 @@ Structural recursion over Definition 1.52, using **Sipser's** constructions (not
 
 ---
 
+**As implemented (faithful only).** `nfa(R)` produces exactly the theorems' states and ε-arrows: no ε-removal, no state merging, no simplification, no minimization. States are numbered q0, q1, … left to right along the expression: a union's or star's new start state is numbered before its operands, so `(0 ∪ 1)*` starts at q0. Golden test: `(0 ∪ 1)* 0 1 0*` gives q0…q12, start q0, F = {q10, q12}, with 12 ε-arrows and 5 symbol arrows. The NFA carries one layout group per union/star sub-expression (drawn as nested boxes, ε-arrows dashed), and each theorem application is one trace step titled with its theorem and sub-expression ("Theorem 1.45 · 0∪1"). Nothing is converted to a DFA unless the program says `dfa(N)`.
+
 ### C4 — DFA (or NFA) → GNFA in special form (proof of Lemma 1.60, p. 71)
 
 ```text
