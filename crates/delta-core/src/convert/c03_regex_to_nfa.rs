@@ -10,8 +10,10 @@
 //! 6. R₁* (Theorem 1.49): new start that is also accepting, ε-arrow to q₁; ε-arrows from F₁ back to
 //!    q₁; F = {q₀} ∪ F₁. (Not "just make the start accepting": Exercise 1.15 shows that is wrong.)
 //!
+//! Cases 4–6 call the same arrow-wiring helpers as the `union`, `concat` and `star` commands (C7).
 //! n-ary unions and concatenations fold left, matching the book's figures. O(|R|).
 
+use super::c07_nfa_closure::{Frag, concat_arrows, star_arrows, union_arrows};
 use super::ids;
 use crate::bitset::BitSet;
 use crate::budget::{Budget, TlError};
@@ -24,12 +26,6 @@ use crate::trace::{Step, Trace};
 
 /// Deepest expression accepted (deeper input would risk overflowing the call stack).
 pub const MAX_DEPTH: usize = 500;
-
-/// A partly built NFA: its start state and accept states.
-struct Frag {
-    start: StateId,
-    accept: Vec<StateId>,
-}
 
 struct Builder<'a> {
     // `'a` is a lifetime: it says this Builder borrows `r` and must not outlive it. (Private
@@ -132,10 +128,8 @@ impl Builder<'_> {
                 for &k in iter {
                     let right = self.build(k, depth + 1)?;
                     let q0 = self.state("Theorem 1.45")?;
-                    self.nfa.add_edge(q0, Label::Eps, acc.start);
-                    self.nfa.add_edge(q0, Label::Eps, right.start);
-                    let mut accept = acc.accept.clone();
-                    accept.extend(right.accept.iter().copied());
+                    let (next, edges) = union_arrows(&mut self.nfa, q0, &acc, &right);
+                    let accept = next.accept.clone();
                     let msg = format!(
                         "{} ∪ {}: new start {} with ε-arrows to {} and {}; F = F₁ ∪ F₂ = {}.",
                         acc_text,
@@ -145,8 +139,7 @@ impl Builder<'_> {
                         self.nfa.name(right.start),
                         self.names(&accept)
                     );
-                    let edges = vec![(q0, acc.start), (q0, right.start)];
-                    acc = Frag { start: q0, accept };
+                    acc = next;
                     acc_text = format!("{acc_text}∪{}", self.text(k));
                     self.record(
                         Step::new("Theorem 1.45", msg).states(vec![q0]).edges(edges),
@@ -162,11 +155,9 @@ impl Builder<'_> {
                 let mut acc_text = self.concat_part(first);
                 for &k in iter {
                     let right = self.build(k, depth + 1)?;
-                    let mut edges = Vec::new();
+                    let (next, edges) = concat_arrows(&mut self.nfa, &acc, &right);
                     for &f in &acc.accept {
-                        self.nfa.add_edge(f, Label::Eps, right.start);
                         self.live_accept.remove(f.index());
-                        edges.push((f, right.start));
                     }
                     let msg = format!(
                         "{} ∘ {}: ε-arrows from F₁ = {} to {}; F = F₂ = {}.",
@@ -176,10 +167,7 @@ impl Builder<'_> {
                         self.nfa.name(right.start),
                         self.names(&right.accept)
                     );
-                    acc = Frag {
-                        start: acc.start,
-                        accept: right.accept,
-                    };
+                    acc = next;
                     acc_text.push_str(&self.concat_part(k));
                     let focus = edges.iter().map(|e| e.0).chain([acc.start]).collect();
                     self.record(
@@ -192,15 +180,8 @@ impl Builder<'_> {
             Re::Star(inner) => {
                 let body = self.build(inner, depth + 1)?;
                 let q0 = self.state("Theorem 1.49")?;
-                self.nfa.add_edge(q0, Label::Eps, body.start);
-                let mut edges = vec![(q0, body.start)];
-                for &f in &body.accept {
-                    self.nfa.add_edge(f, Label::Eps, body.start);
-                    edges.push((f, body.start));
-                }
+                let (frag, edges) = star_arrows(&mut self.nfa, q0, &body);
                 self.live_accept.insert(q0.index());
-                let mut accept = vec![q0];
-                accept.extend(body.accept.iter().copied());
                 let msg = format!(
                     "({})*: new start {} that is also accepting, with an ε-arrow to {}; ε-arrows from F₁ = {} back to {}.",
                     self.text(inner),
@@ -209,7 +190,6 @@ impl Builder<'_> {
                     self.names(&body.accept),
                     self.nfa.name(body.start)
                 );
-                let frag = Frag { start: q0, accept };
                 self.record(
                     Step::new("Theorem 1.49", msg).states(vec![q0]).edges(edges),
                     &frag,

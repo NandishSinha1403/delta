@@ -16,6 +16,8 @@ use delta_core::convert::c02_subset::{FULL_LIMIT, SubsetMode, subset_constructio
 use delta_core::convert::c03_regex_to_nfa::regex_to_nfa;
 use delta_core::convert::c04_to_gnfa::{dfa_to_gnfa, nfa_to_gnfa};
 use delta_core::convert::c05_gnfa_to_regex::{RipOrder, gnfa_to_regex};
+use delta_core::convert::c06_product::{ProductOp, product};
+use delta_core::convert::c07_nfa_closure::{nfa_concat, nfa_star, nfa_union};
 use delta_core::gnfa::Gnfa;
 use delta_core::ids::{StateId, SymId};
 use delta_core::nfa::Nfa;
@@ -483,6 +485,18 @@ fn lookup<'a>(
 }
 
 const CONVERSIONS: [&str; 4] = ["dfa", "nfa", "gnfa", "regex"];
+/// The closure operations (Theorems 1.25, 1.45, 1.47, 1.49).
+const CLOSURES: [&str; 4] = ["union", "intersect", "concat", "star"];
+const ALL_FUNCTIONS: [&str; 8] = [
+    "dfa",
+    "nfa",
+    "gnfa",
+    "regex",
+    "union",
+    "intersect",
+    "concat",
+    "star",
+];
 
 fn eval_call(
     call: &Call,
@@ -493,8 +507,7 @@ fn eval_call(
 ) -> Option<(Object, String, Option<TraceView>)> {
     let f = call.func.text.as_str();
     let later = match f {
-        "minimize" | "union" | "intersect" | "complement" | "reverse" | "star" | "concat"
-        | "plus" | "equivalent" => Some("Phase 2"),
+        "minimize" | "complement" | "reverse" | "plus" | "equivalent" => Some("Phase 2"),
         "cnf" | "pda" | "cfg" => Some("Phase 3"),
         _ => None,
     };
@@ -506,13 +519,18 @@ fn eval_call(
         );
         return None;
     }
+    if CLOSURES.contains(&f) {
+        return eval_closure(call, self_name, env, d, budget);
+    }
     if !CONVERSIONS.contains(&f) {
         let diag = d.error(
             "E802",
             call.func.span,
-            format!("Unknown function `{f}`. Phase 1 has dfa(), nfa(), gnfa() and regex()."),
+            format!(
+                "Unknown function `{f}`. Available: dfa(), nfa(), gnfa(), regex(), union(), intersect(), concat() and star()."
+            ),
         );
-        if let Some(s) = suggest(f, CONVERSIONS) {
+        if let Some(s) = suggest(f, ALL_FUNCTIONS) {
             diag.fix(
                 format!("Change to `{s}`"),
                 vec![TextEdit {
@@ -808,6 +826,220 @@ fn eval_call(
                     None
                 }
             }
+        }
+    }
+}
+
+/// Evaluates an argument of a function call: a name, or a nested call such as `dfa(N)`.
+fn resolve_arg(
+    arg: &Value,
+    f: &str,
+    self_name: &str,
+    env: &Env,
+    d: &mut Diagnostics,
+    budget: &Budget,
+) -> Option<(Object, String)> {
+    match arg {
+        Value::Name(id) => {
+            let n = lookup(env, id, Some(self_name), d)?;
+            Some((n.object.clone(), id.text.clone()))
+        }
+        Value::Call(inner) => {
+            let (o, _, _) = eval_call(inner, self_name, env, d, budget)?;
+            Some((o, format!("{}(…)", inner.func.text)))
+        }
+        other => {
+            d.error(
+                "E801",
+                other.span(),
+                format!("{f}() needs a machine, not a value like this."),
+            );
+            None
+        }
+    }
+}
+
+/// Turns an engine error into a diagnostic on `span`.
+fn report_failure(d: &mut Diagnostics, e: TlError, span: Span) {
+    match e {
+        TlError::Budget { limit, which } => {
+            d.error(
+                "R902",
+                span,
+                format!(
+                    "Stopped: the result needs more than {limit} ({which}). Try a smaller machine."
+                ),
+            );
+        }
+        TlError::Invalid(msg) => {
+            d.error("E801", span, msg);
+        }
+        TlError::Internal(msg) => {
+            d.error(
+                "X999",
+                span,
+                format!("Internal error (a bug in Delta, not your mistake): {msg}"),
+            );
+        }
+    }
+}
+
+/// The closure operations on machines:
+/// - `union(D1, D2)` on two DFAs: the product construction (Theorem 1.25);
+/// - `intersect(D1, D2)`: the product with F = F₁ × F₂ (footnote to Theorem 1.25);
+/// - `union(N1, N2)` with an NFA involved, `concat(N1, N2)`, `star(N1)`: Theorems 1.45, 1.47,
+///   1.49 (a DFA argument is used as an NFA, p. 47).
+fn eval_closure(
+    call: &Call,
+    self_name: &str,
+    env: &Env,
+    d: &mut Diagnostics,
+    budget: &Budget,
+) -> Option<(Object, String, Option<TraceView>)> {
+    let f = call.func.text.as_str();
+    if let Some((key, _)) = call.options.first() {
+        d.error(
+            "E804",
+            key.span,
+            format!(
+                "Unknown option `{}` for {f}(). It takes no options.",
+                key.text
+            ),
+        );
+    }
+    let arity = if f == "star" { 1 } else { 2 };
+    if call.args.len() != arity {
+        let what = if arity == 1 {
+            "exactly one machine"
+        } else {
+            "exactly two machines"
+        };
+        d.error("E801", call.span, format!("{f}() takes {what}."));
+        return None;
+    }
+    let mut inputs = Vec::new();
+    for arg in &call.args {
+        let (o, name) = resolve_arg(arg, f, self_name, env, d, budget)?;
+        if !matches!(o, Object::Dfa(_) | Object::Nfa(_)) {
+            let hint = if matches!(o, Object::Regex(_)) {
+                format!(" Convert it first: {f}(nfa({name}), …).")
+            } else {
+                String::new()
+            };
+            d.error(
+                "E801",
+                arg.span(),
+                format!(
+                    "{f}() needs DFAs or NFAs; `{name}` is a {}.{hint}",
+                    o.kind()
+                ),
+            );
+            return None;
+        }
+        inputs.push((o, name));
+    }
+
+    // Different alphabets are allowed, but the user should know Σ grew (W807).
+    if let [(a, _), (b, _)] = inputs.as_slice() {
+        let (sa, sb) = (a.sigma().names(), b.sigma().names());
+        let same = sa.len() == sb.len() && sa.iter().all(|n| sb.contains(n));
+        if !same {
+            let mut all: Vec<String> = sa.to_vec();
+            for n in sb {
+                if !all.contains(n) {
+                    all.push(n.clone());
+                }
+            }
+            let listed: Vec<String> = all.iter().map(|n| display_symbol(n)).collect();
+            let how = if matches!((a, b), (Object::Dfa(_), Object::Dfa(_))) {
+                "each machine goes to a trap state on the symbols it lacks"
+            } else {
+                "a symbol a machine lacks simply has no arrows"
+            };
+            d.warning(
+                "W807",
+                call.span,
+                format!(
+                    "The alphabets differ, so the result is over Σ = {{{}}}: {how}.",
+                    listed.join(", ")
+                ),
+            );
+        }
+    }
+
+    let names: Vec<&str> = inputs.iter().map(|(_, n)| n.as_str()).collect();
+    let args = names.join(", ");
+    let as_nfa = |o: &Object| -> Option<Nfa> {
+        match o {
+            Object::Nfa(n) => Some(n.clone()),
+            Object::Dfa(m) => Some(dfa_to_nfa(m, budget).0),
+            _ => None,
+        }
+    };
+
+    let (result, title, how) = match (f, inputs.as_slice()) {
+        ("union" | "intersect", [(Object::Dfa(m1), _), (Object::Dfa(m2), _)]) => {
+            let (op, title, how) = if f == "union" {
+                (
+                    ProductOp::Union,
+                    "Theorem 1.25 · product construction, union",
+                    "Theorem 1.25, product of reachable pairs",
+                )
+            } else {
+                (
+                    ProductOp::Intersect,
+                    "Theorem 1.25 (footnote) · product construction, intersection",
+                    "Theorem 1.25 footnote, F = F₁ × F₂",
+                )
+            };
+            (
+                product(m1, m2, op, budget).map(|(m, t)| (Object::Dfa(m), t)),
+                title,
+                how,
+            )
+        }
+        ("intersect", _) => {
+            d.error(
+                "E801",
+                call.span,
+                "intersect() needs two DFAs (the footnote to Theorem 1.25 is a DFA construction). Convert NFAs first: intersect(dfa(N1), dfa(N2)).",
+            );
+            return None;
+        }
+        ("union", [(a, _), (b, _)]) => {
+            let (n1, n2) = (as_nfa(a)?, as_nfa(b)?);
+            (
+                nfa_union(&n1, &n2, budget).map(|(n, t)| (Object::Nfa(n), t)),
+                "Theorem 1.45 · union of NFAs",
+                "Theorem 1.45",
+            )
+        }
+        ("concat", [(a, _), (b, _)]) => {
+            let (n1, n2) = (as_nfa(a)?, as_nfa(b)?);
+            (
+                nfa_concat(&n1, &n2, budget).map(|(n, t)| (Object::Nfa(n), t)),
+                "Theorem 1.47 · concatenation of NFAs",
+                "Theorem 1.47",
+            )
+        }
+        ("star", [(a, _)]) => {
+            let n1 = as_nfa(a)?;
+            (
+                nfa_star(&n1, budget).map(|(n, t)| (Object::Nfa(n), t)),
+                "Theorem 1.49 · star of an NFA",
+                "Theorem 1.49",
+            )
+        }
+        _ => return None,
+    };
+    match result {
+        Ok((obj, trace)) => {
+            let tv = trace_for(title, &trace, &obj);
+            Some((obj, format!("{f}({args}) · {how}"), Some(tv)))
+        }
+        Err(e) => {
+            report_failure(d, e, call.span);
+            None
         }
     }
 }

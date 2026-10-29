@@ -8,7 +8,7 @@ _Last updated: 2026-10-29_
 - Responsive shell (desktop 3 panes, tablet 2 panes + sheet, phone tab bar); CodeMirror + symbol bar.
 - CI + deploy workflows; Playwright smoke test at 3 viewports.
 
-## Phase 1 — Regular languages ✅ (branch `phase-1-wip`, ready to merge)
+## Phase 1 — Regular languages ✅ (merged in #1)
 
 ### Engine (Rust)
 - Core: `ids`, `BitSet`, `Alphabet`, `Dfa`, `Nfa`, `Gnfa`, hash-consed regex arena with a minimal-parentheses printer, traces, budgets.
@@ -34,6 +34,20 @@ _Last updated: 2026-10-29_
 - Tests: Vitest (tuple formatting, trace replay, DOT/layout parsing); Playwright at phone/tablet/desktop, including the
   Phase 1 exit flow (NFA → `dfa(N)` → scrub → `regex(D)`), runs, diagnostics and the gallery.
 
+## Chapter 1.1–1.3 complete ✅ (branch `chapter-1-closure`)
+Everything in Sipser §1.1–1.3 can now be done in the playground. Added on top of Phase 1:
+- **C6, Theorem 1.25**: `union(D1, D2)` on two DFAs by the product construction (Q₁ × Q₂, reachable
+  pairs only, start (q₁, q₂), F = (F₁ × Q₂) ∪ (Q₁ × F₂)), and `intersect(D1, D2)` with F = F₁ × F₂
+  (the footnote). Different alphabets are extended to Σ₁ ∪ Σ₂ with a trap (W807).
+- **C7, Theorems 1.45, 1.47, 1.49**: `union(N1, N2)` (when an NFA is involved), `concat(N1, N2)`,
+  `star(N1)`. They share their arrow-wiring code with C3 (Lemma 1.55); `star` adds a new accepting
+  start state (Exercise 1.15). N₂'s states are primed where names clash, keeping Q₁ and Q₂ disjoint.
+- Gallery: Theorem 1.25 (union, intersection), 1.45, 1.47, 1.49.
+- Tests: every result is compared with the brute-force oracle on all strings up to length 8; the
+  Exercise 1.15 counterexample; DSL dispatch, misuse diagnostics and W807; Playwright opens the
+  gallery examples on phone, tablet and desktop.
+- Regular expressions are typeset with KaTeX like the book: ∪ as `\cup`, stars as superscripts.
+
 ## Next steps
-1. Merge `phase-1-wip` into `main` (ask before pushing).
-2. Phase 2: C6–C10, D1–D5/D8/D9, Conversion Studio, exports (share link, SVG/PNG, TikZ, DOT, JSON), PWA.
+1. Phase 2 (remaining): C8–C10, D1–D5/D8/D9, Conversion Studio, exports (share link, SVG/PNG, TikZ,
+   DOT, JSON), PWA. (C6 and C7 shipped early with Chapter 1.1–1.3.)

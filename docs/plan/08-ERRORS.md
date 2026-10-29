@@ -188,7 +188,7 @@ Code ranges: `E0xx` lexical · `E1xx` syntax · `E2xx` DFA · `E3xx` NFA · `E4x
 | E804 | error | unknown option `regex(G, ordr: …)` | "Unknown option `ordr`. Valid: `order`, `mode`" |
 | E805 | error | `regex(G, order: [q_start])` | "Rip order may only contain states other than q_start and q_accept (Lemma 1.60)" |
 | E806 | error | `dfa(N, full: true)` with 20 states | "Full power set would have 2²⁰ states. Limit is 2¹⁶. Use the default (reachable subsets)" |
-| W807 | warning | `intersect(D1, D2)` with different alphabets | "Alphabets differ, so both were extended to {0,1,2} with trap states" (strict: error) |
+| W807 | warning | `union`/`intersect`/`concat` on machines with different alphabets | "The alphabets differ, so the result is over Σ = {0, 1, 2}": for DFAs each machine goes to a trap state on the symbols it lacks (component named `trap`); for NFAs a missing symbol has no arrows |
 | I808 | info | `complement(N)` on an NFA | "Converted to a DFA first (Theorem 1.39). Swapping accept states of an NFA does not complement it" |
 | E809 | error | `let A = union(B, A)` | "`A` refers to itself" |
 | E810 | error | `check equivalent(G1, G2)` on two CFGs | "EQ_CFG is undecidable (Problem 5.1). Use `check equivalent(G1, G2) up to 10` for a bounded check" |

@@ -1,0 +1,20 @@
+// Theorem 1.49 — the class of regular languages is closed under the star operation.
+// N1 accepts (0*1)+, strings ending in 1, and its start state has a loop.
+nfa N1 {
+  Q = { q1, q2 }
+  Σ = { 0, 1 }
+  δ {
+    q1 -0-> q1
+    q1 -1-> q2
+    q2 -ε-> q1
+  }
+  q0 = q1
+  F  = { q2 }
+}
+
+// A new start q0 that is also accepting, with an ε-arrow to q1, and ε-arrows from F1 back to q1.
+// Exercise 1.15: just making q1 accepting instead would wrongly accept "0".
+let N = star(N1)
+
+check N accepts "", "1", "01", "0011", "11"
+check N rejects "0", "00", "10", "110"

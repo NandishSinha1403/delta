@@ -1,0 +1,31 @@
+// Theorem 1.25 (footnote) — intersection by the product construction with F = F1 × F2.
+// M1 (Example 1.9) accepts strings ending in 1; M2 accepts strings with an even number of 0s.
+dfa M1 {
+  Q = { q1, q2 }
+  Σ = { 0, 1 }
+  δ = table {
+       | 0  | 1
+    q1 | q1 | q2
+    q2 | q1 | q2
+  }
+  q0 = q1
+  F  = { q2 }
+}
+
+dfa M2 {
+  Q = { even, odd }
+  Σ = { 0, 1 }
+  δ = table {
+         | 0    | 1
+    even | odd  | even
+    odd  | even | odd
+  }
+  q0 = even
+  F  = { even }
+}
+
+// Same states and arrows as union(M1, M2); only F changes: F = F1 × F2 = {(q2, even)}.
+let M = intersect(M1, M2)
+
+check M accepts "1", "001", "0101", "11", "0011"
+check M rejects "", "01", "00", "10"

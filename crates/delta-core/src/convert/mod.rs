@@ -6,6 +6,8 @@ pub mod c02_subset;
 pub mod c03_regex_to_nfa;
 pub mod c04_to_gnfa;
 pub mod c05_gnfa_to_regex;
+pub mod c06_product;
+pub mod c07_nfa_closure;
 
 use crate::bitset::BitSet;
 use crate::ids::StateId;

@@ -97,3 +97,19 @@ test('opens an example from the gallery', async ({ page }) => {
   await expect(page.getByRole('textbox', { name: 'Delta code' })).toContainText('nfa N4');
   await expect(page.getByLabel('Object')).toHaveValue('N4');
 });
+
+// Chapter 1.1–1.3 closure constructions, opened from the gallery and checked end to end.
+test('closure constructions from the gallery build and pass their checks', async ({ page }, testInfo) => {
+  const layout = testInfo.project.name;
+  for (const [title, object, kind] of [
+    [/^Theorem 1\.25.*closed under union/, 'M', 'DFA'],
+    [/Theorem 1\.49/, 'N', 'NFA'],
+  ] as const) {
+    await page.getByRole('button', { name: 'Examples' }).click();
+    await page.getByRole('button', { name: title }).click();
+    await page.getByLabel('Object').selectOption(object);
+    if (layout === 'phone') await page.getByRole('tab', { name: 'Diagram' }).click();
+    await expect(page.getByTestId('diagram')).toHaveAttribute('aria-label', new RegExp(`^${kind} ${object},`));
+    if (layout !== 'phone') await expect(page.getByText(/^Tests (\d+)\/\1$/)).toBeVisible();
+  }
+});

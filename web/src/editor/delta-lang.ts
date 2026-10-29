@@ -19,6 +19,7 @@ import type { OutlineView } from '../engine/api';
 
 const DECLARATIONS = ['dfa', 'nfa', 'gnfa', 'regex'];
 const COMMANDS = ['let', 'check', 'run'];
+const OPERATIONS = ['union', 'intersect', 'concat', 'star'];
 const WORDS = ['accepts', 'rejects', 'on', 'over', 'table', 'mode', 'order', 'strict', 'lenient', 'simplified', 'faithful', 'full'];
 const TUPLE = ['Q', 'F', 'q0', 'Sigma', 'delta'];
 const ASCII_SYMBOLS = ['eps', 'empty'];
@@ -41,7 +42,7 @@ const parser: StreamParser<object> = {
     if (stream.match(/^[{}]/)) return 'brace';
     if (stream.match(/^[A-Za-z0-9_']+/)) {
       const w = stream.current();
-      if (DECLARATIONS.includes(w) || COMMANDS.includes(w)) return 'keyword';
+      if (DECLARATIONS.includes(w) || COMMANDS.includes(w) || OPERATIONS.includes(w)) return 'keyword';
       if (WORDS.includes(w)) return 'keyword';
       if (TUPLE.includes(w)) return 'keyword';
       if (ASCII_SYMBOLS.includes(w)) return 'keyword';
@@ -110,6 +111,22 @@ export const KEYWORD_DOCS: Record<string, Doc> = {
   empty: { title: 'Definition 1.52', body: 'ASCII spelling of ∅, the empty language.' },
   '∪': { title: 'Definition 1.52 — union', body: '(R₁ ∪ R₂). ASCII: |. Note: + means R⁺ = RR*, not union (p. 65).' },
   let: { title: 'let', body: 'Names the result of a conversion: let D = dfa(N).' },
+  union: {
+    title: 'Theorem 1.25 / Theorem 1.45 — union',
+    body: 'union(D1, D2) on two DFAs is the product construction: Q₁ × Q₂ (reachable pairs), start (q₁, q₂), F = (F₁ × Q₂) ∪ (Q₁ × F₂). With an NFA it is Theorem 1.45: a new start with ε-arrows to both starts.',
+  },
+  intersect: {
+    title: 'Theorem 1.25 (footnote) — intersection',
+    body: 'intersect(D1, D2) on two DFAs: the product construction with F = F₁ × F₂.',
+  },
+  concat: {
+    title: 'Theorem 1.47 — concatenation',
+    body: 'concat(N1, N2): start q₁, ε-arrows from every accept state of N1 to q₂, F = F₂.',
+  },
+  star: {
+    title: 'Theorem 1.49 — star',
+    body: 'star(N1): a new start q₀ that is also accepting, an ε-arrow to q₁, ε-arrows from F₁ back to q₁. Not "make the start accepting" (Exercise 1.15).',
+  },
   check: { title: 'check', body: 'check M accepts "w", … / check M rejects "w", … — results appear in the Tests tab.' },
   run: { title: 'run', body: 'run M on "w" — open it in the Run panel to step through it.' },
   table: { title: 'δ as a table', body: 'Write δ the way the book draws it: one row per state, one column per symbol.' },
@@ -182,12 +199,20 @@ const SNIPPETS: Completion[] = [
     detail: 'Lemma 1.60',
     type: 'keyword',
   }),
+  snippetCompletion('let ${M} = union(${M1}, ${M2})', { label: 'let … = union(…, …)', detail: 'Theorem 1.25 / 1.45', type: 'keyword' }),
+  snippetCompletion('let ${M} = intersect(${D1}, ${D2})', {
+    label: 'let … = intersect(…, …)',
+    detail: 'Theorem 1.25',
+    type: 'keyword',
+  }),
+  snippetCompletion('let ${N} = concat(${N1}, ${N2})', { label: 'let … = concat(…, …)', detail: 'Theorem 1.47', type: 'keyword' }),
+  snippetCompletion('let ${N} = star(${N1})', { label: 'let … = star(…)', detail: 'Theorem 1.49', type: 'keyword' }),
   snippetCompletion('check ${M} accepts "${w}"', { label: 'check … accepts', type: 'keyword' }),
   snippetCompletion('check ${M} rejects "${w}"', { label: 'check … rejects', type: 'keyword' }),
   snippetCompletion('run ${M} on "${w}"', { label: 'run … on', type: 'keyword' }),
 ];
 
-const PLAIN: Completion[] = [...WORDS, ...TUPLE, ...ASCII_SYMBOLS, 'Σ', 'δ', 'ε', '∅'].map((w) => ({
+const PLAIN: Completion[] = [...OPERATIONS, ...WORDS, ...TUPLE, ...ASCII_SYMBOLS, 'Σ', 'δ', 'ε', '∅'].map((w) => ({
   label: w,
   type: 'keyword',
   ...(KEYWORD_DOCS[w] ? { info: KEYWORD_DOCS[w].body } : {}),

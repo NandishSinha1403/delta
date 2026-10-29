@@ -1,0 +1,32 @@
+// Theorem 1.45 — the class of regular languages is closed under union: an NFA construction.
+// N1 accepts strings containing 11; N2 accepts strings of odd length.
+nfa N1 {
+  Q = { q1, q2, q3 }
+  Σ = { 0, 1 }
+  δ {
+    q1 -[0,1]-> q1
+    q1 -1-> q2
+    q2 -1-> q3
+    q3 -[0,1]-> q3
+  }
+  q0 = q1
+  F  = { q3 }
+}
+
+nfa N2 {
+  Q = { q1, q2 }
+  Σ = { 0, 1 }
+  δ {
+    q1 -[0,1]-> q2
+    q2 -[0,1]-> q1
+  }
+  q0 = q1
+  F  = { q2 }
+}
+
+// A new start q0 with ε-arrows to N1's and N2's starts; F = F1 ∪ F2.
+// N2's states are renamed q1', q2' so Q1 and Q2 stay disjoint, as the proof assumes.
+let N = union(N1, N2)
+
+check N accepts "0", "11", "011", "0110", "10101"
+check N rejects "", "00", "01", "1010"
