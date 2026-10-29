@@ -1,0 +1,15 @@
+[package]
+name = "delta-wasm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+# cdylib = a .wasm library other languages (here: JavaScript) can load.
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+console_error_panic_hook = "0.1.7"
+delta-core = { version = "0.0.1", path = "../delta-core" }
+wasm-bindgen = "0.2.129"

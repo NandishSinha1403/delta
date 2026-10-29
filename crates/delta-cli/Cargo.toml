@@ -1,0 +1,13 @@
+[package]
+name = "delta-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "delta"
+path = "src/main.rs"
+
+[dependencies]
+delta-core = { version = "0.0.1", path = "../delta-core" }

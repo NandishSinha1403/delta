@@ -4,7 +4,18 @@ Programmable automata playground: write the formal tuple of a machine in the Del
 drawn, run it, and convert it using Sipser's own constructions. Live at `delta.nandish.dev`.
 
 The full plan is in `docs/plan/` (start with `README.md`). The current phase is tracked in
-`docs/plan/06-ROADMAP-AND-TESTING.md`. Do only the phase you are asked to do.
+`docs/plan/06-ROADMAP-AND-TESTING.md`.
+
+## Working agreement
+
+- Work one phase at a time. Do only the phase you are asked to do; never start the next one.
+- Give a short plan and wait for an OK before any large change (new crate, new dependency,
+  restructuring, anything touching many files).
+- The owner is learning Rust: add a one-line comment explaining each Rust concept the first time
+  it appears in a file (e.g. `// Result<T, E>: either Ok(value) or Err(error), Rust's way of returning errors`).
+- The Sipser PDF in the repo root is copyrighted: it must never be committed or pushed. It is
+  gitignored (`/*.pdf`); check `git status` before every commit.
+- Never push unless the owner explicitly says "push".
 
 ## Layout
 
@@ -23,10 +34,12 @@ The full plan is in `docs/plan/` (start with `README.md`). The current phase is 
   no `unsafe`, no lifetimes in public types.
 - `delta-core` and `delta-dsl` must never panic: `unwrap`, `expect`, `panic!` are denied by Clippy.
   Errors are values (`Result`).
-- The reference PDF in the repo root is copyrighted and gitignored. Never commit it.
 - All engine calls from the UI go through the Web Worker (`web/src/engine/client.ts`).
 
 ## Checks (all must pass before committing)
+
+Claude Code's shell may not have Rust/Node 22 on PATH; prefix commands with
+`source "$HOME/.cargo/env"; eval "$(fnm env --shell zsh)"; fnm use 22`.
 
 ```bash
 cargo fmt --all --check
