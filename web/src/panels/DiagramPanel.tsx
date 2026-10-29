@@ -1,6 +1,7 @@
 import { conversion, DIAGRAM_CONVERSIONS } from '../conversions';
 import { Diagram } from '../diagram/Diagram';
-import { useObjects } from '../state/engine';
+import { useEngineStore, useObjects } from '../state/engine';
+import { EXECUTE_KEYS, useStale } from '../state/execute';
 import { useUiStore } from '../state/ui';
 import { applyConversion, useActiveRun, useCurrentObject } from './current';
 import { runOverlay, traceFrame } from './overlay';
@@ -74,6 +75,45 @@ function DiagramHeader() {
   );
 }
 
+/** Only for slow evaluations (over 300 ms): a thin indeterminate bar, "Evaluating…" and Stop. */
+function Loader() {
+  const slow = useEngineStore((s) => s.slow);
+  const stop = useEngineStore((s) => s.stop);
+  if (!slow) return null;
+  return (
+    <div role="status" data-testid="loader" className="relative shrink-0 border-b border-border bg-surface">
+      <div className="h-0.5 overflow-hidden bg-navy-2">
+        <div className="h-full w-1/3 animate-[delta-indeterminate_1.1s_ease-in-out_infinite] bg-accent" />
+      </div>
+      <div className="flex items-center gap-3 px-3 py-1.5 text-xs text-muted">
+        <span>Evaluating…</span>
+        <button
+          type="button"
+          onClick={stop}
+          className="rounded-md border border-border-strong px-2 py-0.5 text-text hover:border-reject hover:text-reject"
+        >
+          Stop
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Auto is off and the code changed: say so over the (now stale) diagram. */
+function StaleBanner() {
+  const stale = useStale();
+  if (!stale) return null;
+  return (
+    <p
+      role="status"
+      data-testid="stale-banner"
+      className="pointer-events-none absolute inset-x-0 top-3 z-10 mx-auto w-fit rounded-full border border-steel/60 bg-navy-2/95 px-3 py-1 text-xs text-accent"
+    >
+      Code changed — press {EXECUTE_KEYS} to update
+    </p>
+  );
+}
+
 /**
  * The selected object's state diagram. While scrubbing a trace it shows that step; while a run is
  * open on this machine it shows the active states.
@@ -90,6 +130,7 @@ export function DiagramPanel({
   const object = useCurrentObject();
   const step = useUiStore((s) => s.step);
   const { run, pos } = useActiveRun(object);
+  const slow = useEngineStore((s) => s.slow);
   const body = (() => {
     if (!object) return <EngineStatus empty="Declare a dfa or nfa to see its state diagram." />;
     const frame = step !== null ? traceFrame(object, step) : null;
@@ -145,11 +186,17 @@ export function DiagramPanel({
     return <Diagram key={object.name} name={object.name} machine={object.machine} overlay={overlay} legend={legend} />;
   })();
 
-  if (!header) return body;
+  // While a slow evaluation runs, the previous diagram stays visible but dimmed.
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <DiagramHeader />
-      <div className="min-h-0 flex-1">{body}</div>
+      {header && <DiagramHeader />}
+      <Loader />
+      <div className="relative min-h-0 flex-1">
+        <StaleBanner />
+        <div className={`h-full transition-opacity ${slow ? 'opacity-40' : ''}`} aria-busy={slow}>
+          {body}
+        </div>
+      </div>
     </div>
   );
 }

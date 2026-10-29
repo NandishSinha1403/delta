@@ -200,3 +200,92 @@ test('the author credit links to GitHub', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'The credit sits in the wide status bar');
   await expect(page.getByRole('link', { name: 'Nandish Sinha' })).toHaveAttribute('href', 'https://github.com/NandishSinha1403');
 });
+
+/** Replaces the whole program in the editor. */
+async function setCode(page: Page, text: string) {
+  await page.getByRole('textbox', { name: 'Delta code' }).click();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.insertText(text);
+}
+
+const SMALL_DFA = `dfa M {
+  Q = { p, q }
+  Σ = { a }
+  δ { p -a-> q
+      q -a-> p }
+  q0 = p
+  F = { p }
+}
+check M accepts "", "aa"
+check M rejects "a"
+`;
+
+test('Auto off: edits wait for Execute (Ctrl+Enter), with a stale banner meanwhile', async ({ page }, testInfo) => {
+  const layout = testInfo.project.name;
+  const auto = page.getByRole('switch', { name: 'Auto' });
+  await expect(auto).toHaveAttribute('aria-checked', 'true');
+  await auto.click();
+  await expect(auto).toHaveAttribute('aria-checked', 'false');
+
+  await setCode(page, SMALL_DFA);
+  await expect(page.getByTestId('stale-dot')).toBeVisible();
+  if (layout === 'phone') await page.getByRole('tab', { name: 'Diagram' }).click();
+  await expect(page.getByTestId('stale-banner')).toContainText('Code changed — press');
+  // The old diagram stays until Execute.
+  await expect(page.getByTestId('diagram')).toHaveAttribute('aria-label', /^NFA N,/);
+
+  await page.keyboard.press('Control+Enter');
+  await expect(page.getByTestId('diagram')).toHaveAttribute('aria-label', /^DFA M, 2 states/);
+  await expect(page.getByTestId('stale-banner')).toHaveCount(0);
+  if (layout === 'phone') await page.getByRole('tab', { name: 'Code' }).click();
+  await expect(page.getByTestId('stale-dot')).toHaveCount(0);
+  if (layout !== 'phone') await expect(page.getByTestId('executed')).toHaveText(/^Executed in \d+ ms$/);
+
+  // The choice is remembered.
+  await page.reload();
+  await expect(page.getByRole('switch', { name: 'Auto' })).toHaveAttribute('aria-checked', 'false');
+});
+
+/** "The 13th symbol from the end is 1": its DFA has 2¹³ states, ten times over. */
+function slowProgram(): string {
+  const k = 13;
+  const states = Array.from({ length: k + 1 }, (_, i) => `q${i}`).join(', ');
+  const arrows = Array.from({ length: k - 1 }, (_, i) => `    q${i + 1} -[0,1]-> q${i + 2}`).join('\n');
+  const lets = Array.from({ length: 10 }, (_, i) => `let D${i} = dfa(N)`).join('\n');
+  return `nfa N {\n  Q = { ${states} }\n  Σ = { 0, 1 }\n  δ {\n    q0 -[0,1]-> q0\n    q0 -1-> q1\n${arrows}\n  }\n  q0 = q0\n  F = { q${k} }\n}\n${lets}\n`;
+}
+
+test('a slow evaluation shows the loader, and Stop cancels it', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'phone', 'The loader sits under the diagram header');
+  await setCode(page, slowProgram());
+  const loader = page.getByTestId('loader');
+  await expect(loader).toBeVisible();
+  await expect(loader).toContainText('Evaluating…');
+  // The previous diagram stays visible, dimmed.
+  await expect(page.locator('[aria-busy="true"]')).toBeVisible();
+  await loader.getByRole('button', { name: 'Stop' }).click();
+  await expect(loader).toHaveCount(0);
+  await expect(page.getByTestId('executed')).toHaveText('Stopped');
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+
+  // The restarted engine works: a small program evaluates normally.
+  await setCode(page, SMALL_DFA);
+  await expect(page.getByTestId('diagram')).toHaveAttribute('aria-label', /^DFA M, 2 states/);
+  await expect(page.getByTestId('executed')).toHaveText(/^Executed in \d+ ms$/);
+});
+
+test('fast evaluations never flash the loader', async ({ page }) => {
+  await expect(page.getByTestId('diagram').or(page.getByRole('tab', { name: 'Diagram' })).first()).toBeVisible();
+  let seen = false;
+  await page.exposeFunction('sawLoader', () => {
+    seen = true;
+  });
+  await page.evaluate(() => {
+    new MutationObserver(() => {
+      if (document.querySelector('[data-testid="loader"]')) (window as unknown as { sawLoader: () => void }).sawLoader();
+    }).observe(document.body, { childList: true, subtree: true });
+  });
+  await setCode(page, SMALL_DFA);
+  await page.waitForTimeout(800);
+  expect(seen).toBe(false);
+});

@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { MachineView } from '../engine/api';
+import { StoppedError } from '../engine/api';
 import { engine } from '../engine/client';
 import { describeMachine, parseLayout, toDot, type Layout, type Point } from './layout';
 
@@ -31,6 +32,8 @@ function useLayout(machine: MachineView): { layout: Layout | null; error: string
     layout: null,
     error: null,
   });
+  // Bumped when Stop cancels a layout in flight, so it is requested again from the new worker.
+  const [retry, setRetry] = useState(0);
   useEffect(() => {
     let live = true;
     let pending = cache.get(dot);
@@ -41,13 +44,16 @@ function useLayout(machine: MachineView): { layout: Layout | null; error: string
     }
     pending.then(
       (json) => live && setState({ dot, layout: parseLayout(json, machine), error: null }),
-      (err: unknown) =>
-        live && setState({ dot, layout: null, error: err instanceof Error ? err.message : String(err) }),
+      (err: unknown) => {
+        if (!live) return;
+        if (err instanceof StoppedError) setRetry((r) => r + 1);
+        else setState({ dot, layout: null, error: err instanceof Error ? err.message : String(err) });
+      },
     );
     return () => {
       live = false;
     };
-  }, [dot, machine]);
+  }, [dot, machine, retry]);
   // Until the new layout arrives, keep showing the previous one (no flicker while typing).
   return { layout: state.layout, error: state.dot === dot ? state.error : null };
 }

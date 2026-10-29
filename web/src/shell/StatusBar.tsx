@@ -8,6 +8,9 @@ export function StatusBar() {
   const version = useEngineStore((s) => s.version);
   const status = useEngineStore((s) => s.status);
   const cursor = useUiStore((s) => s.cursor);
+  const lastMs = useEngineStore((s) => s.lastMs);
+  const evaluating = useEngineStore((s) => s.evaluating);
+  const stopped = useEngineStore((s) => s.stopped);
   const open = (tab: InspectorTab) => useUiStore.setState({ inspectorTab: tab, sheetTab: tab, sheetOpen: true });
   const count = (sev: string) => doc?.diagnostics.filter((d) => d.severity === sev).length ?? 0;
   const errors = count('error');
@@ -33,6 +36,9 @@ export function StatusBar() {
           tests {passed}/{cases.length}
         </button>
       )}
+      <span data-testid="executed">
+        {evaluating ? 'Evaluating…' : stopped ? 'Stopped' : lastMs !== null ? `Executed in ${lastMs} ms` : ''}
+      </span>
       <div className="flex-1" />
       <span>
         Ln {cursor.line}, Col {cursor.col}

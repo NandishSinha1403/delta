@@ -192,3 +192,13 @@ body {
     animation-duration: 0ms !important;
   }
 }
+
+/* The indeterminate progress bar under the diagram header (slow evaluations only). */
+@keyframes delta-indeterminate {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}

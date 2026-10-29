@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Document, ObjectView, RunView } from '../engine/api';
+import { StoppedError, type Document, type ObjectView, type RunView } from '../engine/api';
 import { engine } from '../engine/client';
 
 export type EngineStatus = 'loading' | 'ready' | 'error';
@@ -13,6 +13,16 @@ interface EngineStore {
   docSource: string;
   version: string | null;
   evaluate: (source: string) => Promise<void>;
+  /** An evaluation is in flight. */
+  evaluating: boolean;
+  /** …and it has taken over SLOW_MS, so the loader shows (never for fast runs). */
+  slow: boolean;
+  /** How long the last finished evaluation took, for "Executed in N ms". */
+  lastMs: number | null;
+  /** The last evaluation was cancelled with Stop. */
+  stopped: boolean;
+  /** Stop: kills and restarts the worker; the previous results stay on screen. */
+  stop: () => void;
 
   /** The Run panel: which machine, what input, the result and the current position in it. */
   runObject: string | null;
@@ -35,6 +45,8 @@ function message(err: unknown): string {
 
 // Typing fires many evaluations; only the newest answer may be shown.
 let latest = 0;
+/** Evaluations faster than this never show a loader. */
+export const SLOW_MS = 300;
 let latestRun = 0;
 
 export const useEngineStore = create<EngineStore>()((set, get) => ({
@@ -45,15 +57,35 @@ export const useEngineStore = create<EngineStore>()((set, get) => ({
   version: null,
   evaluate: async (source) => {
     const ticket = ++latest;
+    const started = performance.now();
+    set({ evaluating: true, stopped: false });
+    const timer = window.setTimeout(() => {
+      if (ticket === latest && get().evaluating) set({ slow: true });
+    }, SLOW_MS);
     try {
       const doc = await engine.evaluate(source);
       if (ticket !== latest) return;
-      set({ status: 'ready', error: null, doc, docSource: source });
+      const lastMs = Math.round(performance.now() - started);
+      set({ status: 'ready', error: null, doc, docSource: source, evaluating: false, slow: false, lastMs });
       if (get().version === null) set({ version: await engine.version() });
     } catch (err) {
       if (ticket !== latest) return;
-      set({ status: 'error', error: message(err) });
+      if (err instanceof StoppedError) set({ evaluating: false, slow: false, stopped: true });
+      else set({ status: 'error', error: message(err), evaluating: false, slow: false });
+    } finally {
+      window.clearTimeout(timer);
     }
+  },
+  evaluating: false,
+  slow: false,
+  lastMs: null,
+  stopped: false,
+  stop: () => {
+    engine.restart();
+    // The in-flight evaluation rejects with StoppedError and clears the flags; a run in flight
+    // (if any) is abandoned too.
+    latestRun++;
+    set({ runPending: false });
   },
 
   runObject: null,

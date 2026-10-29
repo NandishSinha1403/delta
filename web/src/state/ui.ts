@@ -11,6 +11,7 @@ export type RailPanel = 'files' | 'examples' | 'conversions' | 'tests' | 'settin
 const FILES_KEY = 'delta.files';
 const OLD_SOURCE_KEY = 'delta.source';
 const THEME_KEY = 'delta.theme';
+const AUTO_KEY = 'delta.auto';
 
 // Browser storage can be missing or throw (private windows, blocked site data); it only holds
 // conveniences, so failures are ignored.
@@ -94,6 +95,9 @@ interface UiStore {
   openExample: (example: Example) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  /** Auto: re-evaluate while typing. Off: only Execute (⌘↵ / Ctrl+Enter) updates. */
+  auto: boolean;
+  setAuto: (auto: boolean) => void;
   /** The object shown in the diagram, tuple, δ-table and steps (by name). */
   selected: string | null;
   select: (name: string) => void;
@@ -191,6 +195,11 @@ export const useUiStore = create<UiStore>()((set, get) => {
     setTheme: (theme) => {
       save(THEME_KEY, theme);
       set({ theme });
+    },
+    auto: load(AUTO_KEY) !== 'off',
+    setAuto: (auto) => {
+      save(AUTO_KEY, auto ? 'on' : 'off');
+      set({ auto });
     },
     selected: null,
     select: (selected) => set({ selected, step: null }),
