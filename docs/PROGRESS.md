@@ -47,6 +47,10 @@ Everything in Sipser §1.1–1.3 can now be done in the playground. Added on top
   Exercise 1.15 counterexample; DSL dispatch, misuse diagnostics and W807; Playwright opens the
   gallery examples on phone, tablet and desktop.
 - Regular expressions are typeset with KaTeX like the book: ∪ as `\cup`, stars as superscripts.
+- `docs/DELTA-FOR-AI.md`: a compact syntax guide to give AI models, written from the actual parser.
+  Its code blocks are tests (`crates/delta-dsl/src/guide_tests.rs`): valid blocks must evaluate with
+  no errors or warnings and passing checks; error blocks must report their listed codes.
+- UI credit: "A project by Nandish Sinha" in the status bar and the examples dialog.
 
 ## Next steps
 1. Phase 2 (remaining): C8–C10, D1–D5/D8/D9, Conversion Studio, exports (share link, SVG/PNG, TikZ,

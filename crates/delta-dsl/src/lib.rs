@@ -16,4 +16,6 @@ pub mod parser;
 pub use eval::{evaluate, run_input};
 
 #[cfg(test)]
+mod guide_tests;
+#[cfg(test)]
 mod tests;

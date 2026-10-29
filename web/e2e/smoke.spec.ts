@@ -93,6 +93,7 @@ test('reports a problem as the code is edited', async ({ page }, testInfo) => {
 
 test('opens an example from the gallery', async ({ page }) => {
   await page.getByRole('button', { name: 'Examples' }).click();
+  await expect(page.getByRole('dialog').getByRole('link', { name: 'Nandish Sinha' })).toBeVisible();
   await page.getByRole('button', { name: /Example 1\.41/ }).click();
   await expect(page.getByRole('textbox', { name: 'Delta code' })).toContainText('nfa N4');
   await expect(page.getByLabel('Object')).toHaveValue('N4');
