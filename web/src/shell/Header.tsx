@@ -3,6 +3,7 @@ import { EXAMPLES } from '../examples';
 import { useEngineStore, useObjects } from '../state/engine';
 import { useUiStore } from '../state/ui';
 import { useCurrentObject } from '../panels/current';
+import { Credit } from './Credit';
 
 function ObjectPicker() {
   const objects = useObjects();
@@ -101,9 +102,10 @@ function ExamplesDialog() {
           </li>
         ))}
       </ul>
-      <p className="border-t border-border px-4 py-2 text-xs text-muted">
-        Opening an example replaces the code. Undo with Ctrl/⌘ + Z in the editor.
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-2 text-xs text-muted">
+        <p>Opening an example replaces the code. Undo with Ctrl/⌘ + Z in the editor.</p>
+        <Credit />
+      </div>
     </dialog>
   );
 }

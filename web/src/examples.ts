@@ -16,7 +16,20 @@ export interface Example {
 }
 
 // Gallery order: the tour first, then by book order.
-const ORDER = ['tour', 'fig1-6-M1', 'ex1-38-N1', 'ex1-41-N4', 'ex1-56', 'ex1-58', 'ex1-66'];
+const ORDER = [
+  'tour',
+  'fig1-6-M1',
+  'thm1-25-union',
+  'thm1-25-intersect',
+  'ex1-38-N1',
+  'ex1-41-N4',
+  'thm1-45-union',
+  'thm1-47-concat',
+  'thm1-49-star',
+  'ex1-56',
+  'ex1-58',
+  'ex1-66',
+];
 
 /** Splits "// Example 1.41 — N4 … " into a title and a summary. */
 export function describe(id: string, source: string): Example {

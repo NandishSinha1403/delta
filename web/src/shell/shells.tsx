@@ -6,6 +6,7 @@ import { ProblemsPanel, TestsPanel } from '../panels/TestsPanel';
 import { DeltaPanel, TuplePanel } from '../panels/TuplePanel';
 import { useEngineStore } from '../state/engine';
 import { useUiStore, type InspectorTab, type PhoneView, type SheetTab } from '../state/ui';
+import { Credit } from './Credit';
 import { Header } from './Header';
 import { PanelBoundary } from './PanelBoundary';
 import { TabPanel, Tabs, type TabItem } from './Tabs';
@@ -100,7 +101,8 @@ function StatusBar() {
           Tests {passed}/{cases.length}
         </button>
       )}
-      <span className="ml-auto">{doc ? `${doc.mode} mode` : ''}</span>
+      <Credit className="ml-auto" />
+      <span>{doc ? `${doc.mode} mode` : ''}</span>
       <span>{status === 'error' ? 'engine error' : version ? `engine ${version}` : 'engine starting…'}</span>
     </footer>
   );

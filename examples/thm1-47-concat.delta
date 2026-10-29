@@ -1,0 +1,28 @@
+// Theorem 1.47 — the class of regular languages is closed under concatenation.
+// N1 accepts exactly "1"; N2 accepts strings of odd length. N1 ∘ N2 = 1 followed by odd length.
+nfa N1 {
+  Q = { q1, q2 }
+  Σ = { 0, 1 }
+  δ {
+    q1 -1-> q2
+  }
+  q0 = q1
+  F  = { q2 }
+}
+
+nfa N2 {
+  Q = { r1, r2 }
+  Σ = { 0, 1 }
+  δ {
+    r1 -[0,1]-> r2
+    r2 -[0,1]-> r1
+  }
+  q0 = r1
+  F  = { r2 }
+}
+
+// The start stays N1's start; ε-arrows from F1 to N2's start; F = F2.
+let N = concat(N1, N2)
+
+check N accepts "10", "11", "1000", "1011"
+check N rejects "", "1", "0", "01", "100", "0101"

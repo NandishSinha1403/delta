@@ -58,7 +58,7 @@ fn golden_examples_have_no_errors_and_pass_their_checks() {
             }
         }
     }
-    assert!(count >= 7, "expected the book examples in {dir}");
+    assert!(count >= 12, "expected the book examples in {dir}");
 }
 
 #[test]
@@ -269,4 +269,90 @@ fn run_input_from_the_ui() {
     assert!(r.run.unwrap().accepted);
     let bad = crate::run_input(&src, "N1", "012");
     assert!(bad.error.unwrap().contains("`2`"));
+}
+
+/// Two small machines over {0,1}: D1 = ends in 1 (DFA), N1 = contains 11 (NFA).
+const CLOSURE_SRC: &str = "dfa D1 { Q = {p, q}\n Σ = {0, 1}\n δ { p -0-> p\n p -1-> q\n q -0-> p\n q -1-> q }\n q0 = p\n F = {q} }
+dfa D2 { Q = {e, o}\n Σ = {0, 1}\n δ { e -0-> o\n e -1-> e\n o -0-> e\n o -1-> o }\n q0 = e\n F = {e} }
+nfa N1 { Q = {a, b, c}\n Σ = {0, 1}\n δ { a -[0,1]-> a\n a -1-> b\n b -1-> c\n c -[0,1]-> c }\n q0 = a\n F = {c} }
+";
+
+#[test]
+fn union_of_two_dfas_is_the_product_and_with_an_nfa_is_theorem_1_45() {
+    let doc = evaluate(&format!(
+        "{CLOSURE_SRC}let U = union(D1, D2)\nlet V = union(D1, N1)\nlet I = intersect(D1, D2)"
+    ));
+    assert!(errors(&doc).is_empty(), "{:?}", errors(&doc));
+    let u = object(&doc, "U");
+    assert_eq!(u.kind, "dfa");
+    assert!(u.derived.as_deref().unwrap_or("").contains("Theorem 1.25"));
+    let v = object(&doc, "V");
+    assert_eq!(v.kind, "nfa");
+    assert!(v.derived.as_deref().unwrap_or("").contains("Theorem 1.45"));
+    let i = object(&doc, "I");
+    assert_eq!(i.kind, "dfa");
+    assert_eq!(
+        i.machine
+            .as_ref()
+            .map(|m| m.states.iter().filter(|s| s.accept).count()),
+        Some(1)
+    );
+}
+
+#[test]
+fn concat_and_star_build_nfas_with_traces() {
+    let doc = evaluate(&format!(
+        "{CLOSURE_SRC}let C = concat(D1, N1)\nlet S = star(N1)"
+    ));
+    assert!(errors(&doc).is_empty(), "{:?}", errors(&doc));
+    let s = object(&doc, "S");
+    assert_eq!(s.kind, "nfa");
+    let m = s.machine.as_ref().unwrap();
+    // star adds a new start state that is accepting (Theorem 1.49).
+    let start = m.states.iter().find(|st| st.start).unwrap();
+    assert_eq!(start.name, "q0");
+    assert!(start.accept);
+    assert!(s.trace.as_ref().unwrap().title.contains("Theorem 1.49"));
+    assert!(
+        object(&doc, "C")
+            .trace
+            .as_ref()
+            .unwrap()
+            .title
+            .contains("Theorem 1.47")
+    );
+}
+
+#[test]
+fn closure_misuse_is_reported() {
+    let cases = [
+        ("let X = intersect(D1, N1)", "E801"),
+        ("let X = star(D1, D2)", "E801"),
+        ("let X = union(D1)", "E801"),
+        ("regex R over {0,1} = 01*\nlet X = union(R, D1)", "E801"),
+        ("let X = union(D1, D2, full: true)", "E804"),
+        ("let X = union(D1, Nope)", "E802"),
+    ];
+    for (tail, code) in cases {
+        let doc = evaluate(&format!("{CLOSURE_SRC}{tail}"));
+        assert!(codes(&doc).contains(&code), "{tail}: {:?}", codes(&doc));
+    }
+}
+
+#[test]
+fn different_alphabets_warn_and_still_work() {
+    let src = "dfa A { Q = {p}\n Σ = {a}\n δ { p -a-> p }\n q0 = p\n F = {p} }
+dfa B { Q = {s}\n Σ = {b}\n δ { s -b-> s }\n q0 = s\n F = {s} }
+let U = union(A, B)
+check U accepts \"\", \"aa\", \"bbb\"
+check U rejects \"ab\", \"ba\"";
+    let doc = evaluate(src);
+    assert!(codes(&doc).contains(&"W807"));
+    assert!(errors(&doc).is_empty(), "{:?}", errors(&doc));
+    assert!(
+        doc.results
+            .iter()
+            .flat_map(|r| &r.cases)
+            .all(|c| c.expected == c.actual)
+    );
 }
