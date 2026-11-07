@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "diagnostics": [],
+  "outputs": [
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true, "bounded": null, "assumed": true },
+    { "kind": "show", "value": { "type": "lang", "class": "Regular", "assumed": true } }
+  ]
+}

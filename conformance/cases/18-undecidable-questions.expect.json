@@ -1,0 +1,11 @@
+{
+  "ok": false,
+  "diagnostics": [
+    { "code": "E7*", "severity": "error", "line": 12 },
+    { "code": "E7*", "severity": "error", "line": 13 },
+    { "code": "E7*", "severity": "error", "line": 14 },
+    { "code": "E7*", "severity": "error", "line": 15 },
+    { "code": "E7*", "severity": "error", "line": 16 }
+  ],
+  "outputs": []
+}

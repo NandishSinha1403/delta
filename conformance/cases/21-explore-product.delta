@@ -1,0 +1,34 @@
+// 01-LANGUAGE.md §7.1, "Product construction", verbatim, plus context machines.
+// Context: A = even number of a's, B = ends with b.
+dfa A {
+  start e
+  accept e
+  e -a-> o
+  e -b-> e
+  o -a-> e
+  o -b-> o
+}
+dfa B {
+  start n
+  accept y
+  n -a-> n
+  n -b-> y
+  y -a-> n
+  y -b-> y
+}
+
+fn product(A, B, keep) = explore {
+  start  (A.start, B.start)
+  step   (p, q) on a -> (A.δ(p, a), B.δ(q, a))
+  accept (p, q) if keep(p ∈ A.accept, q ∈ B.accept)
+}
+let both   = product(A, B, fn(x, y) = x and y)
+let either = product(A, B, fn(x, y) = x or y)
+
+assert both.model == dfa             // every step is deterministic, so the default model is dfa
+check both ≡ intersect(A, B)
+check either ≡ union(A, B)
+check both accepts "b", "aab", "abab"
+check both rejects "", "ab", "aa"
+check either accepts "", "ab", "aa"
+check either rejects "a", "ba"

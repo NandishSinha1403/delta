@@ -1,0 +1,9 @@
+// 01-LANGUAGE.md §8: "on failure, the shortest word that tells them apart".
+dfa M {
+  start q0
+  accept q1
+  q0 -a-> q1
+  q1 -a-> q0
+}
+check M ≡ re"a*"          // "" is in a* but not accepted by M
+check M accepts "aa"

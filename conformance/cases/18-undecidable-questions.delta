@@ -1,0 +1,16 @@
+// 01-LANGUAGE.md §6.3, the ✗ cells: every undecidable (or unimplemented) question is a
+// compile-time E7xx error, all reported in one pass, and nothing runs.
+dpda Dd {
+  start q0
+  accept q0
+  q0 -0, ε → A-> q0
+}
+lang Dl = Dd
+lang C = cfg { S -> 0 S 1 | ε }
+lang P = { w ∈ {0,1}* | count(w,'0') == count(w,'1') }
+print "must not appear"
+check C.is_universal()
+check C ⊆ C
+check P.is_empty()
+check C ≡ C
+check Dl ≡ Dl                    // decidable, but not implemented

@@ -1,0 +1,20 @@
+// 01-LANGUAGE.md §8, "Output and testing": one statement of each kind.
+// Context: M accepts an odd number of a's.
+dfa M {
+  start q0
+  accept q1
+  q0 -a-> q1
+  q1 -a-> q0
+}
+lang E = M ∩ re"a a"
+
+print 1, "a"
+show M
+run M on "aa"
+assert 1 + 1 == 2
+check M accepts "a", "aaa"
+check M rejects "", "aa"
+check M ≡ re"a (a a)*"
+check M ≡ re"a (a a)*" up to 5
+check re"a" ⊆ M
+check E.is_empty()

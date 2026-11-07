@@ -1,0 +1,52 @@
+// 01-LANGUAGE.md §6.2: operations compute the class (closure table).
+// Context: one language of each class.
+dpda Dd {                       // { 0ⁿ1ⁿ | n ≥ 0 }, deterministic
+  start q0
+  accept q0, q3
+  q0 -0, ε → AZ-> q1
+  q1 -0, A → AA-> q1
+  q1 -1, A → ε-> q2
+  q2 -1, A → ε-> q2
+  q2 -ε, Z → ε-> q3
+}
+tm Tm {
+  alphabet 0, 1
+  start q0
+  accept qa
+  q0 -0 → R-> q0
+  q0 -1 → R-> qa
+}
+lang F = { "", "01" }
+lang R = re"(0 ∪ 1)* 0 1"
+lang R2 = re"0*"
+lang Dl = Dd
+lang C = cfg { S -> 0 S 1 | ε }
+lang C2 = cfg { S -> 1 S 0 | ε }
+lang P = { w ∈ {0,1}* | count(w,'0') == count(w,'1') }
+lang T = Tm
+
+assert (R ∪ R2).class == Regular
+assert (Dl ∪ Dl).class == CF
+assert (C ∪ C2).class == CF
+assert (C ∩ C2).class == CS
+assert (C ∩ R).class == CF                // the L ∩ R row
+assert (Dl ∩ R).class == DCF
+assert (∁Dl).class == DCF
+assert (∁C).class == CS
+assert (C ++ C2).class == CF
+assert (C*).class == CF
+assert rev(Dl).class == CF
+assert (∁T).class == Any
+assert (T ∪ T).class == Recognizable
+assert (P ∩ P).class == Decidable
+
+// Provisional (QUESTIONS.md Q-75): the Finite column and mixed operands use the join
+assert (F ∪ F).class == Finite
+assert (∁F).class == Regular
+assert (R ∪ C).class == CF
+
+// The values are right too
+assert "01" ∈ (C ∩ R)
+assert "0011" ∉ (C ∩ R)
+assert "0110" ∈ (C ++ C2)
+assert "10" ∈ ∁C

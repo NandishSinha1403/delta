@@ -1,0 +1,4 @@
+{
+  "ok": false,
+  "diagnostics": [{ "severity": "error", "code": "E3*", "fixes": { "$len": 2 } }]
+}

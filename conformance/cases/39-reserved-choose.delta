@@ -1,0 +1,2 @@
+// 01-LANGUAGE.md §16: `choose` is a reserved keyword (feature deferred to v2.1).
+let choose = 1

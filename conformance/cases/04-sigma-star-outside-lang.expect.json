@@ -1,0 +1,5 @@
+{
+  "ok": false,
+  "diagnostics": [{ "severity": "error", "code": "E2*", "line": 3 }],
+  "outputs": []
+}

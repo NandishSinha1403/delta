@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "outputs": [
+    { "kind": "test", "pass": true, "bounded": 10 },
+    { "kind": "test", "pass": true, "bounded": null },
+    { "kind": "test", "pass": true, "bounded": null },
+    { "kind": "show", "value": { "type": "machine", "model": "dfa", "alphabet": ["a", "b"] } }
+  ]
+}

@@ -1,0 +1,5 @@
+// 01-LANGUAGE.md §6.4 with a false claim (this was the spec example before Q-76 was fixed):
+// "10" ∈ P but "10" ∉ (01)*, so the bounded check of the claim must fail (QUESTIONS.md Q-76).
+lang P = { w ∈ {0,1}* | count(w,'0') == count(w,'1') }
+
+lang P2 = P as Regular by re"(01)*"     // claim: P2 is regular, with this regex as evidence

@@ -1,0 +1,14 @@
+// 01-LANGUAGE.md §3, "Values and types": sets, lists, tuples, records, maps, fn, none.
+assert {2, 1, 2} == {1, 2}            // sets: no order, no repetition
+assert [1, 2] != [2, 1]               // lists keep order
+let t = (1, 2)
+let (a, b) = t
+assert a == 1 and b == 2
+let r = { from: 1, to: 2 }
+assert r.from == 1
+let m = { q0: 0, q1: 1 }
+fn adder(n) = fn(x) = x + n           // first-class functions, closures
+assert adder(2)(3) == 5
+assert 'a' != "a"                     // a symbol is not a word
+print {3, 1, 2}                       // canonical order for printing
+print none

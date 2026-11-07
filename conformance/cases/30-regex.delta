@@ -1,0 +1,38 @@
+// 01-LANGUAGE.md §9: regex operators, atoms and precedence ("010*" means 0 · 1 · (0*)).
+lang L = re"010*"
+assert "01" ∈ L
+assert "010" ∈ L
+assert "0100" ∈ L
+assert "0" ∉ L
+assert "0101" ∉ L
+assert "" ∉ L
+lang P = re"(ab)⁺"
+assert "ab" ∈ P
+assert "abab" ∈ P
+assert "" ∉ P
+lang O = re"a?b"
+assert "b" ∈ O
+assert "ab" ∈ O
+assert "aab" ∉ O
+lang W = re"a^3"
+assert "aaa" ∈ W
+assert "aa" ∉ W
+lang D = re"a ∘ b · c"
+assert "abc" ∈ D
+lang U = re"a | b"
+assert "a" ∈ U
+assert "b" ∈ U
+assert "ab" ∉ U
+lang S = re"Σ Σ" over {'a', 'b'}
+assert "ab" ∈ S
+assert "a" ∉ S
+lang C = re"[abc]"
+assert "b" ∈ C
+assert "ab" ∉ C
+lang E = re"ε ∪ a"
+assert "" ∈ E
+assert "a" ∈ E
+lang Z = re"∅"
+assert Z.is_empty()
+lang M = re"<RESET> a"
+assert "<RESET>a" ∈ M

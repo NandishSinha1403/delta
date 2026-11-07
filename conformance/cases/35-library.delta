@@ -1,0 +1,44 @@
+// 01-LANGUAGE.md §12: a sample from each area of the standard library; every method: option.
+let R = re"(0 ∪ 1)* 0 1"
+let N1 = nfa(R, method: "textbook")
+let N2 = nfa(R, method: "thompson")
+let N3 = nfa(R, method: "glushkov")
+let D = determinize(N1)
+let Mh = minimize(D, method: "hopcroft")
+let Mm = minimize(D, method: "moore")
+let Mb = minimize(D, method: "brzozowski")
+let Mt = minimize(D, method: "table")
+
+// Regex ↔ automata
+check N1 ≡ N2
+check N1 ≡ N3
+check gnfa(D) ≡ R
+check to_regex(Mh, method: "state-elimination") ≡ R
+check to_regex(Mh, method: "arden") ≡ R
+check to_regex(Mh, method: "brzozowski-mccluskey") ≡ R
+check simplify(re"(0 ∪ ∅) ε") ≡ re"0"
+
+// Automata
+check dfa(N1) ≡ D                          // dfa is an alias of determinize
+assert Mh.size == 3
+assert Mm.size == 3
+assert Mb.size == 3
+assert Mt.size == 3
+check trim(complete(D)) ≡ D
+check remove_epsilon(N1) ≡ N1
+check reverse(reverse(D)) ≡ D
+check complement(complement(D)) ≡ D
+check union(D, Mh) ≡ D
+check intersect(D, Mh) ≡ D
+check concat(D, D) ≡ re"(0 ∪ 1)* 0 1 (0 ∪ 1)* 0 1"
+check star(D) ≡ re"((0 ∪ 1)* 0 1)*"
+
+// Decisions
+assert equivalent(D, Mh)
+assert subset_of(Mh, D)
+assert is_empty(difference(D, Mh))
+assert not is_finite(D)
+assert not is_universal(D)
+assert shortest(D) == "01"
+assert words(D, upto: 3) == {"01", "001", "101"}
+assert count(D, length: 3) == 2

@@ -1,0 +1,5 @@
+// 01-LANGUAGE.md §7.2: "otherwise the budget stops it with a clear message" (and §13: hitting a
+// budget is an outcome, not a crash).
+budget { steps: 1_000 }
+let n = fixpoint X from 0 { X + 1 }
+print n

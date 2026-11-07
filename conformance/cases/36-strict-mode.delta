@@ -1,0 +1,8 @@
+// 01-LANGUAGE.md §13: `use strict` requires every field to be written explicitly.
+use strict
+dfa M {
+  start q0
+  accept q1
+  q0 -a-> q1
+  q1 -a-> q1
+}

@@ -1,0 +1,7 @@
+// 01-LANGUAGE.md §3: "Annotations are optional (fn f(N: machine[nfa]) -> machine[dfa]) and are
+// checked." A wrong argument type is a compile-time E2xx error, so nothing runs.
+fn f(N: machine[nfa]) -> machine[dfa] = determinize(N)
+fn h(k: int) -> int = k
+let bad = h("a")
+let D = f(nfa(re"a b"))
+assert D.model == dfa

@@ -1,0 +1,36 @@
+// 01-LANGUAGE.md §3, "Set-builder notation" and "Word sets".
+// Context (not in the spec): M, A, B, R, Σ, dead and words are defined here so the
+// spec's four expressions can be evaluated.
+dfa M {
+  alphabet a, b
+  start [0]
+  accept [1]
+  [0] -a-> [1]
+  [1] -a-> [2]
+  [2] -a-> [2]
+  [0] -b-> [0]
+  [1] -b-> [1]
+  [2] -b-> [2]
+}
+dfa A {
+  alphabet a
+  start [0]
+  accept [1]
+  [0] -a-> [1]
+  [1] -a-> [0]
+}
+let B = M
+let R = M.states
+let Σ = M.alphabet
+let dead = 2
+let words = ["", "a", "ab"]
+
+// The spec's examples
+assert { q ∈ M.states | q ∉ M.accept } == {0, 2}
+assert { (p, q) | p ∈ A.states, q ∈ B.states } == {(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2)}
+assert { M.δ(q, a) | q ∈ R, a ∈ Σ, q ≠ dead } == {0, 1, 2}
+assert [ len(w) | w ∈ words ] == [0, 1, 2]
+
+// Σ^n and Σ^≤n are finite sets of words
+assert Σ^2 == {"aa", "ab", "ba", "bb"}
+assert Σ^≤1 == {"", "a", "b"}

@@ -1,0 +1,63 @@
+// 01-LANGUAGE.md §5.2, "Labels": each model's short form means the same as its keyword form.
+// Context: one PDA (aⁿbⁿ), one Mealy machine and one TM, each written both ways.
+
+pda P1 {
+  start q0
+  accept q3
+  q0 -ε, ε → Z-> q1
+  q1 -a, ε → A-> q1
+  q1 -ε, Z → ε-> q3
+  q1 -b, A → ε-> q2
+  q2 -b, A → ε-> q2
+  q2 -ε, Z → ε-> q3
+}
+pda P2 {
+  start q0
+  accept q3
+  q0 -push Z-> q1
+  q1 -read a; push A-> q1
+  q1 -pop Z-> q3
+  q1 -read b; pop A-> q2
+  q2 -read b; pop A-> q2
+  q2 -pop Z-> q3
+}
+assert P1 == P2
+check P1 ≡ P2 up to 8
+check P1 accepts "", "ab", "aabb"
+check P1 rejects "a", "b", "aab", "abb", "ba"
+check P2 accepts "", "ab", "aabb"
+check P2 rejects "a", "b", "aab", "abb", "ba"
+
+mealy T1 {
+  start s
+  s -a / 1-> s
+  s -b / 0-> s
+}
+mealy T2 {
+  start s
+  s -read a; emit 1-> s
+  s -read b; emit 0-> s
+}
+assert T1 == T2
+assert T1.output("aba") == "101"
+
+// `0 → x, R` writes and moves; `x → R` only moves.
+tm M1 {
+  alphabet 0, 1
+  start q0
+  accept qa
+  q0 -0 → x, R-> q0
+  q0 -⊔ → R-> qa
+}
+tm M2 {
+  alphabet 0, 1
+  start q0
+  accept qa
+  q0 -read 0; write x; move R-> q0
+  q0 -read ⊔; move R-> qa
+}
+assert M1 == M2
+check M1 accepts "", "0", "000"
+check M1 rejects "1", "01"
+check M2 accepts "", "0", "000"
+check M2 rejects "1", "01"

@@ -1,0 +1,12 @@
+// 01-LANGUAGE.md §13, the E3xx example: "dfa M: no transition for (q2, '1'). A total deterministic
+// model needs one. Quick fixes: add a dead state / mark (partial)".
+dfa M {
+  alphabet 0, 1
+  start q0
+  accept q2
+  q0 -0-> q1
+  q0 -1-> q0
+  q1 -0-> q2
+  q1 -1-> q0
+  q2 -0-> q2
+}

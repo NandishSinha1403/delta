@@ -1,0 +1,5 @@
+// 01-LANGUAGE.md §13: explain profiles add citations; they never change results (02 §6).
+use explain "sipser3e"
+let N = nfa(re"a ∪ b")
+show N
+check N accepts "a", "b"

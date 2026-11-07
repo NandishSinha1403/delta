@@ -1,0 +1,21 @@
+// 01-LANGUAGE.md §5.3, options `(partial)` and `(accept: by empty-stack)`.
+// Context: the machine bodies are not in the spec.
+
+dfa M (partial) {              // missing transitions → implicit dead state
+  alphabet a, b
+  start q0
+  accept q1
+  q0 -a-> q1
+}
+check M accepts "a"
+check M rejects "", "b", "aa", "ab"
+
+// The stack starts empty (SEMANTICS §3.3), so "" is accepted by empty stack.
+pda P (accept: by empty-stack) {
+  start q0
+  q0 -a, ε → A-> q0
+  q0 -b, A → ε-> q1
+  q1 -b, A → ε-> q1
+}
+check P accepts "", "ab", "aabb"
+check P rejects "a", "aab", "abb", "ba"
