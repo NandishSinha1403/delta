@@ -44,7 +44,7 @@ Nothing in the language assumes one textbook. Book citations live in optional **
 | Engine | Rust → WebAssembly in a Web Worker; tree-walking interpreter; algorithms ported from v1 |
 | Web | React + TS + Vite (Pad); Astro + Starlight (front page + docs) |
 | Mobile | **Capacitor** wrapping the Pad (Android + iOS); a PWA comes first |
-| Hosting | GitHub Pages (static). A server only for the later API, MCP and accounts |
+| Hosting | Cloudflare Pages (static, direct upload). A server only for the later API, MCP and accounts |
 | Look | Near-black UI; palette #E63946 / #F1FAEE / #A8DADC / #457B9D / #1D3557; Courier Prime code; VS Code Dark+ syntax |
 | Codebase | Build on v1: keep engine algorithms and tests, replace the language layer, restructure the UI |
 

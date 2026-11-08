@@ -4,7 +4,7 @@ All products share **one engine** (WASM), **one Pad codebase** (React) and **one
 
 ---
 
-## 1. Site map (static, GitHub Pages)
+## 1. Site map (static, Cloudflare Pages)
 
 | Path | Page |
 |---|---|

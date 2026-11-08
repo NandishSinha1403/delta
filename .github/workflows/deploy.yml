@@ -2,11 +2,11 @@ name: Deploy
 on:
   push: { branches: [main] }
   workflow_dispatch:
-permissions: { contents: read, pages: write, id-token: write }
-concurrency: { group: pages, cancel-in-progress: true }
+permissions: { contents: read }
+concurrency: { group: deploy, cancel-in-progress: true }
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,12 +31,10 @@ jobs:
         working-directory: web
       # The front page and docs at /, the Pad at /pad/ (03-PRODUCTS.md §1).
       - run: ./scripts/build-site.sh
-      - uses: actions/upload-pages-artifact@v3
-        with: { path: site/dist }
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment: { name: github-pages, url: "${{ steps.d.outputs.page_url }}" }
-    steps:
-      - id: d
-        uses: actions/deploy-pages@v4
+      # Cloudflare Pages, direct upload to the "delta" project; --branch=main makes it production.
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          wranglerVersion: "4.42.0"             # the version the first deploys used
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy site/dist --project-name=delta --branch=main

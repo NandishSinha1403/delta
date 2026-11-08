@@ -1,6 +1,6 @@
 # Delta 2 — Progress
 
-_Last updated: 2026-11-08 (Phase 0, second session: ten answers confirmed)_
+_Last updated: 2026-11-09 (Phases 1–5 built; the site moves to Cloudflare Pages)_
 
 ## Current state
 
@@ -8,9 +8,10 @@ _Last updated: 2026-11-08 (Phase 0, second session: ten answers confirmed)_
 |---|---|
 | Branch | `v2` (long-lived; **never merge into `main`** until the v2 beta) |
 | v1 | Tag `v1.0-final` = `50bf153` (= `origin/main` at the time, incl. both CNAME commits). v1 stays live from `main` |
-| Phase | **0 — Audit and spec freeze: produced, awaiting the owner's review.** The spec is **not frozen** until the open questions are confirmed |
-| Conformance | 50 cases (44–50 added for the confirmed answers), **all 50 listed in `conformance/xfail.txt`** (expected to fail: no v2 language yet) |
-| v1 tests | All pass (79 Rust + 3 conformance-harness tests; 25 Vitest; 14 Playwright × 3 viewports) |
+| Phase | **1–5 built** (language, engine, Pad, front page and docs). Next: **5b** (terminal and packages) |
+| Hosting | Cloudflare Pages, project `delta` (`delta-17m.pages.dev`), direct upload from a Mac with wrangler 4.42.0 until GitHub Actions is unlocked; then `deploy.yml` deploys on push to `main`. `delta.nandish.dev` moves from GitHub Pages (v1) to it |
+| Conformance | 100 cases, `xfail.txt` empty: all pass |
+| Tests | 121 Rust (incl. conformance); 26 Vitest; 84 Playwright (phone, tablet, desktop) |
 
 ## What Phase 0 produced
 
@@ -84,14 +85,17 @@ The full check list (wasm build, size check, web lint/typecheck/test/build/e2e) 
 
 ## Next session: start here
 
-1. Read `CLAUDE.md`, then this file, then `docs/v2/QUESTIONS.md`.
-2. ~~Confirm the ten proposed answers~~ (done 2026-11-08). The owner has the list of remaining open
-   questions, each marked "real choice" or "obvious default", and is ruling on them.
-3. Resolve the remaining Phase 1 blockers (list above), especially Q-39 (dependencies) and Q-43
-   (crate layout). Both need the owner's OK under the working agreement.
-4. Apply each newly confirmed answer the same way: `01-LANGUAGE.md`, `SEMANTICS.md` (remove the
-   `[Q-nn]` tag), the conformance cases (new ones go into `xfail.txt`), and the "Confirmed answers"
-   table plus a ✅ on the row in QUESTIONS.md.
-5. Complete the EBNF in 01 §15 (Q-14). Then declare the **spec freeze**: Phase 0 is done.
-6. Only after an explicit go-ahead: start Phase 1 (language core). Its exit criterion includes the
-   P1 conformance cases leaving `xfail.txt`.
+1. Read `CLAUDE.md`, then this file.
+2. Domain: `delta.nandish.dev` is a Pages custom domain; the owner points its CNAME (name.com) at
+   `delta-17m.pages.dev`. Rollback: point it back at `nandishsinha1403.github.io`.
+3. PR #6 (`v2` → `main`) carries the Cloudflare `deploy.yml`; merge only when the owner says so,
+   after GitHub Actions is unlocked and the secrets `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`
+   are set.
+4. Phase 5b (terminal and packages, 04-ROADMAP.md): waiting for the owner to approve new
+   dependencies.
+5. Known: the TM loop detector stores every configuration with its tape (quadratic); the Pad's
+   language preview is capped at 1,000 steps per word (`pad.rs`, `PREVIEW_STEPS`).
+
+Manual deploy (from the repo root, after all checks): `./scripts/build-site.sh`, then
+`npx wrangler@4.42.0 pages deploy site/dist --project-name=delta --branch=main`. Newer wrangler
+(4.158) creates `~/.wrangler` and then ignores the OAuth login; move that folder away if it appears.
