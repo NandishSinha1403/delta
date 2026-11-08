@@ -125,6 +125,9 @@ fn trace_view(m: &Machine, cite: Option<String>) -> Json {
     json!({ "title": title, "steps": steps, "truncated": p.steps.len() > 500 })
 }
 
+/// The step budget for checking one sample word in `lang_info`.
+const PREVIEW_STEPS: u64 = 1_000;
+
 /// Sample words in and out of a language (up to length 3) and which questions are decidable.
 fn lang_info(it: &mut Interp, v: &Value) -> Json {
     if !Interp::is_langlike(v) {
@@ -137,7 +140,9 @@ fn lang_info(it: &mut Interp, v: &Value) -> Json {
     let (mut ins, mut outs) = (Vec::new(), Vec::new());
     let mut layer: Vec<Vec<Sym>> = vec![Vec::new()];
     let saved = (it.steps, it.budget);
-    it.budget.steps = it.steps + 200_000;
+    // A preview, so each sample word gets a small step budget of its own, never more than the
+    // program's: a machine that runs forever (e.g. a TM moving right over blanks) costs little.
+    it.budget.steps = it.steps + PREVIEW_STEPS.min(saved.1.steps);
     'outer: for _ in 0..=3 {
         for w in &layer {
             match it.lang_member(&l, w, crate::diag::Span::default()) {
