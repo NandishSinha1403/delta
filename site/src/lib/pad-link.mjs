@@ -10,7 +10,8 @@ export function padUrl(source, extra = '') {
   return `/pad/#code=${padCode(source)}${extra}`;
 }
 
-/** remark plugin: an "Open in the Pad" link after every runnable ```delta block. */
+/** remark plugin: an "Open in the Pad" link after every runnable ```delta block (and a live Pad
+ * after a ```delta embed block). */
 export function remarkOpenInPad() {
   return (tree) => {
     const walk = (node) => {
@@ -18,13 +19,24 @@ export function remarkOpenInPad() {
       for (let i = 0; i < node.children.length; i++) {
         const child = node.children[i];
         if (child.type === 'code' && child.lang === 'delta') {
-          const label = /error|outcome/.test(child.meta ?? '') ? 'Try it in the Pad' : 'Open in the Pad';
-          node.children.splice(i + 1, 0, {
-            type: 'html',
-            value: `<p class="open-pad"><a href="${padUrl(child.value)}">${label} ↗</a></p>`,
-          });
+          const meta = child.meta ?? '';
+          const label = /error|outcome/.test(meta) ? 'Try it in the Pad' : 'Open in the Pad';
+          const added = [
+            {
+              type: 'html',
+              value: `<p class="open-pad"><a href="${padUrl(child.value)}">${label} ↗</a></p>`,
+            },
+          ];
+          // ```delta embed: the same program, live, in an embedded Pad (loaded when scrolled to).
+          if (/\bembed\b/.test(meta)) {
+            added.unshift({
+              type: 'html',
+              value: `<div class="pad-embed"><iframe title="The program above, live in the Delta Pad" src="${padUrl(child.value, '&embed=1&panel=diagram&run=1')}" loading="lazy"></iframe></div>`,
+            });
+          }
+          node.children.splice(i + 1, 0, ...added);
           child.meta = null;
-          i++;
+          i += added.length;
         } else {
           walk(child);
         }

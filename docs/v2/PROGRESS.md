@@ -1,6 +1,6 @@
 # Delta 2 — Progress
 
-_Last updated: 2026-11-09 (Phases 1–5 built; the site moves to Cloudflare Pages)_
+_Last updated: 2026-11-09 (SEO pages done; 5b and 5c waiting on the owner)_
 
 ## Current state
 
@@ -86,14 +86,41 @@ The full check list (wasm build, size check, web lint/typecheck/test/build/e2e) 
 ## Next session: start here
 
 1. Read `CLAUDE.md`, then this file.
-2. Domain: `delta.nandish.dev` is a Pages custom domain; the owner points its CNAME (name.com) at
-   `delta-17m.pages.dev`. Rollback: point it back at `nandishsinha1403.github.io`.
-3. PR #6 (`v2` → `main`) carries the Cloudflare `deploy.yml`; merge only when the owner says so,
-   after GitHub Actions is unlocked and the secrets `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`
-   are set.
-4. Phase 5b (terminal and packages, 04-ROADMAP.md): waiting for the owner to approve new
-   dependencies.
-5. Known: the TM loop detector stores every configuration with its tape (quadratic); the Pad's
+2. **Domain:** `delta.nandish.dev` is added to the Pages project `delta` (status pending). The owner
+   changes the name.com CNAME `delta` → `delta-17m.pages.dev`; then watch the domain via the API
+   (`/accounts/<id>/pages/projects/delta/domains/delta.nandish.dev`) until status and certificate
+   are `active`, and confirm https://delta.nandish.dev serves v2. Rollback: CNAME back to
+   `nandishsinha1403.github.io`.
+3. **SEO (Phase 5) — done, committed, not yet deployed.** `/tools/` (8 pages; pumping-lemma,
+   cfg-to-cnf, cyk-parser, cfg-to-pda, mealy-moore wait for Phase 6), `/learn/` (9), `/practice/`
+   (8), JSON-LD/social cards (`site/src/route-data.ts`), robots.txt, `site/scripts/check-seo.mjs`
+   (runs in `build-site.sh`). Lighthouse on the live site: 100 perf / 100 SEO (front page; local
+   `astro preview` shows ~73 only because it doesn't compress). OG images are interim
+   (`site/public/og/default.png` from the hero); diagram cards come from the 5b renderer.
+   Still to do: deploy (manual deploy below); the owner sends the Cloudflare Web Analytics site
+   token → set `BEACON_TOKEN` in `site/src/lib/analytics.mjs`; give the owner Google Search
+   Console + Bing TXT-record steps for name.com.
+4. **Phase 5b (terminal and packages)** — approved deps: rustyline 19, resvg 0.45 + svg2pdf 0.13
+   (same usvg 0.45), icy_sixel 0.7, the cargo-dist tool; own layered layout, own iTerm2/kitty
+   protocols, hand-parsed args (no clap/viuer/layout-rs); embed Commit Mono (OFL). The binary is
+   renamed **`deltac`** (git-delta owns `delta`). Renderer = the planned `crates/delta-render`
+   (layout, SVG, TikZ, ASCII; no deps; also in WASM). Spec first: `save <value> to "<file>"` in
+   01-LANGUAGE.md §Output, SEMANTICS §10.4, conformance cases; output kind `save`, the engine
+   never writes files (CLI writes inside the cwd only; the Pad downloads). **Open question for the
+   owner** (they wanted to clarify before answering): how the Pad makes PNG/PDF — lazy second
+   "export" WASM with resvg+svg2pdf (recommended) / browser canvas + print / PDF CLI-only.
+   Releases on tags need GitHub Actions (locked); build and test locally.
+5. **Phase 5c (private manual)** — plan changed: source in this repo under `manual/` (own Starlight
+   site, never in `site/dist`), excerpts pulled by path + marker at build time (CI fails on a
+   missing marker), separate Pages project protected by Cloudflare Access on `<project>.pages.dev`
+   and `*.<project>.pages.dev` (owner's email, one-time PIN, 30-day session), never a custom
+   domain, noindex + robots disallow, no links from the public site. No nameserver move needed.
+   **Waiting for the owner's MANUAL.md template** (never received). Test the Access login in a
+   private window, then give the owner the URL.
+6. PR #6 (`v2` → `main`) carries the Cloudflare `deploy.yml`; merge only when the owner says so,
+   after Actions is unlocked and `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` are set. The owner
+   still needs the step-by-step for a Pages-only API token.
+7. Known: the TM loop detector stores every configuration with its tape (quadratic); the Pad's
    language preview is capped at 1,000 steps per word (`pad.rs`, `PREVIEW_STEPS`).
 
 Manual deploy (from the repo root, after all checks): `./scripts/build-site.sh`, then

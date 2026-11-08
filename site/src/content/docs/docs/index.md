@@ -27,4 +27,7 @@ Every example in these docs runs: press **Open in the Pad** under it.
 - **[Models](/docs/models/)**: the prelude, and how to define your own model.
 - **[Languages and classes](/docs/languages/)**: the class lattice, closure and decision tables.
 - **[Cookbook](/docs/cookbook/)**: recipes for common exercises.
+- **[Tools](/tools/)**: one page per construction or simulator, each with a live Pad.
+- **[Learn](/learn/)**: what DFAs, NFAs, grammars, PDAs and Turing machines are.
+- **[Practice](/practice/)**: exam-style problems with worked, runnable solutions.
 - **[Notation](/docs/notation/)**, **[Errors](/docs/errors/)** and **[AI](/docs/ai/)**.

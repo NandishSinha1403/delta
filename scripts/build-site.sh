@@ -6,4 +6,4 @@ cd "$(dirname "$0")/.."
 ./scripts/build-wasm.sh
 cargo run -q -p delta-cli -- gen-docs site
 (cd web && DELTA_BASE=/pad/ pnpm build --outDir ../site/public/pad --emptyOutDir)
-(cd site && pnpm build)
+(cd site && pnpm build && node scripts/check-seo.mjs)

@@ -2,6 +2,7 @@
 // The front page (03-PRODUCTS.md §2) in the Dark Tech world: black ground, Schibsted Grotesk
 // headlines, Commit Mono for every piece of data, square CTAs, pill status chips.
 import '../styles/fonts.css';
+import { beaconScript } from '../lib/analytics.mjs';
 import { padUrl } from '../lib/pad-link.mjs';
 
 // EndsAB (words over {a, b} that end in "ab"), simulated here so the trace on the page is the
@@ -106,9 +107,30 @@ const recipes = [
   ['Write the subset construction yourself', 'explore-determinize'],
 ];
 
+// Search engines: what Delta is, as structured data (schema.org SoftwareApplication).
+const site = 'https://delta.nandish.dev';
+const description =
+  'Delta is a programming language for the theory of computation: write machines, languages and constructions as code, and see them run.';
+const jsonLd = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Delta',
+  url: `${site}/`,
+  description,
+  applicationCategory: 'EducationalApplication',
+  operatingSystem: 'Any (web browser)',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  isAccessibleForFree: true,
+  license: 'https://opensource.org/licenses/MIT',
+  codeRepository: 'https://github.com/NandishSinha1403/delta',
+  author: { '@type': 'Person', name: 'Nandish Sinha', url: 'https://github.com/NandishSinha1403' },
+});
+const ogImage = `${site}/og/index.png`;
+
 const nav = [
   ['Docs', '/docs/'],
-  ['Tour', '/docs/tour/01-first-program/'],
+  ['Tools', '/tools/'],
+  ['Learn', '/learn/'],
   ['Cookbook', '/docs/cookbook/'],
   ['GitHub', 'https://github.com/NandishSinha1403/delta'],
 ];
@@ -120,7 +142,23 @@ const nav = [
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Delta — the language of computation</title>
-    <meta name="description" content="Delta is a programming language for the theory of computation: write machines, languages and constructions as code, and see them run." />
+    <meta name="description" content={description} />
+    <link rel="canonical" href={`${site}/`} />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Delta" />
+    <meta property="og:title" content="Delta — the language of computation" />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={`${site}/`} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Delta — the language of computation" />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <script type="application/ld+json" set:html={jsonLd} />
+    {beaconScript && <script is:inline defer src={beaconScript.attrs.src} data-cf-beacon={beaconScript.attrs['data-cf-beacon']} />}
     <meta name="theme-color" content="#000000" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preload" href="/fonts/schibsted-grotesk-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
@@ -335,6 +373,8 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
       <span>A project by <a href="https://github.com/NandishSinha1403">Nandish Sinha</a></span>
       <a href="https://github.com/NandishSinha1403/delta">GitHub</a>
       <a href="/docs/">Docs</a>
+      <a href="/docs/tour/01-first-program/">Tour</a>
+      <a href="/practice/">Practice</a>
       <a href="https://github.com/NandishSinha1403/delta/blob/main/LICENSE">MIT license</a>
       <span class="chip"><i class="dot pass"></i>v2.0 beta</span>
     </footer>
