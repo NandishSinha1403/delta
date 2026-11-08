@@ -101,6 +101,8 @@ pub trait Object: std::fmt::Debug {
     fn display(&self) -> String;
     // `&dyn Any` lets callers downcast to the concrete type.
     fn as_any(&self) -> &dyn std::any::Any;
+    /// The shared object as `Rc<dyn Any>`, to recover an `Rc` of the concrete type.
+    fn into_any(self: Rc<Self>) -> Rc<dyn std::any::Any>;
 }
 
 #[derive(Clone, Debug)]
@@ -193,6 +195,14 @@ impl Value {
 
     pub fn tuple(items: Vec<Value>) -> Value {
         Value::Tuple(Rc::new(items))
+    }
+
+    /// The shared object behind `Obj`, if it has type `T`.
+    pub fn rc<T: 'static>(&self) -> Option<Rc<T>> {
+        match self {
+            Value::Obj(o) => o.clone().into_any().downcast::<T>().ok(),
+            _ => None,
+        }
     }
 
     /// The object behind `Obj`, if it has type `T`.

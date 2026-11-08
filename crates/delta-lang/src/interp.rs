@@ -67,6 +67,14 @@ pub struct Interp<'s> {
     free_cache: HashMap<usize, Rc<Vec<String>>>,
     pub strict: bool,
     pub explain: Option<String>,
+    /// Models by name: the prelude, then `model` declarations.
+    pub models: HashMap<String, Rc<crate::model::Model>>,
+    /// Extra diagnostics found while running (warnings, further errors of one machine).
+    pub pending: Vec<Diagnostic>,
+    /// Notation profile: `+` in regexes means union (hmu, linz).
+    pub plus_is_union: bool,
+    /// Extra regex spellings of a custom notation profile (`φ` → `∅`).
+    pub notation_tokens: Vec<(String, String)>,
 }
 
 /// Names of the built-in functions (01 §12). Those not available yet report E509 when called.
@@ -153,6 +161,10 @@ impl<'s> Interp<'s> {
             free_cache: HashMap::new(),
             strict: false,
             explain: None,
+            models: crate::prelude::models(),
+            pending: Vec::new(),
+            plus_is_union: false,
+            notation_tokens: Vec::new(),
         }
     }
 
@@ -494,7 +506,22 @@ impl<'s> Interp<'s> {
                 self.strict = true;
                 Ok(())
             }
-            StmtKind::UseNotation(_) => Ok(()),
+            StmtKind::UseNotation(p) => {
+                self.plus_is_union =
+                    matches!(p.as_str(), "hmu" | "linz") || p.contains("union: \"+\"");
+                // A custom profile: `{ union: "+", epsilon: "λ", empty: "φ" }`.
+                for (key, core) in [("epsilon", "ε"), ("empty", "∅")] {
+                    if let Some(rest) = p.split(&format!("{key}:")).nth(1)
+                        && let Some(tok) = rest.split('"').nth(1)
+                        && !tok.is_empty()
+                        && tok != core
+                    {
+                        self.notation_tokens
+                            .push((tok.to_string(), core.to_string()));
+                    }
+                }
+                Ok(())
+            }
             StmtKind::UseExplain(p) => {
                 self.explain = Some(p.clone());
                 Ok(())
@@ -651,6 +678,13 @@ impl<'s> Interp<'s> {
                 Ok(Value::Record(Rc::new(m)))
             }
             ExprKind::Builder { head, quals, list } => {
+                // `{ w ∈ S* | … }` is a language, never a materialized set.
+                if !*list
+                    && let Some(Qual::Gen(pat, src)) = quals.first()
+                    && matches!(src.kind, ExprKind::Star(_) | ExprKind::Plus(_))
+                {
+                    return self.predicate_lang(pat, src, quals.get(1..).unwrap_or(&[]), e.span);
+                }
                 let mut out = Vec::new();
                 self.scopes.push(HashMap::new());
                 let r = self.builder(head, quals, &mut out);
@@ -875,7 +909,7 @@ impl<'s> Interp<'s> {
         span: Span,
     ) -> R<Value> {
         let Value::Fn(fv) = f else {
-            return err("E508", span, format!("{} is not a function", f.display()));
+            return self.call_object(f, args, named, span);
         };
         match &**fv {
             FnVal::Builtin { name, .. } => self.call_builtin(name, args, named, span),

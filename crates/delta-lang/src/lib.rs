@@ -2,13 +2,23 @@
 //! output document of 02-ENGINE.md §7 as JSON.
 
 pub mod ast;
+pub mod build;
 pub mod builtins;
 pub mod check;
 pub mod diag;
+pub mod explain;
+pub mod grammar;
 pub mod hooks;
 pub mod interp;
+pub mod label;
+pub mod lang;
 pub mod lexer;
+pub mod machine;
+pub mod model;
 pub mod parser;
+pub mod prelude;
+pub mod rx;
+pub mod sim;
 pub mod value;
 
 use diag::{Diagnostic, LineMap};
@@ -48,6 +58,7 @@ pub fn run_with(src: &str, opts: &RunOptions) -> serde_json::Value {
             stopped = true;
             diags.push(d);
         }
+        diags.append(&mut it.pending);
         outputs = std::mem::take(&mut it.outputs);
         steps = it.steps;
     }

@@ -502,6 +502,8 @@ Variables are the left-hand sides unless declared. Symbols are space-separated *
 
 Every built-in takes an optional `method:` naming **the algorithm** (never a book), and returns a value that remembers its **provenance and step trace** (`steps(x)`).
 
+**What the states of a result are.** `determinize` gives sets of the input's states; `minimize` keeps a state that merges with nothing and makes a merged class the set of its states; `union`/`intersect`/`difference`/`product` give pairs `(p, q)`; `concat` tags states `(1, q)` and `(2, q)`; `complete` adds `:dead`, and `reverse`, `star` and `to_gnfa` add `:start` (and `:accept`), renamed `:dead1`, `:start1`, … if taken; `to_nfa` numbers its states `0, 1, …`. Every result remembers its algorithm id, and `steps(x)` lists its trace.
+
 **Conversions are verbs**. A model name (`dfa`, `nfa`, `pda`, …) only starts a machine literal (`dfa M { … }`, `dfa { … }`), appears in types (`machine[dfa]`), and names the model value (`M.model == dfa`). It is never called: `dfa(N)` is error E2xx with the quick fix "`determinize(N)`" (likewise `nfa(R)` → `to_nfa(R)`, `gnfa(M)` → `to_gnfa(M)`).
 
 | Area | Functions |

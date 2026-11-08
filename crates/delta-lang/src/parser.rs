@@ -495,6 +495,15 @@ impl<'a> Parser<'a> {
                 Ok(StmtKind::Assign(name, t.span, e))
             }
             Tok::Op(Op::LBrace) => Ok(StmtKind::Block(self.block()?)),
+            // `cfg G { … }` at statement level binds G.
+            Tok::Kw(Kw::Cfg) if matches!(self.peek_nth(1), Tok::Ident(_)) => {
+                let e = self.expr()?;
+                let name = match &e.kind {
+                    ExprKind::Cfg { name: Some(n), .. } => n.clone(),
+                    _ => String::new(),
+                };
+                Ok(StmtKind::MachineDecl(name, t.span, e))
+            }
             _ => Ok(StmtKind::Expr(self.expr()?)),
         }
     }
@@ -1102,6 +1111,10 @@ impl<'a> Parser<'a> {
             Tok::Op(Op::Minus) => unary(self, UnOp::Neg, 17),
             Tok::Op(Op::Compl) => unary(self, UnOp::Compl, 17),
             Tok::Op(Op::BigUnion) => unary(self, UnOp::BigUnion, 17),
+            // `union(A, B)` is the library function, not the ASCII operator.
+            Tok::Op(Op::Union) if self.peek_nth(1) == Tok::Op(Op::LParen) => {
+                simple(self, ExprKind::Var("union".to_string()))
+            }
             Tok::Kw(Kw::Not) => unary(self, UnOp::Not, 5),
             Tok::Int(n) => simple(self, ExprKind::Int(n)),
             Tok::Sym(s) => simple(self, ExprKind::Sym(s)),

@@ -12,6 +12,8 @@ pub mod bitset;
 pub mod budget;
 pub mod convert;
 pub mod dfa;
+/// Delta 2 finite-automaton algorithms (index-based; no book references).
+pub mod fa;
 pub mod gnfa;
 pub mod ids;
 pub mod nfa;

@@ -1,0 +1,15 @@
+// The standard prelude (01-LANGUAGE.md §4): ordinary Delta code, loaded before every program.
+model dfa   { input one-way; deterministic; total; accept by final }
+model nfa   { input one-way; epsilon; accept by final }
+model gnfa  { input one-way; labels regex; special-form; accept by final }
+model pda   { input one-way; epsilon; storage stack; accept by final }
+model dpda  extends pda { deterministic }
+model tm    { input on-tape; storage tape; deterministic; accept by halting; missing reject }
+model ntm   extends tm { not deterministic }
+model lba   extends tm { bounded }                        // head stays within the input
+model mtm(k) { input on-tape; storage tapes(k); deterministic; accept by halting; missing reject }
+model twdfa { input two-way; deterministic; total; accept by final }
+model mealy { input one-way; deterministic; output per-transition }
+model moore { input one-way; deterministic; output per-state }
+model fst   { input one-way; epsilon; output per-transition }
+model ctr(k) { input one-way; storage counters(k); accept by final }

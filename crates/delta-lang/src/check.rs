@@ -6,6 +6,7 @@
 use crate::ast::*;
 use crate::diag::{Diagnostic, Span};
 use crate::interp::BUILTINS;
+use crate::lang::{self, Decidability, LangOp, Question};
 use crate::value::Class;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
@@ -92,7 +93,40 @@ impl Ty {
 struct VarInfo {
     mutable: bool,
     ty: Ty,
+    /// The language class, when it is known without running.
+    class: Option<Class>,
 }
+
+/// The class of a prelude model's languages (for checking before running).
+fn prelude_class(model: &str) -> Option<Class> {
+    Some(match model {
+        "dfa" | "nfa" | "gnfa" | "twdfa" | "mealy" | "moore" | "fst" => Class::Regular,
+        "dpda" => Class::Dcf,
+        "pda" => Class::Cf,
+        "lba" => Class::Cs,
+        "tm" | "ntm" | "mtm" => Class::Recognizable,
+        _ => return None,
+    })
+}
+
+/// Library functions whose result is a finite automaton.
+const FA_RESULTS: [&str; 15] = [
+    "to_nfa",
+    "determinize",
+    "minimize",
+    "complement",
+    "complete",
+    "trim",
+    "reverse",
+    "remove_epsilon",
+    "union",
+    "intersect",
+    "difference",
+    "concat",
+    "star",
+    "product",
+    "to_gnfa",
+];
 
 /// What a model name converts with (Q-06: conversions are verbs).
 fn conversion_verb(model: &str) -> &'static str {
@@ -111,6 +145,10 @@ pub struct Checker<'a> {
     scopes: Vec<HashMap<String, VarInfo>>,
     fns: HashMap<String, Rc<FnDef>>,
     models: HashSet<String>,
+    /// Models with parameters (`mtm(k)`): calling them instantiates them.
+    param_models: HashSet<String>,
+    /// Inside the subject of `check … up to n`, questions are bounded and always allowed.
+    bounded: bool,
     in_lang: u32,
     pub diags: Vec<Diagnostic>,
 }
@@ -122,6 +160,8 @@ pub fn check(prog: &Program, src: &str, models: &[String]) -> Vec<Diagnostic> {
         scopes: Vec::new(),
         fns: HashMap::new(),
         models: models.iter().cloned().collect(),
+        param_models: ["mtm", "ctr"].iter().map(|s| s.to_string()).collect(),
+        bounded: false,
         in_lang: 0,
         diags: Vec::new(),
     };
@@ -136,6 +176,7 @@ pub fn check(prog: &Program, src: &str, models: &[String]) -> Vec<Diagnostic> {
                         VarInfo {
                             mutable: false,
                             ty: Ty::Fn,
+                            class: None,
                         },
                     );
                     c.fns.insert(n.clone(), def.clone());
@@ -143,6 +184,9 @@ pub fn check(prog: &Program, src: &str, models: &[String]) -> Vec<Diagnostic> {
             }
             StmtKind::Model(m) => {
                 c.models.insert(m.name.clone());
+                if !m.params.is_empty() {
+                    c.param_models.insert(m.name.clone());
+                }
             }
             _ => {}
         }
@@ -171,7 +215,11 @@ impl Checker<'_> {
     }
 
     fn bind(&mut self, name: &str, mutable: bool, ty: Ty) {
-        let info = VarInfo { mutable, ty };
+        self.bind_class(name, mutable, ty, None);
+    }
+
+    fn bind_class(&mut self, name: &str, mutable: bool, ty: Ty, class: Option<Class>) {
+        let info = VarInfo { mutable, ty, class };
         match self.scopes.last_mut() {
             Some(s) => {
                 s.insert(name.to_string(), info);
@@ -208,7 +256,11 @@ impl Checker<'_> {
             StmtKind::Let(p, e) => {
                 self.expr(e);
                 let ty = self.infer(e);
-                self.bind_pattern(p, ty);
+                let class = self.class_of(e);
+                match p {
+                    Pattern::Var(n, _) => self.bind_class(n, false, ty, class),
+                    _ => self.bind_pattern(p, ty),
+                }
             }
             StmtKind::Var(n, e) => {
                 self.expr(e);
@@ -258,7 +310,9 @@ impl Checker<'_> {
             StmtKind::Return(None) => {}
             StmtKind::Print(es) => es.iter().for_each(|e| self.expr(e)),
             StmtKind::Check(e, k) => {
+                self.bounded = matches!(k, CheckKind::Holds(Some(_)));
                 self.expr(e);
+                self.bounded = false;
                 match k {
                     CheckKind::Accepts(ws) | CheckKind::Rejects(ws) => {
                         ws.iter().for_each(|w| self.expr(w))
@@ -289,11 +343,17 @@ impl Checker<'_> {
                     self.expr(e);
                 }
                 self.in_lang -= 1;
-                self.bind(name, false, Ty::Lang);
+                let class = match claim {
+                    Some((c, _, _)) => Class::from_name(c),
+                    None => self.class_of(value),
+                };
+                self.bind_class(name, false, Ty::Lang, class);
             }
             StmtKind::MachineDecl(name, _, e) => {
                 self.expr(e);
-                self.bind(name, false, Ty::Machine);
+                let ty = self.infer(e);
+                let class = self.class_of(e);
+                self.bind_class(name, false, ty, class);
             }
             StmtKind::Budget(pairs) => pairs.iter().for_each(|(_, _, e)| self.expr(e)),
             StmtKind::Block(b) => self.block(b),
@@ -349,7 +409,10 @@ impl Checker<'_> {
             }
             ExprKind::Call(callee, args) => {
                 if let ExprKind::Var(n) = &callee.kind {
-                    if self.models.contains(n) && self.lookup(n).is_none() {
+                    if self.models.contains(n)
+                        && self.lookup(n).is_none()
+                        && !self.param_models.contains(n)
+                    {
                         let verb = conversion_verb(n);
                         self.diags.push(
                             Diagnostic::error(
@@ -365,6 +428,17 @@ impl Checker<'_> {
                     }
                 } else {
                     self.expr(callee);
+                    if let ExprKind::Member(x, m) = &callee.kind {
+                        let q = match m.as_str() {
+                            "is_empty" => Some(Question::IsEmpty),
+                            "is_finite" => Some(Question::IsFinite),
+                            "is_universal" => Some(Question::IsUniversal),
+                            _ => None,
+                        };
+                        if let (Some(q), Some(c)) = (q, self.class_of(x)) {
+                            self.question(q, c, None, e.span);
+                        }
+                    }
                 }
                 args.iter().for_each(|a| self.expr(&a.value));
             }
@@ -390,7 +464,27 @@ impl Checker<'_> {
                 for q in quals {
                     match q {
                         Qual::Gen(p, src) => {
-                            self.expr(src);
+                            // `{ w ∈ {a,b}* | … }`: bare names in the alphabet are symbols.
+                            let set_items = match &src.kind {
+                                ExprKind::Star(inner) | ExprKind::Plus(inner) => {
+                                    match &inner.kind {
+                                        ExprKind::Set(items) => Some(items),
+                                        _ => None,
+                                    }
+                                }
+                                _ => None,
+                            };
+                            match set_items {
+                                Some(items) => {
+                                    for i in items {
+                                        match &i.kind {
+                                            ExprKind::Var(n) if !self.known(n) => {}
+                                            _ => self.expr(i),
+                                        }
+                                    }
+                                }
+                                None => self.expr(src),
+                            }
                             self.bind_pattern(p, Ty::Unknown);
                         }
                         Qual::Cond(c) => self.expr(c),
@@ -438,6 +532,20 @@ impl Checker<'_> {
                 }
             }
             ExprKind::Member(x, _) => self.expr(x),
+            ExprKind::Binary(op @ (BinOp::Equiv | BinOp::Subset), a, b) => {
+                self.expr(a);
+                self.expr(b);
+                if !self.bounded
+                    && let (Some(ca), Some(cb)) = (self.class_of(a), self.class_of(b))
+                {
+                    let q = if *op == BinOp::Equiv {
+                        Question::Equiv
+                    } else {
+                        Question::Subset
+                    };
+                    self.question(q, ca, Some(cb), e.span);
+                }
+            }
             _ => {
                 // Every other expression: check its direct sub-expressions.
                 for_each_child(e, &mut |c| self.expr(c));
@@ -535,6 +643,82 @@ impl Checker<'_> {
                     ),
                 ));
             }
+        }
+    }
+
+    /// Reports a question that is undecidable (E701) or not implemented (E702) for its class.
+    fn question(&mut self, q: Question, a: Class, b: Option<Class>, span: Span) {
+        let joined = b.map(|b| a.max(b)).unwrap_or(a);
+        match lang::decidable(q, joined) {
+            Decidability::Yes => {}
+            Decidability::No => self
+                .diags
+                .push(crate::hooks::undecidable(q, a, b, span, None)),
+            Decidability::NotImplemented => self
+                .diags
+                .push(crate::hooks::not_implemented(q, joined, span)),
+        }
+    }
+
+    /// The language class of an expression, when it is known without running.
+    fn class_of(&self, e: &Expr) -> Option<Class> {
+        match &e.kind {
+            ExprKind::Var(n) => self.lookup(n).and_then(|v| v.class),
+            ExprKind::Machine(m) => prelude_class(&m.model),
+            ExprKind::Canonical(m) => prelude_class(&m.model),
+            ExprKind::Explore(x) => match &x.model {
+                None => Some(Class::Regular),
+                Some((m, _)) => prelude_class(m),
+            },
+            ExprKind::Regex { .. } => Some(Class::Regular),
+            ExprKind::Cfg { .. } => Some(Class::Cf),
+            ExprKind::Builder {
+                quals, list: false, ..
+            } if matches!(quals.first(), Some(Qual::Gen(_, s)) if matches!(s.kind, ExprKind::Star(_) | ExprKind::Plus(_))) => {
+                Some(Class::Decidable)
+            }
+            ExprKind::Set(items)
+                if !items.is_empty()
+                    && items
+                        .iter()
+                        .all(|i| matches!(i.kind, ExprKind::Word(_) | ExprKind::Eps)) =>
+            {
+                Some(Class::Finite)
+            }
+            ExprKind::Binary(op, a, b) => {
+                let op = match op {
+                    BinOp::Union => LangOp::Union,
+                    BinOp::Inter => LangOp::Inter,
+                    BinOp::Diff => LangOp::Diff,
+                    BinOp::Concat => LangOp::Concat,
+                    _ => return None,
+                };
+                Some(lang::op_class(
+                    op,
+                    self.class_of(a)?,
+                    Some(self.class_of(b)?),
+                ))
+            }
+            ExprKind::Unary(UnOp::Compl, x) => {
+                Some(lang::op_class(LangOp::Compl, self.class_of(x)?, None))
+            }
+            ExprKind::Star(x) => Some(lang::op_class(LangOp::Star, self.class_of(x)?, None)),
+            ExprKind::Plus(x) => Some(lang::op_class(LangOp::Plus, self.class_of(x)?, None)),
+            ExprKind::Member(x, m) if m == "lang" => self.class_of(x),
+            ExprKind::Call(f, args) => {
+                match &f.kind {
+                    ExprKind::Var(n)
+                        if self.lookup(n).is_none() && FA_RESULTS.contains(&n.as_str()) =>
+                    {
+                        Some(Class::Regular)
+                    }
+                    ExprKind::Var(n) if n == "rev" && self.lookup(n).is_none() => Some(
+                        lang::op_class(LangOp::Rev, self.class_of(&args.first()?.value)?, None),
+                    ),
+                    _ => None,
+                }
+            }
+            _ => None,
         }
     }
 
