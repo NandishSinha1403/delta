@@ -72,7 +72,14 @@ pub fn execute<'s>(src: &'s str, opts: &RunOptions) -> Execution<'s> {
     }
     diags.sort_by_key(|d| d.span.from);
     let ok = !stopped && !diags.iter().any(Diagnostic::is_error);
-    Execution { program, diags, interp, outputs, ok, steps }
+    Execution {
+        program,
+        diags,
+        interp,
+        outputs,
+        ok,
+        steps,
+    }
 }
 
 /// Parses, checks and runs `src`. Never panics: every problem is a diagnostic.

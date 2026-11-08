@@ -453,7 +453,11 @@ impl P<'_> {
             let (kw, stack) = match kw.strip_prefix("pop").or_else(|| kw.strip_prefix("push")) {
                 Some(n) if !n.is_empty() && n.chars().all(|c| c.is_ascii_digit()) => {
                     let i = n.parse::<usize>().unwrap_or(1).max(1) - 1;
-                    (kw.trim_end_matches(|c: char| c.is_ascii_digit()).to_string(), i)
+                    (
+                        kw.trim_end_matches(|c: char| c.is_ascii_digit())
+                            .to_string(),
+                        i,
+                    )
                 }
                 _ => (kw, 0),
             };

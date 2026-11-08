@@ -11,7 +11,7 @@ All products share **one engine** (WASM), **one Pad codebase** (React) and **one
 | `/` | **Front page** (§2) |
 | `/pad` | The Pad (§3) |
 | `/pad#code=…` | Shared program (compressed in the URL hash, no server) |
-| `/pad/embed#…` | Embeddable Pad (§5) |
+| `/pad#code=…&embed=1` | Embeddable Pad (§5) |
 | `/docs` | Docs home → Tour, Library, Cookbook, Notation, Models, Languages and classes, Errors, AI |
 | `/docs/errors/E701` | One page per error code |
 | `/examples` | Gallery by topic; each opens in the Pad |
@@ -128,11 +128,11 @@ Goal: within ten seconds a visitor understands what Delta is, and within thirty 
 ## 5. Embeds
 
 ```html
-<iframe src="https://delta.nandish.dev/pad/embed#code=…&panel=diagram&run=1"
+<iframe src="https://delta.nandish.dev/pad/#code=…&embed=1&panel=diagram&run=1"
         width="100%" height="420" loading="lazy" title="Delta example"></iframe>
 ```
 
-Options: `panel`, `run` (auto-run once), `readonly`, `theme`, `height`. A "Copy embed" button lives in the Pad's Share menu. The front page and docs use the same embed internally.
+Options (in the hash): `embed=1`, `panel` (diagram, tests, lang, console), `run`, `readonly`. The `code` value is the program, deflated and base64url-encoded. A "Copy embed" button lives in the Pad's Share menu. The front page and docs use the same embed internally.
 
 ---
 

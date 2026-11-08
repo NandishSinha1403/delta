@@ -16,10 +16,17 @@ export function App() {
   // `#code=…` opens a shared program; `&embed=1` shows the embeddable Pad (03-PRODUCTS.md §5).
   const [hash] = useState(() => parseHash(window.location.hash));
   useEffect(() => {
-    if (!hash.code) return;
-    decodeSource(hash.code)
-      .then((source) => useUiStore.getState().openShared(source))
-      .catch(() => {});
+    const open = (code: string | null) => {
+      if (!code) return;
+      decodeSource(code)
+        .then((source) => useUiStore.getState().openShared(source))
+        .catch(() => {});
+    };
+    open(hash.code);
+    // A share link pasted into an open Pad changes only the hash.
+    const onHash = () => open(parseHash(window.location.hash).code);
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
   }, [hash.code]);
   const source = useUiStore((s) => s.source);
   const activeId = useUiStore((s) => s.activeId);

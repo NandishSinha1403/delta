@@ -24,7 +24,8 @@ pub fn evaluate(src: &str) -> Result<String, JsError> {
 /// Runs machine `name` of the program on `input`, step by step; returns a `RunResult` as JSON.
 #[wasm_bindgen]
 pub fn run(src: &str, name: &str, input: &str) -> Result<String, JsError> {
-    serde_json::to_string(&delta_lang::pad::run(src, name, input)).map_err(|e| JsError::new(&e.to_string()))
+    serde_json::to_string(&delta_lang::pad::run(src, name, input))
+        .map_err(|e| JsError::new(&e.to_string()))
 }
 
 /// The output document of 02-ENGINE.md §7 (what `delta run --json` prints).

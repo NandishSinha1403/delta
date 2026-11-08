@@ -4,13 +4,13 @@
 
 use crate::ast::*;
 use crate::diag::{Diagnostic, LineMap};
-use crate::hooks::{word_text, TraceVal};
+use crate::hooks::{TraceVal, word_text};
 use crate::interp::Interp;
 use crate::lang::LangVal;
 use crate::machine::Machine;
 use crate::rx::RegexVal;
-use crate::value::{sym_text, Sym, Value};
-use serde_json::{json, Value as Json};
+use crate::value::{Sym, Value, sym_text};
+use serde_json::{Value as Json, json};
 use std::collections::BTreeMap;
 use std::rc::Rc;
 
@@ -35,7 +35,10 @@ pub fn machine_view(m: &Machine) -> Json {
     // Parallel edges become one arrow with the labels joined.
     let mut merged: BTreeMap<(usize, usize), Vec<String>> = BTreeMap::new();
     for e in &m.edges {
-        merged.entry((e.from, e.to)).or_default().push(m.label_text(&e.label));
+        merged
+            .entry((e.from, e.to))
+            .or_default()
+            .push(m.label_text(&e.label));
     }
     let edges: Vec<Json> = merged
         .iter()
@@ -103,7 +106,9 @@ pub fn machine_view(m: &Machine) -> Json {
 }
 
 fn trace_view(m: &Machine, cite: Option<String>) -> Json {
-    let Some(p) = &m.provenance else { return Json::Null };
+    let Some(p) = &m.provenance else {
+        return Json::Null;
+    };
     let title = match cite {
         Some(c) => format!("{} · {c}", p.algorithm),
         None => p.algorithm.clone(),
@@ -125,7 +130,9 @@ fn lang_info(it: &mut Interp, v: &Value) -> Json {
     if !Interp::is_langlike(v) {
         return Json::Null;
     }
-    let Ok(l) = it.to_lang(v, crate::diag::Span::default()) else { return Json::Null };
+    let Ok(l) = it.to_lang(v, crate::diag::Span::default()) else {
+        return Json::Null;
+    };
     let syms: Vec<Sym> = l.sigma.iter().cloned().collect();
     let (mut ins, mut outs) = (Vec::new(), Vec::new());
     let mut layer: Vec<Vec<Sym>> = vec![Vec::new()];
@@ -142,16 +149,18 @@ fn lang_info(it: &mut Interp, v: &Value) -> Json {
         }
         layer = layer
             .iter()
-            .flat_map(|w| syms.iter().map(move |s| {
-                let mut x = w.clone();
-                x.push(s.clone());
-                x
-            }))
+            .flat_map(|w| {
+                syms.iter().map(move |s| {
+                    let mut x = w.clone();
+                    x.push(s.clone());
+                    x
+                })
+            })
             .collect();
     }
     it.steps = saved.0;
     it.budget = saved.1;
-    use crate::lang::{decidable, Decidability, Question};
+    use crate::lang::{Decidability, Question, decidable};
     let questions: Vec<Json> = [
         ("w ∈ L", None),
         ("L.is_empty()", Some(Question::IsEmpty)),
@@ -179,7 +188,10 @@ fn lang_info(it: &mut Interp, v: &Value) -> Json {
 /// A named value of the program as a Pad object, if it is something to show.
 fn object_view(it: &Interp, name: &str, v: &Value, from: usize, to: usize) -> Option<Json> {
     if let Some(m) = v.downcast::<Machine>() {
-        let cite = m.provenance.as_ref().and_then(|p| it.citation(&p.algorithm));
+        let cite = m
+            .provenance
+            .as_ref()
+            .and_then(|p| it.citation(&p.algorithm));
         let derived = m.provenance.as_ref().map(|p| match &cite {
             Some(c) => format!("{} · {c}", p.algorithm),
             None => p.algorithm.clone(),
@@ -248,7 +260,9 @@ fn literal_names(e: &Expr) -> (Vec<String>, Vec<String>) {
     fn walk(items: &[MItem], states: &mut Vec<String>, syms: &mut Vec<String>) {
         for it in items {
             match it {
-                MItem::Edge { from, to, label, .. } => {
+                MItem::Edge {
+                    from, to, label, ..
+                } => {
                     for s in [from, to] {
                         if let MState::Name(n, _) = s
                             && !states.contains(n)
@@ -293,7 +307,9 @@ pub fn document(src: &str) -> Json {
     let mut objects = Vec::new();
     let mut outline = Vec::new();
     for s in &ex.program.stmts {
-        let Some((name, kind)) = declared(s) else { continue };
+        let Some((name, kind)) = declared(s) else {
+            continue;
+        };
         let (from, to) = (u16(src, s.span.from), u16(src, s.span.to));
         let (states, symbols) = match &s.kind {
             StmtKind::MachineDecl(_, _, e) | StmtKind::Let(_, e) => literal_names(e),
@@ -340,12 +356,19 @@ pub fn document(src: &str) -> Json {
                                 "from": u16(src, w.span.from), "to": u16(src, w.span.to) })
                     })
                     .collect();
-                let object = src.get(subject.span.from..subject.span.to).unwrap_or("").to_string();
+                let object = src
+                    .get(subject.span.from..subject.span.to)
+                    .unwrap_or("")
+                    .to_string();
                 results.push(json!({ "kind": "check", "object": object, "from": from, "to": to, "cases": cases, "run": Json::Null }));
             }
             StmtKind::Run(m, w) => {
                 let object = src.get(m.span.from..m.span.to).unwrap_or("").to_string();
-                let input = src.get(w.span.from..w.span.to).unwrap_or("").trim_matches('"').to_string();
+                let input = src
+                    .get(w.span.from..w.span.to)
+                    .unwrap_or("")
+                    .trim_matches('"')
+                    .to_string();
                 let run = run_view_named(&ex.interp, &object, &input);
                 results.push(json!({ "kind": "run", "object": object, "from": from, "to": to, "cases": [], "run": run }));
             }
@@ -368,7 +391,9 @@ pub fn document(src: &str) -> Json {
 
 fn run_view_named(it: &Option<Interp>, name: &str, input: &str) -> Json {
     let Some(it) = it else { return Json::Null };
-    let Some(m) = it.globals.get(name).and_then(|b| b.value.rc::<Machine>()) else { return Json::Null };
+    let Some(m) = it.globals.get(name).and_then(|b| b.value.rc::<Machine>()) else {
+        return Json::Null;
+    };
     let w = parse_input(input);
     run_view(it, name, &m, &w).unwrap_or(Json::Null)
 }
@@ -397,7 +422,11 @@ fn run_view(it: &Interp, name: &str, m: &Rc<Machine>, w: &[Sym]) -> Option<Json>
     let names: Vec<String> = m.states.iter().map(Machine::display_state).collect();
     let set_text = |s: &[usize]| -> String {
         let n: Vec<String> = s.iter().filter_map(|q| names.get(*q).cloned()).collect();
-        if m.eff.deterministic && n.len() == 1 { n.join("") } else { format!("{{{}}}", n.join(", ")) }
+        if m.eff.deterministic && n.len() == 1 {
+            n.join("")
+        } else {
+            format!("{{{}}}", n.join(", "))
+        }
     };
     let mut steps = Vec::new();
     let accepted;
@@ -419,8 +448,10 @@ fn run_view(it: &Interp, name: &str, m: &Rc<Machine>, w: &[Sym]) -> Option<Json>
         };
         let mut cur = vec![m.start];
         close(&mut cur);
-        steps.push(json!({ "pos": 0, "active": cur, "message": format!("Start in {}.", set_text(&cur)),
-                           "explain": format!("The machine starts in {}.", set_text(&cur)) }));
+        steps.push(
+            json!({ "pos": 0, "active": cur, "message": format!("Start in {}.", set_text(&cur)),
+                           "explain": format!("The machine starts in {}.", set_text(&cur)) }),
+        );
         for (i, a) in w.iter().enumerate() {
             let mut next = Vec::new();
             for &q in &cur {
@@ -489,5 +520,10 @@ pub fn run(src: &str, name: &str, input: &str) -> Json {
 
 /// Keeps `word_text` and `TraceVal` reachable for the trace panel's future use.
 pub fn trace_text(t: &TraceVal) -> String {
-    format!("{} on {}: {}", t.machine, word_text(&t.input), t.verdict.name())
+    format!(
+        "{} on {}: {}",
+        t.machine,
+        word_text(&t.input),
+        t.verdict.name()
+    )
 }
