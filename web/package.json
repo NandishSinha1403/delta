@@ -14,7 +14,8 @@
     "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:site": "playwright test -c playwright.site.config.ts"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.4",

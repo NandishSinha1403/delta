@@ -1,0 +1,185 @@
+---
+// The front page (03-PRODUCTS.md §2): within ten seconds a visitor knows what Delta is, and
+// within thirty they've edited and run something in the live hero.
+import { padCode, padUrl } from '../lib/pad-link.mjs';
+
+const hero = `dfa EndsAB {
+  start q0
+  accept q2
+  q0 -a-> q1;   q0 -b-> q0
+  q1 -a-> q1;   q1 -b-> q2
+  q2 -a-> q1;   q2 -b-> q0
+}
+lang L = { w ∈ {a,b}* | w ends with "ab" }
+check EndsAB ≡ L up to 10
+run EndsAB on "abab"
+`;
+
+const features = [
+  {
+    title: 'Write it like math',
+    text: 'Languages are set-builder expressions, machines are drawn as arrows. Unicode or ASCII: ∪ is union, ∈ is in.',
+    code: `lang Pal = { w ∈ {a,b}* | w == rev(w) }\nassert "abba" ∈ Pal and "ab" ∉ Pal\ncheck Pal ≡ { w ∈ {a,b}* | rev(w) == w } up to 6`,
+  },
+  {
+    title: 'Any machine',
+    text: 'Models are built from storage and acceptance: DFAs, pushdown automata, Turing machines, transducers, or your own.',
+    code: `model qa { input one-way; epsilon; storage queue; accept by final }\nqa Q {\n  start s\n  accept f\n  s -read a; enqueue X-> s\n  s -enqueue Z-> t\n  t -read b; dequeue X-> t\n  t -dequeue Z-> f\n}\ncheck Q accepts "", "ab", "aabb"`,
+  },
+  {
+    title: 'Ask only what’s decidable',
+    text: 'Every language knows its class. An undecidable question is an error before the program runs, with a bounded check offered instead.',
+    code: `lang C = cfg { S -> 0 S 1 | ε }\nlang P = { w ∈ {0,1}* | count(w,'0') == count(w,'1') }\n// check C ≡ P is error E701: undecidable for these classes\ncheck C ⊆ P up to 8`,
+  },
+  {
+    title: 'Constructions as code',
+    text: 'Write the subset construction the way it’s defined, then step through it like any built-in.',
+    code: `fn subsets(N) = explore {\n  alphabet N.alphabet\n  start  N.eclose({ N.start })\n  step   R on a -> N.eclose(⋃ { N.δ(q, a) | q ∈ R })\n  accept R if R ∩ N.accept ≠ ∅\n}\nlet N = to_nfa(re"(a ∪ b)* a b")\ncheck subsets(N) ≡ determinize(N)`,
+  },
+];
+
+const recipes = [
+  ['DFA: binary numbers divisible by n', 'divisible-by-n'],
+  ['Regex to NFA, three ways', 'regex-to-nfa'],
+  ['PDA: aⁿbⁿ', 'pda-anbn'],
+  ['Turing machine: 0ⁿ1ⁿ', 'tm-anbn'],
+  ['Mealy machine: running parity', 'mealy-parity'],
+  ['Minimize a DFA', 'minimize'],
+];
+const embed = `/pad/#code=${padCode(hero)}&embed=1&panel=diagram&run=1`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Delta — the language of computation</title>
+    <meta name="description" content="Delta is a programming language for the theory of computation: write machines, languages and constructions as code, and see them run." />
+    <meta name="theme-color" content="#111215" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/pad/manifest.webmanifest" />
+    <style>
+      :root {
+        --bg: #111215;
+        --surface: #181a1f;
+        --border: #2a2d35;
+        --text: #e8eaee;
+        --muted: #9aa1ad;
+        --accent: #5fb7c9;
+        --on-accent: #0b1215;
+        color-scheme: dark;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #fafaf9;
+          --surface: #ffffff;
+          --border: #e2e4e8;
+          --text: #16181d;
+          --muted: #5b6270;
+          --accent: #1d6f80;
+          --on-accent: #ffffff;
+          color-scheme: light;
+        }
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.55 'IBM Plex Sans', system-ui, sans-serif; }
+      a { color: var(--accent); }
+      .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+      header.nav { display: flex; align-items: center; gap: 20px; height: 60px; }
+      .logo { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 20px; color: var(--text); text-decoration: none; }
+      .logo img { width: 30px; height: 30px; }
+      .nav a.link { color: var(--muted); text-decoration: none; font-size: 15px; }
+      .nav a.link:hover { color: var(--text); }
+      .spacer { flex: 1; }
+      .btn { display: inline-block; padding: 10px 18px; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 15px; }
+      .btn.primary { background: var(--accent); color: var(--on-accent); }
+      .btn.ghost { border: 1px solid var(--border); color: var(--text); }
+      .hero { padding: 48px 0 24px; }
+      h1 { font-size: clamp(34px, 6vw, 56px); line-height: 1.08; margin: 0 0 16px; letter-spacing: -0.02em; }
+      .lead { font-size: 19px; color: var(--muted); max-width: 640px; margin: 0 0 24px; }
+      .cta { display: flex; gap: 12px; flex-wrap: wrap; }
+      .live { margin-top: 32px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--surface); }
+      .live iframe { display: block; width: 100%; height: 440px; border: 0; }
+      .live p { margin: 0; padding: 8px 14px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--border); }
+      section.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; padding: 40px 0; }
+      .card { border: 1px solid var(--border); border-radius: 12px; padding: 20px; background: var(--surface); min-width: 0; }
+      .card h2 { margin: 0 0 6px; font-size: 20px; }
+      .card p { margin: 0 0 12px; color: var(--muted); }
+      pre { margin: 0 0 10px; padding: 12px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); overflow-x: auto; font: 13px/1.5 ui-monospace, 'JetBrains Mono', monospace; }
+      h2.section { font-size: 26px; margin: 40px 0 16px; }
+      .recipes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+      .recipes a { display: block; padding: 14px; border: 1px solid var(--border); border-radius: 10px; color: var(--text); text-decoration: none; background: var(--surface); }
+      .recipes a:hover { border-color: var(--accent); }
+      .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+      footer { margin-top: 56px; padding: 24px 0 40px; border-top: 1px solid var(--border); color: var(--muted); font-size: 14px; display: flex; gap: 16px; flex-wrap: wrap; }
+      footer a { color: var(--muted); }
+      @media (max-width: 640px) {
+        .nav a.link.hide-sm { display: none; }
+        .live iframe { height: 520px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="nav">
+        <a class="logo" href="/"><img src="/favicon.svg" alt="" width="30" height="30" />Delta</a>
+        <a class="link" href="/docs/">Docs</a>
+        <a class="link hide-sm" href="/docs/cookbook/">Examples</a>
+        <a class="link hide-sm" href="https://github.com/NandishSinha1403/delta">GitHub</a>
+        <span class="spacer"></span>
+        <a class="btn primary" href="/pad/">Open the Pad</a>
+      </header>
+
+      <main>
+        <section class="hero">
+          <h1>The language of computation.</h1>
+          <p class="lead">Write machines, languages and constructions as code. See them run. Delta is a small, safe language whose values are the objects of computation theory.</p>
+          <div class="cta">
+            <a class="btn primary" href="/pad/">Open the Pad</a>
+            <a class="btn ghost" href="/docs/tour/01-first-program/">Take the tour</a>
+          </div>
+          <div class="live">
+            <iframe title="A live Delta program: edit it and press Execute" src={embed} loading="lazy"></iframe>
+            <p>This is the real Pad, running in your browser. Edit the code; the diagram and tests update. <a href={padUrl(hero)}>Open it full size ↗</a></p>
+          </div>
+        </section>
+
+        <section class="features" aria-label="Features">
+          {features.map((f) => (
+            <article class="card">
+              <h2>{f.title}</h2>
+              <p>{f.text}</p>
+              <pre><code>{f.code}</code></pre>
+              <a href={padUrl(f.code)}>Open in the Pad ↗</a>
+            </article>
+          ))}
+        </section>
+
+        <h2 class="section">Learn by doing</h2>
+        <div class="recipes">
+          {recipes.map(([title, slug]) => <a href={`/docs/cookbook/${slug}/`}>{title}</a>)}
+        </div>
+
+        <div class="two">
+          <section>
+            <h2 class="section">For teachers</h2>
+            <p>Embed a live example in your course page with one <code>&lt;iframe&gt;</code> (Share → Copy embed). <code>use strict</code> requires every field, as in an assignment, and explain profiles add textbook citations to constructions and errors.</p>
+          </section>
+          <section>
+            <h2 class="section">For AI tools</h2>
+            <p>Every run is JSON (<a href="/schema/output-v2.json">schema</a>), and <a href="/llms.txt">/llms.txt</a> is a complete guide to the language for assistants. Errors carry stable codes and quick fixes.</p>
+          </section>
+        </div>
+      </main>
+
+      <footer>
+        <span>A project by <a href="https://github.com/NandishSinha1403">Nandish Sinha</a></span>
+        <a href="https://github.com/NandishSinha1403/delta">GitHub</a>
+        <a href="/docs/">Docs</a>
+        <a href="https://github.com/NandishSinha1403/delta/blob/main/LICENSE">License (MIT)</a>
+        <span>v2.0 beta</span>
+      </footer>
+    </div>
+  </body>
+</html>

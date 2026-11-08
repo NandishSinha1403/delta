@@ -1,0 +1,19 @@
+/* The Pad's look: near-black, a steel accent, IBM Plex Sans for prose. */
+:root {
+  --sl-color-accent-low: #10303a;
+  --sl-color-accent: #5fb7c9;
+  --sl-color-accent-high: #c8eef5;
+  --sl-font: 'IBM Plex Sans', system-ui, sans-serif;
+}
+:root[data-theme='light'] {
+  --sl-color-accent-low: #d7f0f5;
+  --sl-color-accent: #1d6f80;
+  --sl-color-accent-high: #0e3943;
+}
+.open-pad {
+  margin-top: 0.25rem !important;
+  font-size: var(--sl-text-sm);
+}
+.open-pad a {
+  text-decoration: none;
+}

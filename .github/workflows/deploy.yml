@@ -14,17 +14,25 @@ jobs:
         with: { targets: wasm32-unknown-unknown }
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --workspace
-      - run: ./scripts/build-wasm.sh          # see below
       - uses: pnpm/action-setup@v4             # reads "packageManager" from web/package.json
         with: { package_json_file: web/package.json }
       - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: pnpm, cache-dependency-path: web/pnpm-lock.yaml }
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: |
+            web/pnpm-lock.yaml
+            site/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
         working-directory: web
-      - run: pnpm test && pnpm build
+      - run: pnpm install --frozen-lockfile
+        working-directory: site
+      - run: pnpm test
         working-directory: web
+      # The front page and docs at /, the Pad at /pad/ (03-PRODUCTS.md §1).
+      - run: ./scripts/build-site.sh
       - uses: actions/upload-pages-artifact@v3
-        with: { path: web/dist }
+        with: { path: site/dist }
   deploy:
     needs: build
     runs-on: ubuntu-latest

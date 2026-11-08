@@ -25,6 +25,14 @@ jobs:
             git diff -- web/src/engine/generated
             exit 1
           fi
+      - name: Generated docs are committed and up to date
+        run: |
+          cargo run -q -p delta-cli -- gen-docs site
+          if [ -n "$(git status --porcelain -- site)" ]; then
+            echo "::error::The generated docs are stale. Run 'cargo run -p delta-cli -- gen-docs site' and commit the result."
+            git status --short -- site
+            exit 1
+          fi
 
   web:
     runs-on: ubuntu-latest
@@ -38,9 +46,16 @@ jobs:
       - uses: pnpm/action-setup@v4
         with: { package_json_file: web/package.json }
       - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: pnpm, cache-dependency-path: web/pnpm-lock.yaml }
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: |
+            web/pnpm-lock.yaml
+            site/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
         working-directory: web
+      - run: pnpm install --frozen-lockfile
+        working-directory: site
       - run: pnpm lint
         working-directory: web
       - run: pnpm typecheck
@@ -52,6 +67,10 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
         working-directory: web
       - run: pnpm test:e2e
+        working-directory: web
+      - name: Build the site (front page, docs, Pad at /pad/) and test it
+        run: ./scripts/build-site.sh
+      - run: pnpm test:site
         working-directory: web
       - uses: actions/upload-artifact@v4
         if: failure()

@@ -1,0 +1,21 @@
+{
+  "name": "delta",
+  "scopeName": "source.delta",
+  "patterns": [
+    { "name": "comment.line.double-slash.delta", "match": "//.*$" },
+    { "name": "comment.block.delta", "begin": "/\\*", "end": "\\*/" },
+    { "name": "string.regexp.delta", "match": "re\"(\\\\.|[^\"\\\\])*\"" },
+    { "name": "string.quoted.double.delta", "match": "\"(\\\\.|[^\"\\\\])*\"" },
+    { "name": "string.quoted.single.delta", "match": "'(<[^>']*>|[^'])'" },
+    { "name": "constant.other.symbol.delta", "match": "(?<![\\w)\\]])-\\[[^\\n]*?\\]->|(?<=\\s)-[^\\s\\[>][^\\n]*?->" },
+    { "name": "constant.other.atom.delta", "match": "(?<![\\w)\\]]):[A-Za-z_][\\w']*" },
+    { "name": "keyword.control.delta", "match": "\\b(let|var|fn|if|else|for|while|return|print|show|assert|check|run|model|machine|lang|use|budget|explore|fixpoint|cfg|and|or|not|in|accepts|rejects|up|to|on|from|as|by|over|any|step|edges|extends|table)\\b" },
+    { "name": "storage.type.delta", "match": "\\b(dfa|nfa|gnfa|pda|dpda|tm|ntm|lba|mtm|twdfa|mealy|moore|fst|ctr)\\b" },
+    { "name": "variable.other.property.delta", "match": "\\b(states|alphabet|start|accept|reject|stack|tape|output|final|blank)\\b" },
+    { "name": "support.type.delta", "match": "\\b(Finite|Regular|DCF|CF|CS|Decidable|Recognizable|Any)\\b" },
+    { "name": "constant.language.delta", "match": "\\b(true|false|none)\\b|[εε∅⊔]" },
+    { "name": "constant.numeric.delta", "match": "\\b\\d[\\d_]*\\b" },
+    { "name": "entity.name.function.delta", "match": "\\b[A-Za-z_][\\w']*(?=\\()" },
+    { "name": "keyword.operator.delta", "match": "[∪∩∖∁∈∉⊆≡≠≤≥⋃→⁺·∘]" }
+  ]
+}

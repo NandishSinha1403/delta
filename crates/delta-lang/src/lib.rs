@@ -6,6 +6,7 @@ pub mod build;
 pub mod builtins;
 pub mod check;
 pub mod diag;
+pub mod docs;
 pub mod explain;
 pub mod grammar;
 pub mod hooks;
