@@ -48,6 +48,32 @@ loops / unknown), Q-75 (Finite and Any columns, `F ∩ L` / `F ∖ L` rules), Q-
 Q-09–Q-15, Q-17–Q-25, Q-27, Q-28, Q-39 (new dependencies: indexmap, im, schemars), Q-40, Q-41,
 Q-43, Q-45–Q-48, Q-93.
 
+**Made 2026-11-08/09 (deploy, SEO, 5b, 5c), by the owner unless marked (C) = Claude's call:**
+- Hosting: Cloudflare Pages project `delta`, direct upload (no Git integration), production branch
+  `main`; `delta.pages.dev` was taken, so the URL is `delta-17m.pages.dev`. Deploy from the Mac
+  until GitHub Actions is unlocked; `deploy.yml` (wrangler-action@v3, pinned wrangler 4.42.0 (C))
+  replaces GitHub Pages on PR #6, which is not merged. Never touch `main` without the owner.
+- Domain: `delta.nandish.dev` stays on name.com DNS; one CNAME to `delta-17m.pages.dev`.
+- Pad preview budget (C): 1,000 steps per sample word, never above the program's budget.
+- SEO: tool pages launch now only for what the engine supports (8 of 13); the rest with Phase 6
+  (C). Pages are Starlight content (build-time HTML, tested by `tests/docs.rs`); one route
+  middleware builds JSON-LD from each page's visible FAQ (C). Header nav: Docs, Tools, Learn,
+  Cookbook, GitHub; Tour and Practice in the footer (C). Practice problems are original, in GATE
+  style, never copied from past papers (C).
+- OG images: rendered by Delta's own renderer (5b); interim card from the hero image until then.
+- 5b dependencies approved: rustyline 19, resvg 0.45, svg2pdf 0.13, icy_sixel 0.7, cargo-dist
+  (tool). Not added: viuer, layout-rs, clap (own code instead). Font: Commit Mono (OFL).
+- 5b binary name: `deltac` (avoids git-delta's `delta`). The renderer is the planned
+  `delta-render` crate (C). `save` is an output the engine emits; the CLI writes files only
+  inside the cwd and the Pad downloads (C).
+- 5c manual: in this repo under `manual/`, separate Starlight site and Pages project, Cloudflare
+  Access on its pages.dev hosts only (email PIN, owner only, 30-day session), never a custom
+  domain, noindex; no tokens, keys or account IDs in it. Every phase's done-definition then
+  includes its manual chapters.
+
+**Open:** Pad PNG/PDF for `save` (owner wants to clarify), the MANUAL.md template, the Web
+Analytics token.
+
 ## Key findings of the audit
 
 1. **v1 has no minimization at all** (no Hopcroft, Moore, Brzozowski or table method), although
