@@ -325,8 +325,9 @@ fn tokenize(text: &str) -> Result<Vec<T>, String> {
     Ok(out)
 }
 
-const KEYWORDS: [&str; 12] = [
+const KEYWORDS: [&str; 16] = [
     "read", "pop", "push", "write", "move", "emit", "inc", "dec", "if", "enqueue", "dequeue", "on",
+    "pop2", "push2", "pop3", "push3",
 ];
 
 struct P<'a> {
@@ -448,6 +449,14 @@ impl P<'_> {
                     "expected an operation such as read, pop, push, write or move".to_string(),
                 );
             };
+            // `pop2`, `push2`: the second stack (stacks are numbered from 1).
+            let (kw, stack) = match kw.strip_prefix("pop").or_else(|| kw.strip_prefix("push")) {
+                Some(n) if !n.is_empty() && n.chars().all(|c| c.is_ascii_digit()) => {
+                    let i = n.parse::<usize>().unwrap_or(1).max(1) - 1;
+                    (kw.trim_end_matches(|c: char| c.is_ascii_digit()).to_string(), i)
+                }
+                _ => (kw, 0),
+            };
             match kw.as_str() {
                 "on" => {
                     let n = match self.bump() {
@@ -467,8 +476,8 @@ impl P<'_> {
                     let s = self.sym()?;
                     ops.push(LOp::Read(tape, s));
                 }
-                "pop" => ops.push(LOp::Pop(0, self.sym()?)),
-                "push" => ops.push(LOp::Push(0, self.word()?)),
+                "pop" => ops.push(LOp::Pop(stack, self.sym()?)),
+                "push" => ops.push(LOp::Push(stack, self.word()?)),
                 "write" => ops.push(LOp::Write(tape, self.sym()?)),
                 "move" => {
                     let d = self.dir()?;

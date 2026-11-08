@@ -1,0 +1,22 @@
+// Ordinary code — a worklist search over a machine's states
+dfa M {
+  alphabet a
+  start [0]
+  accept [0]
+  [0] -a-> [1];   [1] -a-> [2];   [2] -a-> [0];   [3] -a-> [3]
+}
+var todo = [M.start]
+var seen = { M.start }
+while todo ≠ [] {
+  let q = todo[0]
+  todo = todo[1..]
+  for a ∈ M.alphabet {
+    let r = M.δ(q, a)
+    if r ∉ seen {
+      seen = seen ∪ { r }
+      todo = todo ++ [r]
+    }
+  }
+}
+assert seen == {0, 1, 2}
+print "reachable:", seen

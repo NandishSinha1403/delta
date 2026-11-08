@@ -1,0 +1,10 @@
+// Decidability — questions are allowed only where the class makes them decidable
+lang R = re"(a ∪ b)* b"
+lang C = cfg { S -> a S b | ε }
+assert not R.is_empty()
+assert not R.is_finite()
+assert not R.is_universal()
+assert not C.is_empty()               // emptiness is decidable for CF
+assert not C.is_finite()
+// check C ⊆ re"(a ∪ b)*" would be error E701 (undecidable for CF): a bounded check works
+check C ⊆ re"(a ∪ b)*" up to 6

@@ -39,7 +39,7 @@ function ObjectSwitcher() {
   );
 }
 
-/** → DFA (Thm 1.39), → GNFA, → regex: only the ones that apply to the selected object. */
+/** → DFA, minimize, → regex: only the ones that apply to the selected object. */
 function ConvertButtons() {
   const current = useCurrentObject();
   if (!current) return null;
@@ -57,7 +57,6 @@ function ConvertButtons() {
           className="h-7 rounded-md border border-steel/60 bg-accent/10 px-2.5 text-xs text-accent hover:bg-accent/20"
         >
           {c.label}
-          {c.fn === 'dfa' && <span className="ml-1 text-steel-soft">Thm 1.39</span>}
         </button>
       ))}
     </div>
@@ -168,6 +167,20 @@ export function DiagramPanel({
       );
     }
 
+    if (!object.machine && object.kind !== 'regex') {
+      return (
+        <div className="flex h-full flex-col items-center justify-center gap-3 bg-canvas p-6 text-center">
+          <pre className="max-w-full overflow-auto font-mono text-sm whitespace-pre-wrap text-text">
+            {object.regex ?? object.derived ?? object.name}
+          </pre>
+          <p className="max-w-sm text-sm text-muted">
+            {object.name} is {object.kind === 'cfg' ? 'a grammar' : 'a language'} ({object.class}). Its class, sample words and
+            decidable questions are in the Lang view.
+          </p>
+        </div>
+      );
+    }
+
     if (!object.machine) {
       return (
         <div className="flex h-full flex-col items-center justify-center gap-3 bg-canvas p-6 text-center">
@@ -176,7 +189,7 @@ export function DiagramPanel({
           </p>
           <p className="max-w-sm text-sm text-muted">
             A regular expression has no state diagram. Convert it with → DFA, or write{' '}
-            <code className="font-mono text-text">let N = nfa({object.name})</code> to see Lemma 1.55 build one.
+            <code className="font-mono text-text">let N = to_nfa({object.name})</code> to see an NFA built from it.
           </p>
         </div>
       );

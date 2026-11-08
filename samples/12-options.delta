@@ -1,0 +1,23 @@
+// Machine options — (partial), (accept: by empty-stack) and (initial stack Z)
+dfa M (partial) {               // missing transitions go to an implicit dead state
+  alphabet a, b
+  start q0
+  accept q1
+  q0 -a-> q1
+}
+check M accepts "a"
+check M rejects "", "b", "aa"
+pda E (accept: by empty-stack) {
+  start q0
+  q0 -a, ε → A-> q0
+  q0 -b, A → ε-> q1
+  q1 -b, A → ε-> q1
+}
+check E accepts "", "ab", "aabb"
+check E rejects "a", "abb"
+pda Z (initial stack Z) {
+  start q0
+  accept q1
+  q0 -ε, Z → ε-> q1             // pops the initial Z
+}
+check Z accepts ""

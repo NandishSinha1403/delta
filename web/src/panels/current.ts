@@ -53,3 +53,15 @@ export function applyConversion(c: Conversion, args: readonly string[]): void {
   setSource(next.source);
   useUiStore.setState({ selected: next.name, step: null });
 }
+
+/** The source range of a 1-based line. */
+export function lineRange(source: string, line: number): { from: number; to: number } {
+  let from = 0;
+  for (let i = 1; i < line; i++) {
+    const next = source.indexOf('\n', from);
+    if (next === -1) break;
+    from = next + 1;
+  }
+  const end = source.indexOf('\n', from);
+  return { from, to: end === -1 ? source.length : end };
+}

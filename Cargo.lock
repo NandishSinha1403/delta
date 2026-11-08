@@ -163,8 +163,7 @@ name = "delta-wasm"
 version = "0.0.1"
 dependencies = [
  "console_error_panic_hook",
- "delta-core",
- "delta-dsl",
+ "delta-lang",
  "serde_json",
  "wasm-bindgen",
 ]

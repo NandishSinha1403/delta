@@ -1,0 +1,28 @@
+// Tour — machines, languages and constructions in one program
+// A machine, written the way you'd draw it
+dfa EndsAB {
+  start q0
+  accept q2
+  q0 -a-> q1;   q0 -b-> q0
+  q1 -a-> q1;   q1 -b-> q2
+  q2 -a-> q1;   q2 -b-> q0
+}
+
+// A language, written the way you'd write it in math
+lang L = { w ∈ {a,b}* | w ends with "ab" }
+
+check EndsAB ≡ L up to 10            // bounded: L is only known to be Decidable
+check EndsAB ≡ re"(a ∪ b)* a b"      // exact: both are Regular
+
+// A construction, written like its definition
+fn subsets(N) = explore {
+  alphabet N.alphabet
+  start  N.eclose({ N.start })
+  step   R on a -> N.eclose(⋃ { N.δ(q, a) | q ∈ R })
+  accept R if R ∩ N.accept ≠ ∅
+}
+
+let N = to_nfa(re"(a ∪ b)* a b")
+check subsets(N) ≡ N
+show subsets(N)
+run EndsAB on "abab"

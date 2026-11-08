@@ -8,6 +8,7 @@ import { EXECUTE_KEYS, execute, useStale } from '../state/execute';
 import { useUiStore } from '../state/ui';
 import { DiagramPanel } from './DiagramPanel';
 import { StepsPanel } from './StepsPanel';
+import { ConsolePanel, LangPanel } from './LangPanel';
 import { ProblemsPanel, TestsPanel } from './TestsPanel';
 import { DeltaPanel } from './TuplePanel';
 
@@ -106,12 +107,14 @@ export function CodePanel() {
   );
 }
 
-type MoreTab = 'delta' | 'steps' | 'tests' | 'problems';
+type MoreTab = 'delta' | 'steps' | 'tests' | 'lang' | 'console' | 'problems';
 
 const MORE_TABS: readonly TabItem<MoreTab>[] = [
   { id: 'steps', label: 'Steps' },
   { id: 'delta', label: 'δ-table' },
   { id: 'tests', label: 'Tests' },
+  { id: 'lang', label: 'Lang' },
+  { id: 'console', label: 'Console' },
   { id: 'problems', label: 'Problems' },
 ];
 
@@ -141,6 +144,8 @@ export function MorePanel() {
         )}
         {tab === 'delta' && <DeltaPanel />}
         {tab === 'tests' && <TestsPanel />}
+        {tab === 'lang' && <LangPanel />}
+        {tab === 'console' && <ConsolePanel />}
         {tab === 'problems' && <ProblemsPanel />}
       </TabPanel>
     </div>

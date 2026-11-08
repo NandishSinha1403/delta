@@ -2,7 +2,7 @@
 // Comlink. All engine work happens here so the UI never blocks.
 import * as Comlink from 'comlink';
 import type { Graphviz } from '@hpcc-js/wasm-graphviz';
-import type { Document } from './generated/Document';
+import type { Document } from './api';
 import type { RunResult } from './generated/RunResult';
 import init, { evaluate, run, version } from './pkg/delta_wasm';
 

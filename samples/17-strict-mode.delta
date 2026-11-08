@@ -1,0 +1,12 @@
+// Strict mode — every field written out, as in an assignment
+use strict
+dfa M {
+  states q0, q1
+  alphabet a, b
+  start q0
+  accept q1
+  q0 -a-> q1;   q0 -b-> q0
+  q1 -a-> q1;   q1 -b-> q0
+}
+check M accepts "a", "ba"
+check M rejects "", "ab"

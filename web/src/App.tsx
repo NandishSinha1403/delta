@@ -1,4 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { EmbedShell } from './shell/Embed';
+import { decodeSource, parseHash } from './state/share';
 import { CommandPalette } from './shell/CommandPalette';
 import { DesktopShell, PhoneShell, TabletShell } from './shell/shells';
 import { useLayout } from './shell/useLayout';
@@ -11,6 +13,14 @@ const DEBOUNCE_MS = 150;
 
 export function App() {
   const layout = useLayout();
+  // `#code=…` opens a shared program; `&embed=1` shows the embeddable Pad (03-PRODUCTS.md §5).
+  const [hash] = useState(() => parseHash(window.location.hash));
+  useEffect(() => {
+    if (!hash.code) return;
+    decodeSource(hash.code)
+      .then((source) => useUiStore.getState().openShared(source))
+      .catch(() => {});
+  }, [hash.code]);
   const source = useUiStore((s) => s.source);
   const activeId = useUiStore((s) => s.activeId);
   const auto = useUiStore((s) => s.auto);
@@ -52,6 +62,8 @@ export function App() {
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
   }, []);
+
+  if (hash.embed) return <EmbedShell panel={hash.panel} />;
 
   return (
     <>

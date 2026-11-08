@@ -1,22 +1,57 @@
 import { useEngineStore } from '../state/engine';
 import { useUiStore } from '../state/ui';
-import { applyEdits, openRunView, showString } from './current';
+import { applyEdits, lineRange, openRunView, showString } from './current';
 import { EngineStatus, Note } from './Status';
 
 /** Results of the program's `check` and `run` commands (docs/plan/05 §4, batch test panel). */
+/** The tests that aren't one word of a `check … accepts/rejects` (asserts, ≡, ⊆, bounded). */
+function OtherTests() {
+  const tests = useEngineStore((s) => s.doc?.tests);
+  const source = useEngineStore((s) => s.docSource);
+  const revealRange = useUiStore((s) => s.revealRange);
+  const others = (tests ?? []).filter((t) => !/ (accepts|rejects) "/.test(t.name));
+  if (others.length === 0) return null;
+  return (
+    <ul aria-label="Assertions and checks" className="mt-4 space-y-1.5">
+      {others.map((t, i) => (
+        <li key={i} className="text-sm">
+          <button
+            type="button"
+            onClick={() => revealRange(lineRange(source, t.line))}
+            className="flex w-full items-baseline gap-2 text-left hover:bg-surface-2"
+          >
+            <span className={`font-semibold ${t.pass ? 'text-accept' : 'text-reject'}`}>{t.pass ? '✓' : '✗'}</span>
+            <span className="min-w-0 flex-1 truncate font-mono text-text">{t.name}</span>
+            {typeof t.bounded === 'number' && (
+              <span className="shrink-0 rounded bg-surface-2 px-1.5 text-[11px] text-muted">bounded ≤ {t.bounded}</span>
+            )}
+            {t.assumed && <span className="shrink-0 rounded bg-surface-2 px-1.5 text-[11px] text-warn">assumed</span>}
+          </button>
+          {!t.pass && (t.message || t.witness !== undefined) && (
+            <p className="ml-5 font-mono text-xs text-muted">
+              {t.witness !== undefined ? `counterexample: ${showString(t.witness)}` : t.message}
+            </p>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function TestsPanel() {
   const results = useEngineStore((s) => s.doc?.results);
+  const tests = useEngineStore((s) => s.doc?.tests);
   const startRun = useEngineStore((s) => s.startRun);
   const showRun = useEngineStore((s) => s.showRun);
   const select = useUiStore((s) => s.select);
   const revealRange = useUiStore((s) => s.revealRange);
-  if (!results) return <EngineStatus empty="" />;
-  if (results.length === 0) {
-    return <Note>Add a check, e.g. check M accepts "01", "11", to test your machine here.</Note>;
+  if (!results || !tests) return <EngineStatus empty="" />;
+  if (results.length === 0 && tests.length === 0) {
+    return <Note>Add a check, e.g. check M accepts "01", "11", or an assert, to test your program here.</Note>;
   }
 
-  const cases = results.flatMap((r) => r.cases);
-  const passed = cases.filter((c) => c.expected === c.actual).length;
+  const cases = tests;
+  const passed = cases.filter((c) => c.pass).length;
 
   return (
     <section aria-label="Tests" className="p-3">
@@ -108,6 +143,7 @@ export function TestsPanel() {
           );
         })}
       </div>
+      <OtherTests />
     </section>
   );
 }
@@ -126,7 +162,7 @@ export function ProblemsPanel() {
   const revealRange = useUiStore((s) => s.revealRange);
   const setSource = useUiStore((s) => s.setSource);
   if (!diagnostics) return <EngineStatus empty="" />;
-  if (diagnostics.length === 0) return <Note>No problems. The program matches the book’s definitions.</Note>;
+  if (diagnostics.length === 0) return <Note>No problems.</Note>;
   return (
     <ul aria-label="Problems" className="divide-y divide-border">
       {diagnostics.map((d, i) => {

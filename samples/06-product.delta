@@ -1,0 +1,22 @@
+// Product construction — union, intersection and difference of DFAs
+dfa EvenA {
+  start e
+  accept e
+  e -a-> o;   e -b-> e
+  o -a-> e;   o -b-> o
+}
+dfa EndsB {
+  start n
+  accept y
+  n -a-> n;   n -b-> y
+  y -a-> n;   y -b-> y
+}
+let Both = intersect(EvenA, EndsB)
+let Either = union(EvenA, EndsB)
+let OnlyA = difference(EvenA, EndsB)
+check Both accepts "b", "aab"
+check Either accepts "", "ab"
+check OnlyA accepts "", "aa"
+check OnlyA rejects "b"
+check Both ≡ EvenA ∩ EndsB
+show Both

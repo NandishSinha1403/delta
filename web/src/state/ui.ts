@@ -2,13 +2,14 @@ import { create } from 'zustand';
 import { DEFAULT_SOURCE, type Example } from '../examples';
 
 export type PhoneView = 'code' | 'diagram' | 'tuple' | 'run' | 'more';
-export type InspectorTab = 'tuple' | 'delta' | 'steps' | 'tests' | 'problems';
+export type InspectorTab = 'tuple' | 'delta' | 'steps' | 'tests' | 'lang' | 'console' | 'problems';
 export type SheetTab = InspectorTab | 'run';
 export type Theme = 'dark' | 'light';
 /** The left rail's drawers. */
 export type RailPanel = 'files' | 'examples' | 'conversions' | 'tests' | 'settings';
 
-const FILES_KEY = 'delta.files';
+// Delta 2 programs: v1 files saved under the old key are not v2 syntax, so they stay there.
+const FILES_KEY = 'delta.v2.files';
 const OLD_SOURCE_KEY = 'delta.source';
 const THEME_KEY = 'delta.theme';
 const AUTO_KEY = 'delta.auto';
@@ -93,6 +94,8 @@ interface UiStore {
   closeFile: (id: string) => void;
   /** Opens an example in its own tab (or switches to it if it is already open). */
   openExample: (example: Example) => void;
+  /** Opens a program from a share link as a new file. */
+  openShared: (source: string) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
   /** Auto: re-evaluate while typing. Off: only Execute (⌘↵ / Ctrl+Enter) updates. */
@@ -179,6 +182,19 @@ export const useUiStore = create<UiStore>()((set, get) => {
         persist(rest, activeId);
         set({ files: rest });
       }
+    },
+    openShared: (source) => {
+      const { files } = get();
+      const same = files.find((f) => f.source === source);
+      if (same) {
+        activate(files, same.id);
+        return;
+      }
+      const taken = new Set(files.map((f) => f.name));
+      let name = 'shared.delta';
+      for (let i = 2; taken.has(name); i++) name = `shared-${i}.delta`;
+      const file = { id: newId(), name, source };
+      activate([...files, file], file.id);
     },
     openExample: (example) => {
       const { files } = get();

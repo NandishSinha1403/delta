@@ -1,0 +1,5 @@
+// Raising a class with evidence — a claim checked up to a bound and marked "assumed"
+lang E = { w ∈ {0,1}* | count(w,'0') % 2 == 0 } as Regular by re"(1* 0 1* 0)* 1*"
+assert E.class == Regular
+assert E.assumed
+check E ≡ re"(1* 0 1* 0)* 1*"          // decided exactly, through the evidence

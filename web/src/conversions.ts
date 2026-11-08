@@ -1,13 +1,14 @@
-// The conversions and closure operations the engine supports today, with their book references.
+// Library conversions the Pad offers as buttons (01-LANGUAGE.md §12), with their algorithm ids.
+// Explain profiles, not the UI, add textbook citations.
 // The command palette, the Conversions drawer and the diagram's Convert buttons all read this list,
 // so none of them can offer something that does not exist.
 import type { ObjectView } from './engine/api';
 
 export interface Conversion {
-  fn: 'dfa' | 'nfa' | 'gnfa' | 'regex' | 'union' | 'intersect' | 'concat' | 'star';
+  fn: 'determinize' | 'minimize' | 'to_nfa' | 'to_gnfa' | 'to_regex' | 'union' | 'intersect' | 'concat' | 'star';
   /** Short label for a button, e.g. "→ DFA". */
   label: string;
-  /** Book reference, e.g. "Theorem 1.39". */
+  /** The algorithm id, e.g. "determinize/subset". */
   book: string;
   /** One line for the palette and drawer. */
   doc: string;
@@ -19,18 +20,19 @@ export interface Conversion {
 }
 
 export const CONVERSIONS: readonly Conversion[] = [
-  { fn: 'dfa', label: '→ DFA', book: 'Theorem 1.39', doc: 'Subset construction (reachable subsets)', takes: ['nfa', 'regex'], arity: 1, prefix: 'D' },
-  { fn: 'nfa', label: '→ NFA', book: 'Lemma 1.55', doc: 'Regular expression to NFA, or a DFA viewed as an NFA', takes: ['regex', 'dfa'], arity: 1, prefix: 'N' },
-  { fn: 'gnfa', label: '→ GNFA', book: 'Lemma 1.60', doc: 'Generalized NFA in special form', takes: ['dfa', 'nfa'], arity: 1, prefix: 'G' },
-  { fn: 'regex', label: '→ regex', book: 'Lemma 1.60', doc: 'State elimination, CONVERT(G)', takes: ['dfa', 'nfa', 'gnfa'], arity: 1, prefix: 'R' },
-  { fn: 'union', label: 'union', book: 'Theorem 1.25 / 1.45', doc: 'Product construction on DFAs; NFA union otherwise', takes: ['dfa', 'nfa'], arity: 2, prefix: 'U' },
-  { fn: 'intersect', label: 'intersect', book: 'Theorem 1.25', doc: 'Product construction with F = F₁ × F₂ (footnote)', takes: ['dfa'], arity: 2, prefix: 'I' },
-  { fn: 'concat', label: 'concat', book: 'Theorem 1.47', doc: 'Concatenation of NFAs', takes: ['dfa', 'nfa'], arity: 2, prefix: 'C' },
-  { fn: 'star', label: 'star', book: 'Theorem 1.49', doc: 'Star with a new accepting start state', takes: ['dfa', 'nfa'], arity: 1, prefix: 'S' },
+  { fn: 'determinize', label: '→ DFA', book: 'determinize/subset', doc: 'Subset construction (reachable subsets)', takes: ['nfa', 'regex'], arity: 1, prefix: 'D' },
+  { fn: 'minimize', label: 'minimize', book: 'minimize/hopcroft', doc: 'Merge equivalent states', takes: ['dfa'], arity: 1, prefix: 'M' },
+  { fn: 'to_nfa', label: '→ NFA', book: 'to_nfa/textbook', doc: 'Regular expression to NFA', takes: ['regex'], arity: 1, prefix: 'N' },
+  { fn: 'to_gnfa', label: '→ GNFA', book: 'to_gnfa/special-form', doc: 'Generalized NFA in special form', takes: ['dfa', 'nfa'], arity: 1, prefix: 'G' },
+  { fn: 'to_regex', label: '→ regex', book: 'to_regex/state-elimination', doc: 'State elimination', takes: ['dfa', 'nfa'], arity: 1, prefix: 'R' },
+  { fn: 'union', label: 'union', book: 'product/pairs', doc: 'Product construction, accepting if either accepts', takes: ['dfa', 'nfa'], arity: 2, prefix: 'U' },
+  { fn: 'intersect', label: 'intersect', book: 'product/pairs', doc: 'Product construction, accepting if both accept', takes: ['dfa', 'nfa'], arity: 2, prefix: 'I' },
+  { fn: 'concat', label: 'concat', book: 'concat/epsilon', doc: 'Concatenation with ε-edges', takes: ['dfa', 'nfa'], arity: 2, prefix: 'C' },
+  { fn: 'star', label: 'star', book: 'star/epsilon', doc: 'Star with a new accepting start state', takes: ['dfa', 'nfa'], arity: 1, prefix: 'S' },
 ];
 
 /** The Convert buttons above the diagram: only these three, and only where they apply. */
-export const DIAGRAM_CONVERSIONS: readonly Conversion['fn'][] = ['dfa', 'gnfa', 'regex'];
+export const DIAGRAM_CONVERSIONS: readonly Conversion['fn'][] = ['determinize', 'minimize', 'to_regex'];
 
 export function conversion(fn: Conversion['fn']): Conversion {
   // The list is fixed, so the lookup always succeeds.

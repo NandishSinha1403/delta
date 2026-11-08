@@ -1,0 +1,12 @@
+// Languages and classes — every lang knows what Delta can guarantee about it
+lang F = { "", "01", "0011" }                        // Finite
+lang R = re"(0 ∪ 1)* 0 1"                            // Regular
+lang C = cfg { S -> 0 S 1 | ε }                      // CF
+lang P = { w ∈ {0,1}* | count(w,'0') == count(w,'1') }   // Decidable
+assert F.class == Finite
+assert (F ∪ R).class == Regular
+assert (C ∩ R).class == CF                           // the L ∩ R row of the closure table
+assert (P ∩ F).class == Finite                       // F ∩ L stays finite: L is decidable
+assert "0011" ∈ C
+assert "0101" ∈ P
+check C ⊆ P up to 8                                  // every 0ⁿ1ⁿ has as many 0s as 1s

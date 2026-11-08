@@ -1,0 +1,18 @@
+// Turing machine — the four verdicts: accept, reject, loops, unknown
+budget { steps: 1_000 }
+tm T {
+  alphabet 0, 1, 2, 3
+  start q0
+  accept qa
+  reject qr
+  q0 -0 → R-> qa              // enters the accept state: accept
+  q0 -⊔ → R-> qr              // enters the reject state: reject
+  q0 -1 → S-> q0              // the configuration repeats: loops
+  q0 -2 → R-> q1              // runs right over blanks forever: unknown
+  q1 -⊔ → R-> q1
+}
+assert T.run("0").verdict == :accept
+assert T.run("").verdict == :reject
+assert T.run("1").verdict == :loops
+assert T.run("2").verdict == :unknown
+run T on "0"
