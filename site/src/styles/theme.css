@@ -1,19 +1,89 @@
-/* The Pad's look: near-black, a steel accent, IBM Plex Sans for prose. */
-:root {
-  --sl-color-accent-low: #10303a;
-  --sl-color-accent: #5fb7c9;
-  --sl-color-accent-high: #c8eef5;
-  --sl-font: 'IBM Plex Sans', system-ui, sans-serif;
+/* The docs in the front page's Dark Tech world: #000 ground, #0a0a0a panels with a 1px ring,
+   Schibsted Grotesk prose and headings, Commit Mono code, #52a8ff for active states only. */
+@import './fonts.css';
+
+:root,
+:root[data-theme='dark'] {
+  --sl-color-white: #ffffff;
+  --sl-color-gray-1: #ededed;
+  --sl-color-gray-2: #c9c9c9;
+  --sl-color-gray-3: #999999;
+  --sl-color-gray-4: #5c5c5c;
+  --sl-color-gray-5: #1f1f1f;
+  --sl-color-gray-6: #0a0a0a;
+  --sl-color-black: #000000;
+  --sl-color-accent-low: #0b2440;
+  --sl-color-accent: #52a8ff;
+  --sl-color-accent-high: #cfe6ff;
+  --sl-color-text-accent: #52a8ff;
+  --sl-color-bg-nav: #000000;
+  --sl-color-bg-sidebar: #000000;
+  --sl-color-hairline: rgba(255, 255, 255, 0.145);
+  --sl-color-hairline-light: rgba(255, 255, 255, 0.08);
+  --sl-font: 'Schibsted Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --sl-font-mono: 'Commit Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  color-scheme: dark;
 }
-:root[data-theme='light'] {
-  --sl-color-accent-low: #d7f0f5;
-  --sl-color-accent: #1d6f80;
-  --sl-color-accent-high: #0e3943;
+
+body { -webkit-font-smoothing: antialiased; }
+::selection { background: rgba(82, 168, 255, 0.35); color: #fff; }
+:focus-visible { outline: 2px solid #52a8ff; outline-offset: 2px; }
+
+.sl-markdown-content h1,
+.sl-markdown-content h2,
+.sl-markdown-content h3,
+h1#_top {
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  color: #fff;
 }
-.open-pad {
-  margin-top: 0.25rem !important;
-  font-size: var(--sl-text-sm);
+h1#_top { letter-spacing: -0.045em; }
+
+/* Code blocks: styled in ec.config.mjs (#0a0a0a, 1px ring, 12px radius). */
+.sl-markdown-content :not(pre) > code {
+  background: #1f1f1f;
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+  color: #ededed;
 }
+
+/* "Open in the Pad": a square button, as on the front page. */
+.open-pad { margin-top: 0.5rem !important; }
 .open-pad a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 0;
+  background: #fff;
+  color: #121212;
+  font: 500 14px/1 var(--sl-font);
   text-decoration: none;
+  padding: 8px 12px;
 }
+.open-pad a:hover { background: #e6e6e6; }
+
+/* Tables: data in the mono face. */
+.sl-markdown-content table { font-variant-numeric: tabular-nums; }
+.sl-markdown-content th {
+  font: 400 12px/1.4 var(--sl-font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #999;
+}
+.sl-markdown-content td code { white-space: nowrap; }
+
+/* Links and the current sidebar entry use the accent. */
+.sl-markdown-content a { text-underline-offset: 3px; }
+nav.sidebar a[aria-current='page'] {
+  background: #1f1f1f;
+  color: #fff;
+  box-shadow: inset 2px 0 0 #52a8ff;
+}
+
+/* The site title in white. */
+.site-title { color: #fff !important; font-weight: 500; letter-spacing: -0.02em; }
+
+/* The search box and buttons: square. */
+site-search button[data-open-modal] { border-radius: 0; background: #0a0a0a; border-color: rgba(255, 255, 255, 0.145); }
+.sl-link-button { border-radius: 0 !important; }
+starlight-menu-button button { border-radius: 0; background: #fff; color: #121212; }

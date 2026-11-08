@@ -1,9 +1,40 @@
 ---
-// The front page (03-PRODUCTS.md §2): within ten seconds a visitor knows what Delta is, and
-// within thirty they've edited and run something in the live hero.
-import { padCode, padUrl } from '../lib/pad-link.mjs';
+// The front page (03-PRODUCTS.md §2) in the Dark Tech world: black ground, Schibsted Grotesk
+// headlines, Commit Mono for every piece of data, square CTAs, pill status chips.
+import '../styles/fonts.css';
+import { padUrl } from '../lib/pad-link.mjs';
 
-const hero = `dfa EndsAB {
+// EndsAB (words over {a, b} that end in "ab"), simulated here so the trace on the page is the
+// machine's real run, not a mock-up.
+const delta: Record<string, Record<string, string>> = {
+  q0: { a: 'q1', b: 'q0' },
+  q1: { a: 'q1', b: 'q2' },
+  q2: { a: 'q1', b: 'q0' },
+};
+const inputs = ['abab', 'aab', 'ab', 'abba', '', 'bba'];
+const runs = inputs.map((w) => {
+  let q = 'q0';
+  const rows = [{ step: 0, state: q, read: '—', head: 0 }];
+  [...w].forEach((a, i) => {
+    q = delta[q]?.[a] ?? q;
+    rows.push({ step: i + 1, state: q, read: a, head: i + 1 });
+  });
+  return { input: w, accept: q === 'q2', rows };
+});
+
+const endsAB = `dfa EndsAB {
+  start q0
+  accept q2
+  q0 -a-> q1;   q0 -b-> q0
+  q1 -a-> q1;   q1 -b-> q2
+  q2 -a-> q1;   q2 -b-> q0
+}
+run EndsAB on "abab"
+check EndsAB accepts "abab", "aab", "ab"
+check EndsAB rejects "abba", "", "bba"
+`;
+
+const tour = `dfa EndsAB {
   start q0
   accept q2
   q0 -a-> q1;   q0 -b-> q0
@@ -12,41 +43,75 @@ const hero = `dfa EndsAB {
 }
 lang L = { w ∈ {a,b}* | w ends with "ab" }
 check EndsAB ≡ L up to 10
+check EndsAB ≡ re"(a ∪ b)* a b"
 run EndsAB on "abab"
 `;
+const embed = `${padUrl(tour, '&embed=1&panel=diagram&run=1')}`;
 
-const features = [
-  {
-    title: 'Write it like math',
-    text: 'Languages are set-builder expressions, machines are drawn as arrows. Unicode or ASCII: ∪ is union, ∈ is in.',
-    code: `lang Pal = { w ∈ {a,b}* | w == rev(w) }\nassert "abba" ∈ Pal and "ab" ∉ Pal\ncheck Pal ≡ { w ∈ {a,b}* | rev(w) == w } up to 6`,
-  },
-  {
-    title: 'Any machine',
-    text: 'Models are built from storage and acceptance: DFAs, pushdown automata, Turing machines, transducers, or your own.',
-    code: `model qa { input one-way; epsilon; storage queue; accept by final }\nqa Q {\n  start s\n  accept f\n  s -read a; enqueue X-> s\n  s -enqueue Z-> t\n  t -read b; dequeue X-> t\n  t -dequeue Z-> f\n}\ncheck Q accepts "", "ab", "aabb"`,
-  },
-  {
-    title: 'Ask only what’s decidable',
-    text: 'Every language knows its class. An undecidable question is an error before the program runs, with a bounded check offered instead.',
-    code: `lang C = cfg { S -> 0 S 1 | ε }\nlang P = { w ∈ {0,1}* | count(w,'0') == count(w,'1') }\n// check C ≡ P is error E701: undecidable for these classes\ncheck C ⊆ P up to 8`,
-  },
-  {
-    title: 'Constructions as code',
-    text: 'Write the subset construction the way it’s defined, then step through it like any built-in.',
-    code: `fn subsets(N) = explore {\n  alphabet N.alphabet\n  start  N.eclose({ N.start })\n  step   R on a -> N.eclose(⋃ { N.δ(q, a) | q ∈ R })\n  accept R if R ∩ N.accept ≠ ∅\n}\nlet N = to_nfa(re"(a ∪ b)* a b")\ncheck subsets(N) ≡ determinize(N)`,
-  },
+const checks = [
+  { name: 'EndsAB ≡ re"(a ∪ b)* a b"', status: 'pass', note: 'exact' },
+  { name: 'EndsAB ≡ L up to 10', status: 'pass', note: '≤ 10' },
+  { name: 'subsets(N) ≡ determinize(N)', status: 'pass', note: 'exact' },
+  { name: 'C ⊆ P up to 8', status: 'pass', note: '≤ 8' },
+  { name: 'C ≡ P', status: 'fail', note: 'E701' },
 ];
+const checksCode = `lang C = cfg { S -> 0 S 1 | ε }
+lang P = { w ∈ {0,1}* | count(w,'0') == count(w,'1') }
+check C ⊆ P up to 8
+// check C ≡ P is error E701: equivalence of CF languages is undecidable
+`;
+
+// Of the six questions in the decision table (∈, empty, finite, universal, ≡, ⊆).
+const classes = [
+  { name: 'Regular', yes: 6, wip: 0 },
+  { name: 'DCF', yes: 4, wip: 1 },
+  { name: 'CF', yes: 3, wip: 0 },
+  { name: 'CS', yes: 1, wip: 0 },
+  { name: 'Decidable', yes: 1, wip: 0 },
+  { name: 'Recognizable', yes: 0, wip: 0 },
+];
+const classesCode = `lang R = re"(0 ∪ 1)* 0 1"
+lang C = cfg { S -> 0 S 1 | ε }
+assert (C ∩ R).class == CF
+assert not C.is_empty() and not C.is_finite()
+`;
+
+// determinize(N) for N = (a ∪ b)* a b: the engine's recorded steps, states written by name.
+const replay = [
+  ['add', 'start  {q0}'],
+  ['add', 'state  {q0, q1}'],
+  ['edge', '{q0}     -a-> {q0, q1}'],
+  ['edge', '{q0}     -b-> {q0}'],
+  ['edge', '{q0, q1} -a-> {q0, q1}'],
+  ['add', 'state  {q0, q2}'],
+  ['edge', '{q0, q1} -b-> {q0, q2}'],
+  ['edge', '{q0, q2} -a-> {q0, q1}'],
+  ['edge', '{q0, q2} -b-> {q0}'],
+];
+const replayCode = `nfa N {
+  alphabet a, b
+  start q0
+  accept q2
+  q0 -[a, b]-> q0;   q0 -a-> q1;   q1 -b-> q2
+}
+show determinize(N)
+`;
 
 const recipes = [
   ['DFA: binary numbers divisible by n', 'divisible-by-n'],
   ['Regex to NFA, three ways', 'regex-to-nfa'],
   ['PDA: aⁿbⁿ', 'pda-anbn'],
   ['Turing machine: 0ⁿ1ⁿ', 'tm-anbn'],
-  ['Mealy machine: running parity', 'mealy-parity'],
-  ['Minimize a DFA', 'minimize'],
+  ['Minimize a DFA and see which states merge', 'minimize'],
+  ['Write the subset construction yourself', 'explore-determinize'],
 ];
-const embed = `/pad/#code=${padCode(hero)}&embed=1&panel=diagram&run=1`;
+
+const nav = [
+  ['Docs', '/docs/'],
+  ['Tour', '/docs/tour/01-first-program/'],
+  ['Cookbook', '/docs/cookbook/'],
+  ['GitHub', 'https://github.com/NandishSinha1403/delta'],
+];
 ---
 
 <!doctype html>
@@ -56,130 +121,534 @@ const embed = `/pad/#code=${padCode(hero)}&embed=1&panel=diagram&run=1`;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Delta — the language of computation</title>
     <meta name="description" content="Delta is a programming language for the theory of computation: write machines, languages and constructions as code, and see them run." />
-    <meta name="theme-color" content="#111215" />
+    <meta name="theme-color" content="#000000" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="manifest" href="/pad/manifest.webmanifest" />
-    <style>
-      :root {
-        --bg: #111215;
-        --surface: #181a1f;
-        --border: #2a2d35;
-        --text: #e8eaee;
-        --muted: #9aa1ad;
-        --accent: #5fb7c9;
-        --on-accent: #0b1215;
-        color-scheme: dark;
-      }
-      @media (prefers-color-scheme: light) {
-        :root {
-          --bg: #fafaf9;
-          --surface: #ffffff;
-          --border: #e2e4e8;
-          --text: #16181d;
-          --muted: #5b6270;
-          --accent: #1d6f80;
-          --on-accent: #ffffff;
-          color-scheme: light;
-        }
-      }
-      * { box-sizing: border-box; }
-      body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.55 'IBM Plex Sans', system-ui, sans-serif; }
-      a { color: var(--accent); }
-      .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
-      header.nav { display: flex; align-items: center; gap: 20px; height: 60px; }
-      .logo { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 20px; color: var(--text); text-decoration: none; }
-      .logo img { width: 30px; height: 30px; }
-      .nav a.link { color: var(--muted); text-decoration: none; font-size: 15px; }
-      .nav a.link:hover { color: var(--text); }
-      .spacer { flex: 1; }
-      .btn { display: inline-block; padding: 10px 18px; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 15px; }
-      .btn.primary { background: var(--accent); color: var(--on-accent); }
-      .btn.ghost { border: 1px solid var(--border); color: var(--text); }
-      .hero { padding: 48px 0 24px; }
-      h1 { font-size: clamp(34px, 6vw, 56px); line-height: 1.08; margin: 0 0 16px; letter-spacing: -0.02em; }
-      .lead { font-size: 19px; color: var(--muted); max-width: 640px; margin: 0 0 24px; }
-      .cta { display: flex; gap: 12px; flex-wrap: wrap; }
-      .live { margin-top: 32px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--surface); }
-      .live iframe { display: block; width: 100%; height: 440px; border: 0; }
-      .live p { margin: 0; padding: 8px 14px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--border); }
-      section.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; padding: 40px 0; }
-      .card { border: 1px solid var(--border); border-radius: 12px; padding: 20px; background: var(--surface); min-width: 0; }
-      .card h2 { margin: 0 0 6px; font-size: 20px; }
-      .card p { margin: 0 0 12px; color: var(--muted); }
-      pre { margin: 0 0 10px; padding: 12px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); overflow-x: auto; font: 13px/1.5 ui-monospace, 'JetBrains Mono', monospace; }
-      h2.section { font-size: 26px; margin: 40px 0 16px; }
-      .recipes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
-      .recipes a { display: block; padding: 14px; border: 1px solid var(--border); border-radius: 10px; color: var(--text); text-decoration: none; background: var(--surface); }
-      .recipes a:hover { border-color: var(--accent); }
-      .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-      footer { margin-top: 56px; padding: 24px 0 40px; border-top: 1px solid var(--border); color: var(--muted); font-size: 14px; display: flex; gap: 16px; flex-wrap: wrap; }
-      footer a { color: var(--muted); }
-      @media (max-width: 640px) {
-        .nav a.link.hide-sm { display: none; }
-        .live iframe { height: 520px; }
-      }
-    </style>
+    <link rel="preload" href="/fonts/schibsted-grotesk-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/commit-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/img/hero-dfa.webp" as="image" />
   </head>
   <body>
-    <div class="wrap">
-      <header class="nav">
-        <a class="logo" href="/"><img src="/favicon.svg" alt="" width="30" height="30" />Delta</a>
-        <a class="link" href="/docs/">Docs</a>
-        <a class="link hide-sm" href="/docs/cookbook/">Examples</a>
-        <a class="link hide-sm" href="https://github.com/NandishSinha1403/delta">GitHub</a>
-        <span class="spacer"></span>
-        <a class="btn primary" href="/pad/">Open the Pad</a>
-      </header>
+    <Fragment set:html={`<!--
+THESIS: Delta's front page is the machine itself: a real rendered DFA under a black scrim, then real runs, checks and constructions laid out as instrument readouts, never marketing cards.
+OWN-WORLD: #000 ground, #0a0a0a panels ringed in rgba(255,255,255,.145), Schibsted Grotesk 500 headlines with tight tracking, Commit Mono for every datum, square white CTAs, #1f1f1f pill chips with status dots (#62c073 pass, #999 warn, #ededed fail), #52a8ff for the active state only.
+STORY: a student sees a running automaton, reads a real trace, tries it live, learns that questions know their decidability, and opens the Pad.
+FIRST VIEWPORT: full-height divisible-by-5 render behind a bottom scrim; headline and CTA bottom-left; provenance caption bottom-right; header at 38px.
+FORM: brief-pinned (user's Dark Tech spec); seed key: pinned-by-brief.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+-->`} />
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Delta home">
+        <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M1 16h7" stroke="currentColor" stroke-width="1.6" fill="none" />
+          <path d="M6.2 12.8 9 16l-2.8 3.2" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round" />
+          <circle cx="20" cy="16" r="10" stroke="currentColor" stroke-width="1.6" fill="none" />
+          <circle cx="20" cy="16" r="6.4" stroke="currentColor" stroke-width="1.6" fill="none" />
+        </svg>
+        <span>Delta</span>
+      </a>
+      <nav class="nav-center" aria-label="Main">
+        {nav.map(([label, href]) => <a href={href}>{label}</a>)}
+      </nav>
+      <a class="btn-square btn-small nav-cta" href="/pad/">
+        Open the Pad
+        <svg class="arrow" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 9 9 3M4 3h5v5" /></svg>
+      </a>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open menu">
+        <span></span><span></span>
+      </button>
+    </header>
 
-      <main>
-        <section class="hero">
-          <h1>The language of computation.</h1>
-          <p class="lead">Write machines, languages and constructions as code. See them run. Delta is a small, safe language whose values are the objects of computation theory.</p>
-          <div class="cta">
-            <a class="btn primary" href="/pad/">Open the Pad</a>
-            <a class="btn ghost" href="/docs/tour/01-first-program/">Take the tour</a>
-          </div>
-          <div class="live">
-            <iframe title="A live Delta program: edit it and press Execute" src={embed} loading="lazy"></iframe>
-            <p>This is the real Pad, running in your browser. Edit the code; the diagram and tests update. <a href={padUrl(hero)}>Open it full size ↗</a></p>
-          </div>
-        </section>
-
-        <section class="features" aria-label="Features">
-          {features.map((f) => (
-            <article class="card">
-              <h2>{f.title}</h2>
-              <p>{f.text}</p>
-              <pre><code>{f.code}</code></pre>
-              <a href={padUrl(f.code)}>Open in the Pad ↗</a>
-            </article>
-          ))}
-        </section>
-
-        <h2 class="section">Learn by doing</h2>
-        <div class="recipes">
-          {recipes.map(([title, slug]) => <a href={`/docs/cookbook/${slug}/`}>{title}</a>)}
-        </div>
-
-        <div class="two">
-          <section>
-            <h2 class="section">For teachers</h2>
-            <p>Embed a live example in your course page with one <code>&lt;iframe&gt;</code> (Share → Copy embed). <code>use strict</code> requires every field, as in an assignment, and explain profiles add textbook citations to constructions and errors.</p>
-          </section>
-          <section>
-            <h2 class="section">For AI tools</h2>
-            <p>Every run is JSON (<a href="/schema/output-v2.json">schema</a>), and <a href="/llms.txt">/llms.txt</a> is a complete guide to the language for assistants. Errors carry stable codes and quick fixes.</p>
-          </section>
-        </div>
-      </main>
-
-      <footer>
-        <span>A project by <a href="https://github.com/NandishSinha1403">Nandish Sinha</a></span>
-        <a href="https://github.com/NandishSinha1403/delta">GitHub</a>
-        <a href="/docs/">Docs</a>
-        <a href="https://github.com/NandishSinha1403/delta/blob/main/LICENSE">License (MIT)</a>
-        <span>v2.0 beta</span>
-      </footer>
+    <div id="mobile-menu" class="mobile-menu" hidden>
+      <nav aria-label="Main">
+        {nav.map(([label, href]) => <a href={href}>{label}</a>)}
+      </nav>
+      <a class="btn-square btn-large" href="/pad/">
+        Open the Pad
+        <svg class="arrow" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 9 9 3M4 3h5v5" /></svg>
+      </a>
     </div>
+
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <img class="hero-art" src="/img/hero-dfa.webp" alt="A state diagram drawn by the Delta Pad: the five-state DFA for binary numbers divisible by 5." width="1780" height="1000" fetchpriority="high" />
+        <div class="scrim" aria-hidden="true"></div>
+        <div class="hero-inner">
+          <h1 id="hero-title" class="headline-fluid">The language of computation.</h1>
+          <p class="hero-sub">Write machines, languages and constructions as code, then run them. Delta is a small, safe language whose values are automata, grammars, words and the questions you can ask about them.</p>
+          <div class="hero-actions">
+            <a class="btn-square btn-large" href="/pad/">
+              Open the Pad
+              <svg class="arrow" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 9 9 3M4 3h5v5" /></svg>
+            </a>
+            <a class="text-link" href="/docs/tour/01-first-program/">Take the tour</a>
+          </div>
+        </div>
+        <p class="hero-caption mono">divisible_by(5) · 5 states · drawn by the Pad</p>
+      </section>
+
+      <section class="section" aria-labelledby="trace-title">
+        <div class="section-head">
+          <h2 id="trace-title">Every run is a trace.</h2>
+          <p>Step through any machine, one configuration at a time: the state, the symbol it read, and where the input head is. These are EndsAB's real runs.</p>
+        </div>
+        <div class="card trace" data-trace>
+          <div class="trace-head">
+            <span class="chip mono" data-trace-id>run EndsAB on "abab"</span>
+            <span class="chip mono" data-trace-steps>5 steps</span>
+            <span class="chip mono" data-trace-verdict><i class="dot pass"></i>accept</span>
+            <a class="text-link small push" href={padUrl(endsAB)}>Open in the Pad</a>
+          </div>
+          <div class="trace-body">
+            <ul class="trace-list" aria-label="Inputs">
+              {runs.map((r, i) => (
+                <li>
+                  <button type="button" class="mono" aria-pressed={i === 0 ? 'true' : 'false'} data-run={i}>
+                    <i class={`dot ${r.accept ? 'pass' : 'fail'}`}></i>
+                    <span>{r.input === '' ? 'ε' : r.input}</span>
+                    <span class="verdict">{r.accept ? 'accept' : 'reject'}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div class="trace-table-wrap">
+              {runs.map((r, i) => (
+                <table class="trace-table mono" data-table={i} hidden={i !== 0}>
+                  <thead>
+                    <tr><th scope="col">Step</th><th scope="col">State</th><th scope="col">Head</th><th scope="col">Read</th></tr>
+                  </thead>
+                  <tbody>
+                    {r.rows.map((row, k) => (
+                      <tr class={i === 0 && k === r.rows.length - 1 ? 'active' : undefined}>
+                        <td>{row.step}</td>
+                        <td>{row.state}</td>
+                        <td>
+                          <div class="timeline" aria-label={`head at position ${row.head} of ${r.input.length}`}>
+                            <div class="bar" style={`left:${r.input.length ? (row.head / (r.input.length + 1)) * 100 : 0}%;width:${100 / (r.input.length + 1)}%`}></div>
+                          </div>
+                        </td>
+                        <td>{row.read}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="live-title">
+        <div class="section-head">
+          <h2 id="live-title">Change it. It runs.</h2>
+          <p>This is the Pad itself, in your browser: no install, no server. Edit the machine and the diagram and tests follow.</p>
+        </div>
+        <div class="card live">
+          <iframe title="A live Delta program: edit it and the diagram updates" src={embed} loading="lazy"></iframe>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="bento-title">
+        <div class="section-head">
+          <h2 id="bento-title">The theory, built in.</h2>
+          <p>Delta knows what each language is and what can be asked of it, and every construction keeps its steps.</p>
+        </div>
+        <div class="bento">
+          <article class="card bento-card">
+            <h3>Checks know what’s decidable</h3>
+            <p>An undecidable question is an error before anything runs, with a bounded check offered instead.</p>
+            <ul class="rows mono">
+              {checks.map((c) => (
+                <li>
+                  <span class="row-name">{c.name}</span>
+                  <span class="row-note">{c.note}</span>
+                  <span class="chip"><i class={`dot ${c.status}`}></i>{c.status}</span>
+                </li>
+              ))}
+            </ul>
+            <a class="text-link small" href={padUrl(checksCode)}>Open in the Pad</a>
+          </article>
+
+          <article class="card bento-card">
+            <h3>Every language has a class</h3>
+            <p>Of the six questions Delta can ask a language, how many each class can answer.</p>
+            <ul class="bars mono">
+              {classes.map((c) => (
+                <li>
+                  <span class="bar-name">{c.name}</span>
+                  <span class="stack" aria-label={`${c.yes} decidable${c.wip ? `, ${c.wip} decidable but not implemented` : ''}`}>
+                    <span class="seg yes" style={`width:${(c.yes / 6) * 100}%`}></span>
+                    <span class="seg wip" style={`width:${(c.wip / 6) * 100}%`}></span>
+                  </span>
+                  <span class="bar-count">{c.yes}/6</span>
+                </li>
+              ))}
+            </ul>
+            <p class="legend mono"><i class="sw yes"></i>decidable <i class="sw wip"></i>not implemented <i class="sw no"></i>undecidable</p>
+            <a class="text-link small" href={padUrl(classesCode)}>Open in the Pad</a>
+          </article>
+
+          <article class="card bento-card">
+            <h3>Constructions replay</h3>
+            <p>determinize(N) records every state and edge it adds. Step through it in the Pad.</p>
+            <ol class="diff mono">
+              {replay.map(([kind, text]) => (
+                <li class={kind}><span class="sign">{kind === 'add' ? '+' : '~'}</span>{text}</li>
+              ))}
+            </ol>
+            <a class="text-link small" href={padUrl(replayCode)}>Open in the Pad</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="metrics" aria-label="Delta in numbers">
+        <div class="metric"><p class="value">50<span class="unit mono">/50</span></p><p class="sub mono">conformance cases pass</p></div>
+        <div class="metric"><p class="value">150<span class="unit mono">ex</span></p><p class="sub mono">docs examples, all run in CI</p></div>
+        <div class="metric"><p class="value">256<span class="unit mono">KB</span></p><p class="sub mono">the engine, gzipped</p></div>
+        <div class="metric"><p class="value">14<span class="unit mono">models</span></p><p class="sub mono">in the standard prelude</p></div>
+      </section>
+
+      <section class="section" aria-labelledby="learn-title">
+        <div class="section-head">
+          <h2 id="learn-title">Learn by doing.</h2>
+          <p>Each recipe is a complete program you can run and change.</p>
+        </div>
+        <ul class="recipes card">
+          {recipes.map(([title, slug]) => (
+            <li><a href={`/docs/cookbook/${slug}/`}><span>{title}</span><span class="mono slug">{slug}</span></a></li>
+          ))}
+        </ul>
+      </section>
+
+      <section class="section two" aria-label="Teachers and AI tools">
+        <div>
+          <h2>For teachers</h2>
+          <p>Embed a live example in a course page with one iframe (Share, then Copy embed). <code class="mono">use strict</code> requires every field, as an assignment would, and explain profiles add textbook citations.</p>
+        </div>
+        <div>
+          <h2>For AI tools</h2>
+          <p>Every run is JSON (<a class="text-link" href="/schema/output-v2.json">schema</a>), and <a class="text-link" href="/llms.txt">/llms.txt</a> is a complete guide to the language. Errors carry stable codes and quick fixes.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer mono">
+      <span>A project by <a href="https://github.com/NandishSinha1403">Nandish Sinha</a></span>
+      <a href="https://github.com/NandishSinha1403/delta">GitHub</a>
+      <a href="/docs/">Docs</a>
+      <a href="https://github.com/NandishSinha1403/delta/blob/main/LICENSE">MIT license</a>
+      <span class="chip"><i class="dot pass"></i>v2.0 beta</span>
+    </footer>
+
+    <script>
+      // Full-screen menu on small screens.
+      const toggle = document.querySelector<HTMLButtonElement>('.menu-toggle');
+      const menu = document.getElementById('mobile-menu');
+      const setOpen = (open: boolean) => {
+        if (!toggle || !menu) return;
+        toggle.setAttribute('aria-expanded', String(open));
+        toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+        menu.hidden = !open;
+        document.body.classList.toggle('menu-open', open);
+      };
+      toggle?.addEventListener('click', () => setOpen(toggle.getAttribute('aria-expanded') !== 'true'));
+      document.addEventListener('keydown', (e) => e.key === 'Escape' && setOpen(false));
+      menu?.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setOpen(false)));
+
+      // The trace: pick a run, and step its rows (the head bar of the current step turns blue).
+      const trace = document.querySelector<HTMLElement>('[data-trace]');
+      if (trace) {
+        const buttons = [...trace.querySelectorAll<HTMLButtonElement>('[data-run]')];
+        const tables = [...trace.querySelectorAll<HTMLTableElement>('[data-table]')];
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        let timer = 0;
+        const play = (i: number) => {
+          window.clearInterval(timer);
+          const rows = [...(tables[i]?.querySelectorAll('tbody tr') ?? [])];
+          rows.forEach((r) => r.classList.remove('active'));
+          if (reduced) {
+            rows.at(-1)?.classList.add('active');
+            return;
+          }
+          let k = 0;
+          rows[0]?.classList.add('active');
+          timer = window.setInterval(() => {
+            rows[k]?.classList.remove('active');
+            k = Math.min(k + 1, rows.length - 1);
+            rows[k]?.classList.add('active');
+            if (k === rows.length - 1) window.clearInterval(timer);
+          }, 650);
+        };
+        const select = (i: number) => {
+          buttons.forEach((b, j) => b.setAttribute('aria-pressed', String(i === j)));
+          tables.forEach((t, j) => (t.hidden = i !== j));
+          const b = buttons[i];
+          const input = b?.querySelector('span')?.textContent ?? '';
+          const accept = b?.querySelector('.dot')?.classList.contains('pass');
+          const rows = tables[i]?.querySelectorAll('tbody tr').length ?? 0;
+          const id = trace.querySelector('[data-trace-id]');
+          const steps = trace.querySelector('[data-trace-steps]');
+          const verdict = trace.querySelector('[data-trace-verdict]');
+          if (id) id.textContent = `run EndsAB on "${input === 'ε' ? '' : input}"`;
+          if (steps) steps.textContent = `${rows} step${rows === 1 ? '' : 's'}`;
+          if (verdict) verdict.innerHTML = `<i class="dot ${accept ? 'pass' : 'fail'}"></i>${accept ? 'accept' : 'reject'}`;
+          play(i);
+        };
+        buttons.forEach((b, i) => b.addEventListener('click', () => select(i)));
+        const seen = new IntersectionObserver((entries) => {
+          if (entries.some((e) => e.isIntersecting)) {
+            play(0);
+            seen.disconnect();
+          }
+        }, { threshold: 0.4 });
+        seen.observe(trace);
+      }
+    </script>
+
+    <style is:global>
+      :root {
+        --bg: #000;
+        --card: #0a0a0a;
+        --ring: rgba(255, 255, 255, 0.145);
+        --chip: #1f1f1f;
+        --text: #ededed;
+        --white: #fff;
+        --sub: #e7e7e7;
+        --muted: #999999;
+        --accent: #52a8ff;
+        --ok: #62c073;
+        --sans: 'Schibsted Grotesk', ui-sans-serif, system-ui, sans-serif;
+        --mono: 'Commit Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+        --pad-x: 56px;
+        color-scheme: dark;
+      }
+      * { box-sizing: border-box; }
+      html { background: var(--bg); scrollbar-color: #2b2b2b var(--bg); }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 400 16px/1.6 var(--sans);
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      body.menu-open { overflow: hidden; }
+      ::selection { background: rgba(82, 168, 255, 0.35); color: var(--white); }
+      a { color: inherit; text-underline-offset: 3px; }
+      :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+      h1, h2, h3 { font-family: var(--sans); font-weight: 500; color: var(--white); margin: 0; text-wrap: balance; }
+      h2 { font-size: clamp(28px, 3.2vw, 44px); line-height: 1.08; letter-spacing: -0.04em; }
+      h3 { font-size: 20px; line-height: 1.25; letter-spacing: -0.02em; }
+      p { margin: 0; }
+      .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+      code { font-family: var(--mono); font-size: 0.92em; color: var(--white); }
+
+      /* Buttons: square. Chips: pills. */
+      .btn-square {
+        display: inline-flex; align-items: center; gap: 10px;
+        border-radius: 0; background: var(--white); color: #121212;
+        font: 500 16px/1 var(--sans); text-decoration: none;
+        padding: 8px 12px;
+        transition: background-color 160ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 160ms;
+      }
+      .btn-square:hover { background: #e6e6e6; box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.08); }
+      .btn-square .arrow { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+      .btn-large { font-size: 20px; padding: 14px 20px; }
+      .chip {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: var(--chip); border-radius: 100px; padding: 4px 10px;
+        font: 400 12px/1.4 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.02em;
+        white-space: nowrap;
+      }
+      .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex: none; }
+      .dot.pass { background: var(--ok); }
+      .dot.warn { background: var(--muted); }
+      .dot.fail { background: var(--text); }
+      .text-link { color: var(--white); text-decoration: underline; text-decoration-color: rgba(255, 255, 255, 0.35); }
+      .text-link:hover { text-decoration-color: var(--white); }
+      .text-link.small { font-size: 14px; }
+      .card {
+        background: var(--card); border-radius: 12px;
+        box-shadow: 0 0 0 1px var(--ring);
+      }
+
+      /* Header */
+      .site-header {
+        position: absolute; top: 38px; left: 0; right: 0; z-index: 20;
+        display: flex; align-items: center; gap: 32px; padding: 0 var(--pad-x);
+      }
+      .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--white); text-decoration: none; font: 500 20px/1 var(--sans); letter-spacing: -0.02em; }
+      .mark { width: 28px; height: 28px; color: var(--white); }
+      .nav-center { display: flex; gap: 28px; margin: 0 auto; }
+      .nav-center a { color: var(--white); text-decoration: none; font-size: 16px; opacity: 0.86; }
+      .nav-center a:hover { opacity: 1; }
+      .menu-toggle { display: none; }
+      .mobile-menu {
+        position: fixed; inset: 0; z-index: 30; background: var(--bg);
+        display: flex; flex-direction: column; justify-content: space-between;
+        padding: 112px 20px 40px;
+      }
+      .mobile-menu[hidden] { display: none; }
+      .mobile-menu nav { display: flex; flex-direction: column; }
+      .mobile-menu nav a {
+        color: var(--white); text-decoration: none; font: 500 36px/1.1 var(--sans); letter-spacing: -0.04em;
+        padding: 14px 0; border-bottom: 1px solid var(--ring);
+      }
+      .mobile-menu .btn-square { align-self: stretch; justify-content: space-between; }
+
+      /* Hero */
+      .hero { position: relative; min-height: 100svh; display: flex; align-items: flex-end; overflow: hidden; isolation: isolate; }
+      .hero-art {
+        position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 42%;
+        z-index: -2; opacity: 0.9;
+        -webkit-mask-image: radial-gradient(ellipse 75% 70% at 55% 42%, #000 45%, transparent 100%);
+        mask-image: radial-gradient(ellipse 75% 70% at 55% 42%, #000 45%, transparent 100%);
+      }
+      .scrim {
+        position: absolute; inset: 0; z-index: -1;
+        background:
+          linear-gradient(to top, rgba(0, 0, 0, 0.76) 0%, rgba(0, 0, 0, 0) 93.785%),
+          linear-gradient(to top, #000 0%, rgba(0, 0, 0, 0) 38%),
+          radial-gradient(ellipse 40% 30% at 20% 85%, rgba(82, 168, 255, 0.10), transparent 70%);
+      }
+      .hero-inner { padding: 0 var(--pad-x) 88px; max-width: calc(752px + 2 * var(--pad-x)); }
+      .headline-fluid {
+        font-size: clamp(32px, 2.6vw + 22px, 60px); line-height: 1.02; letter-spacing: -0.045em; max-width: 752px;
+      }
+      .hero-sub { margin-top: 20px; font-size: 16px; color: var(--sub); max-width: 560px; }
+      .hero-actions { margin-top: 32px; display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
+      .hero-caption { position: absolute; right: var(--pad-x); bottom: 92px; font-size: 12px; color: var(--muted); }
+
+      /* Sections */
+      main > .section, .metrics { max-width: 1240px; margin: 128px auto 0; padding: 0 var(--pad-x); }
+      main > .section:first-of-type { margin-top: 112px; }
+      .section-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; align-items: end; margin-bottom: 32px; }
+      .section-head p { color: var(--muted); max-width: 52ch; }
+
+      /* Trace (the event stream) */
+      .trace-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 14px 16px; border-bottom: 1px solid var(--ring); }
+      .push { margin-left: auto; }
+      .trace-body { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 300px; }
+      .trace-list { list-style: none; margin: 0; padding: 8px; border-right: 1px solid var(--ring); max-height: 360px; overflow-y: auto; }
+      .trace-list button {
+        width: 100%; display: flex; align-items: center; gap: 10px;
+        background: none; border: 0; border-radius: 6px; padding: 9px 10px; color: var(--muted);
+        font: 400 13px/1 var(--mono); cursor: pointer; text-align: left;
+      }
+      .trace-list button span:nth-of-type(1) { color: var(--white); }
+      .trace-list .verdict { margin-left: auto; font-size: 11px; text-transform: uppercase; }
+      .trace-list button:hover { background: #111; }
+      .trace-list button[aria-pressed='true'] { background: var(--chip); box-shadow: inset 0 0 0 1px var(--ring); }
+      .trace-table-wrap { overflow-x: auto; }
+      .trace-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+      .trace-table th {
+        text-align: left; font-weight: 400; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
+        padding: 12px 16px; border-bottom: 1px solid var(--ring);
+      }
+      .trace-table td { padding: 11px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); color: var(--text); white-space: nowrap; }
+      .trace-table td:nth-child(3) { width: 55%; }
+      .trace-table tr.active td { background: rgba(82, 168, 255, 0.06); color: var(--white); }
+      .timeline { position: relative; width: 100%; height: 6px; background: transparent; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06); border-radius: 2px; }
+      .timeline .bar { position: absolute; top: 0; height: 100%; border-radius: 2px; background: rgba(255, 255, 255, 0.18); transition: background-color 220ms; }
+      .trace-table tr.active .bar { background: var(--accent); }
+
+      /* Live Pad */
+      .live { overflow: hidden; }
+      .live iframe { display: block; width: 100%; height: 480px; border: 0; }
+
+      /* Bento */
+      .bento { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+      .bento-card { padding: 22px; display: flex; flex-direction: column; gap: 14px; position: relative; overflow: hidden; }
+      .bento-card::before {
+        content: ''; position: absolute; inset: -40% -20% auto auto; width: 70%; height: 70%;
+        background: radial-gradient(circle, rgba(82, 168, 255, 0.10), transparent 65%); opacity: 0; transition: opacity 300ms;
+        pointer-events: none;
+      }
+      .bento-card:hover::before { opacity: 1; }
+      .bento-card:hover { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.24); }
+      .bento-card > p { color: var(--muted); font-size: 15px; }
+      .bento-card .text-link { margin-top: auto; }
+      .rows { list-style: none; margin: 0; padding: 0; font-size: 12.5px; }
+      .rows li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 9px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+      .row-name { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .row-note { color: var(--muted); }
+      .bars { list-style: none; margin: 0; padding: 0; font-size: 12.5px; display: grid; gap: 10px; }
+      .bars li { display: grid; grid-template-columns: 96px minmax(0, 1fr) 30px; gap: 10px; align-items: center; }
+      .bar-name { color: var(--text); }
+      .bar-count { color: var(--muted); text-align: right; }
+      .stack { display: flex; height: 8px; background: var(--chip); border-radius: 2px; overflow: hidden; }
+      .seg.yes { background: rgba(255, 255, 255, 0.82); }
+      .seg.wip { background: var(--accent); }
+      .legend { font-size: 11px; color: var(--muted); display: flex; gap: 6px 14px; flex-wrap: wrap; align-items: center; }
+      .sw { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: -0.5px; }
+      .sw.yes { background: rgba(255, 255, 255, 0.82); }
+      .sw.wip { background: var(--accent); }
+      .sw.no { background: var(--chip); box-shadow: inset 0 0 0 1px var(--ring); }
+      .diff { list-style: none; margin: 0; padding: 0; font-size: 12.5px; background: #050505; border-radius: 8px; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08); overflow: hidden; }
+      .diff li { display: flex; gap: 10px; padding: 5px 12px; white-space: pre; color: var(--text); }
+      .diff li.add { box-shadow: inset 2px 0 0 var(--ok); background: rgba(98, 192, 115, 0.06); }
+      .diff li.edge { box-shadow: inset 2px 0 0 var(--accent); background: rgba(82, 168, 255, 0.05); }
+      .diff .sign { color: var(--muted); }
+
+      /* Metrics */
+      .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .metrics .metric { padding: 28px 24px; box-shadow: 0 0 0 0.5px var(--ring); }
+      .value { font: 500 56px/1 var(--sans); letter-spacing: -3.36px; color: var(--white); font-variant-numeric: tabular-nums; }
+      .unit { font-size: 16px; letter-spacing: 0; color: var(--muted); margin-left: 6px; }
+      .sub { margin-top: 12px; font-size: 13px; color: var(--muted); }
+
+      /* Recipes */
+      .recipes { list-style: none; margin: 0; padding: 4px 0; }
+      .recipes li + li { border-top: 1px solid rgba(255, 255, 255, 0.06); }
+      .recipes a { display: flex; justify-content: space-between; gap: 16px; padding: 16px 22px; text-decoration: none; color: var(--white); }
+      .recipes a:hover { background: #0f0f0f; }
+      .recipes .slug { color: var(--muted); font-size: 13px; }
+
+      .two { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+      .two h2 { font-size: 28px; margin-bottom: 14px; }
+      .two p { color: var(--muted); max-width: 60ch; }
+
+      .site-footer {
+        max-width: 1240px; margin: 128px auto 0; padding: 28px var(--pad-x) 48px;
+        display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px;
+        border-top: 1px solid var(--ring); font-size: 13px; color: var(--muted);
+      }
+      .site-footer a { color: var(--muted); }
+      .site-footer a:hover { color: var(--white); }
+      .site-footer .chip { margin-left: auto; }
+
+      @media (max-width: 1024px) {
+        .bento { grid-template-columns: 1fr; }
+        .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
+      @media (max-width: 760px) {
+        :root { --pad-x: 20px; }
+        .site-header { top: 20px; }
+        .nav-center, .nav-cta { display: none; }
+        .menu-toggle {
+          display: inline-flex; flex-direction: column; justify-content: center; gap: 6px; margin-left: auto;
+          width: 44px; height: 44px; background: none; border: 0; padding: 0 10px; position: relative; z-index: 40; cursor: pointer;
+        }
+        .menu-toggle span { display: block; height: 1.5px; background: var(--white); transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1); }
+        .menu-toggle[aria-expanded='true'] span:first-child { transform: translateY(3.75px) rotate(45deg); }
+        .menu-toggle[aria-expanded='true'] span:last-child { transform: translateY(-3.75px) rotate(-45deg); }
+        body.menu-open .site-header { position: fixed; z-index: 40; }
+        .hero-art { object-position: 50% 38%; }
+        .hero-inner { padding-bottom: 72px; }
+        .hero-caption { left: var(--pad-x); right: auto; bottom: 28px; }
+        main > .section, .metrics { margin-top: 88px; }
+        .section-head, .two { grid-template-columns: 1fr; gap: 14px; }
+        .trace-body { grid-template-columns: 1fr; }
+        .trace-list { border-right: 0; border-bottom: 1px solid var(--ring); display: flex; overflow-x: auto; gap: 4px; max-height: none; }
+        .trace-list button { width: auto; }
+        .trace-list .verdict { display: none; }
+        .live iframe { height: 560px; }
+        .value { font-size: 44px; letter-spacing: -2.4px; }
+        .recipes a { flex-direction: column; gap: 4px; }
+        .site-footer .chip { margin-left: 0; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * { transition: none !important; }
+      }
+    </style>
   </body>
 </html>

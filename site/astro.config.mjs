@@ -3,10 +3,8 @@
 import { unified } from '@astrojs/markdown-remark';
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
-import { readFileSync } from 'node:fs';
 import { remarkOpenInPad } from './src/lib/pad-link.mjs';
 
-const deltaGrammar = JSON.parse(readFileSync(new URL('./src/lib/delta.tmLanguage.json', import.meta.url), 'utf8'));
 
 export default defineConfig({
   site: 'https://delta.nandish.dev',
@@ -19,7 +17,10 @@ export default defineConfig({
       favicon: '/favicon.svg',
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/NandishSinha1403/delta' }],
       customCss: ['./src/styles/theme.css'],
-      expressiveCode: { shiki: { langs: [deltaGrammar] } },
+      components: {
+        ThemeProvider: './src/components/DarkTheme.astro',
+        ThemeSelect: './src/components/NoThemeSelect.astro',
+      },
       sidebar: [
         { label: 'Start', items: [{ label: 'Docs home', link: '/docs/' }, { label: 'Open the Pad ↗', link: '/pad/' }] },
         { label: 'Tour', items: [{ autogenerate: { directory: 'docs/tour' } }] },

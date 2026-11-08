@@ -13,7 +13,7 @@ export default defineConfig({
     { name: 'phone', use: { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } },
   ],
   webServer: {
-    command: 'pnpm --dir ../site preview --port 4321',
+    command: 'pnpm --dir ../site preview --port 4321 --ignore-lock',
     url: 'http://localhost:4321',
     reuseExistingServer: !process.env.CI,
   },
