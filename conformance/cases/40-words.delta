@@ -9,6 +9,6 @@ assert rev(v) == "110"
 assert count(w, '1') == 2
 assert w ends with "10"
 assert w starts with "01"
-assert "11" in w                // substring
+assert w contains "11"          // substring (`in` is membership)
 assert ε == ""
 assert len(ε) == 0

@@ -3,5 +3,5 @@
 fn f(N: machine[nfa]) -> machine[dfa] = determinize(N)
 fn h(k: int) -> int = k
 let bad = h("a")
-let D = f(nfa(re"a b"))
+let D = f(to_nfa(re"a b"))
 assert D.model == dfa

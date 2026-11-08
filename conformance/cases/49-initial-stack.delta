@@ -1,0 +1,14 @@
+// 01-LANGUAGE.md §5.3 (Q-62): a stack starts empty, unless the machine has the option
+// "initial stack Z" (the Hopcroft–Motwani–Ullman convention).
+pda P (initial stack Z) {
+  start q0
+  accept q1
+  q0 -ε, Z → ε-> q1            // pops the initial Z
+}
+pda E {
+  start q0
+  accept q1
+  q0 -ε, Z → ε-> q1            // the stack is empty, so this edge never fires
+}
+check P accepts ""
+check E rejects ""

@@ -6,7 +6,8 @@ fn name(a: word, k: int) -> bool {         // block body, optional types
 }
 let f = fn(x) = x + 1                      // anonymous
 
-let x = 3        var y = 0      y = y + 1
+let x = 3
+var y = 0;  y = y + 1                      // a newline or ";" ends a statement
 assert add(2, 3) == 5
 assert name("ab", 3)
 assert f(x) == 4

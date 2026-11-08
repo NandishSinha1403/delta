@@ -4,9 +4,9 @@
 dfa EndsAB {
   start q0
   accept q2
-  q0 -a-> q1    q0 -b-> q0
-  q1 -a-> q1    q1 -b-> q2
-  q2 -a-> q1    q2 -b-> q0
+  q0 -a-> q1;   q0 -b-> q0
+  q1 -a-> q1;   q1 -b-> q2
+  q2 -a-> q1;   q2 -b-> q0
 }
 
 // A language, written the way you'd write it in math
@@ -17,11 +17,12 @@ check EndsAB ≡ re"(a ∪ b)* a b"      // exact: both are Regular
 
 // A construction, written like its definition
 fn determinize(N) = explore {
+  alphabet N.alphabet
   start  N.eclose({ N.start })
   step   R on a -> N.eclose(⋃ { N.δ(q, a) | q ∈ R })
   accept R if R ∩ N.accept ≠ ∅
 }
 
-let N = nfa(re"(a ∪ b)* a b")
+let N = to_nfa(re"(a ∪ b)* a b")
 check determinize(N) ≡ N
 show determinize(N)

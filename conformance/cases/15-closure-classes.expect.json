@@ -1,5 +1,5 @@
 {
   "ok": true,
   "diagnostics": [],
-  "outputs": { "$len": 21, "$each": { "kind": "test", "pass": true } }
+  "outputs": { "$len": 36, "$each": { "kind": "test", "pass": true } }
 }

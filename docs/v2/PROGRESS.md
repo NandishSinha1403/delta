@@ -1,6 +1,6 @@
 # Delta 2 — Progress
 
-_Last updated: 2026-11-08 (end of Phase 0 session)_
+_Last updated: 2026-11-08 (Phase 0, second session: ten answers confirmed)_
 
 ## Current state
 
@@ -9,7 +9,7 @@ _Last updated: 2026-11-08 (end of Phase 0 session)_
 | Branch | `v2` (long-lived; **never merge into `main`** until the v2 beta) |
 | v1 | Tag `v1.0-final` = `50bf153` (= `origin/main` at the time, incl. both CNAME commits). v1 stays live from `main` |
 | Phase | **0 — Audit and spec freeze: produced, awaiting the owner's review.** The spec is **not frozen** until the open questions are confirmed |
-| Conformance | 43 cases, **all 43 listed in `conformance/xfail.txt`** (expected to fail: no v2 language yet) |
+| Conformance | 50 cases (44–50 added for the confirmed answers), **all 50 listed in `conformance/xfail.txt`** (expected to fail: no v2 language yet) |
 | v1 tests | All pass (79 Rust + 3 conformance-harness tests; 25 Vitest; 14 Playwright × 3 viewports) |
 
 ## What Phase 0 produced
@@ -33,15 +33,19 @@ _Last updated: 2026-11-08 (end of Phase 0 session)_
 - Q-90: conformance layout and the xfail-ledger approach (CI green, list only shrinks).
 - Q-91: local `main` was fast-forwarded to `origin/main` before tagging.
 
-**Proposed, confirm next session** (QUESTIONS.md, "Proposed answers"): Q-01 (several statements
-per line), Q-03 (`-label->` lexing), Q-06 (`dfa` model/literal/function), Q-08 (`in` = membership
-only; substring is `contains`), Q-26 (state names are symbols, `'q0'`), Q-44 (citations only in
-`delta-explain`), Q-62 (stack starts empty), Q-69 (`by halting` = enter accept state), Q-75
-(closure-table gaps, join rule), Q-80 (`explore` alphabet = union of referenced machines'
-alphabets).
+**Confirmed 2026-11-08** (QUESTIONS.md, "Confirmed answers"; applied to 01, SEMANTICS and
+conformance): Q-01 (newline or `;`, everywhere; also answers Q-02), Q-03 (machine-body lexing mode,
+edge tokens), Q-06 (conversions are verbs: `to_nfa`, `to_gnfa`, `determinize`), Q-08
+(`contains`), Q-26 (states are atoms, `:q0`; atom-keyed maps), Q-44 (citations only in
+`delta-explain`), Q-62 (empty stack, option `initial stack Z0`), Q-69 (verdicts accept / reject /
+loops / unknown), Q-75 (Finite and Any columns, `F ∩ L` / `F ∖ L` rules), Q-80 (`explore` needs
+`alphabet`).
 
-**Still open:** every other question in QUESTIONS.md. These block Phase 1: Q-02, Q-04, Q-05, Q-07,
-Q-09–Q-15, Q-17–Q-28, Q-39 (new dependencies: indexmap, im, schemars), Q-40, Q-41, Q-43, Q-45–Q-48.
+**New, raised while applying them:** Q-92 (`F ∩ L` for an Any L), Q-93 (option syntax).
+
+**Still open:** every other question in QUESTIONS.md. These block Phase 1: Q-04, Q-05, Q-07,
+Q-09–Q-15, Q-17–Q-25, Q-27, Q-28, Q-39 (new dependencies: indexmap, im, schemars), Q-40, Q-41,
+Q-43, Q-45–Q-48, Q-93.
 
 ## Key findings of the audit
 
@@ -81,11 +85,13 @@ The full check list (wasm build, size check, web lint/typecheck/test/build/e2e) 
 ## Next session: start here
 
 1. Read `CLAUDE.md`, then this file, then `docs/v2/QUESTIONS.md`.
-2. Go through the **proposed answers** with the owner: mark each CONFIRMED or change it.
+2. ~~Confirm the ten proposed answers~~ (done 2026-11-08). The owner has the list of remaining open
+   questions, each marked "real choice" or "obvious default", and is ruling on them.
 3. Resolve the remaining Phase 1 blockers (list above), especially Q-39 (dependencies) and Q-43
    (crate layout). Both need the owner's OK under the working agreement.
-4. Apply every confirmed answer: update `01-LANGUAGE.md`, `SEMANTICS.md` (remove the `[Q-nn]` tag)
-   and the affected conformance cases (e.g. Q-08 changes case 40's `in` to `contains`).
+4. Apply each newly confirmed answer the same way: `01-LANGUAGE.md`, `SEMANTICS.md` (remove the
+   `[Q-nn]` tag), the conformance cases (new ones go into `xfail.txt`), and the "Confirmed answers"
+   table plus a ✅ on the row in QUESTIONS.md.
 5. Complete the EBNF in 01 §15 (Q-14). Then declare the **spec freeze**: Phase 0 is done.
 6. Only after an explicit go-ahead: start Phase 1 (language core). Its exit criterion includes the
    P1 conformance cases leaving `xfail.txt`.

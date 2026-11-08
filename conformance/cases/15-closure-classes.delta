@@ -40,13 +40,33 @@ assert (∁T).class == Any
 assert (T ∪ T).class == Recognizable
 assert (P ∩ P).class == Decidable
 
-// Provisional (QUESTIONS.md Q-75): the Finite column and mixed operands use the join
+// The Finite and Any columns, and mixed operands (the larger class)
 assert (F ∪ F).class == Finite
+assert (F ++ F).class == Finite
+assert rev(F).class == Finite
 assert (∁F).class == Regular
+assert (F*).class == Regular
 assert (R ∪ C).class == CF
+assert (F ∪ T).class == Recognizable
+assert (∁T ∪ R).class == Any
+
+// F ∩ L and F ∖ L are Finite when L is Decidable or lower...
+assert (F ∩ C).class == Finite
+assert (F ∩ P).class == Finite
+assert (F ∖ P).class == Finite
+// ...and when L is Recognizable, F ∩ L is Recognizable and F ∖ L is Any
+assert (F ∩ T).class == Recognizable
+assert (F ∖ T).class == Any
+
+// L ∖ K in general is L ∩ ∁K
+assert (R ∖ R2).class == Regular
+assert (C ∖ R).class == CF                // ∁R is Regular: the L ∩ R row
+assert (R ∖ C).class == CS                // ∁C is CS, then the L ∩ R row
 
 // The values are right too
 assert "01" ∈ (C ∩ R)
 assert "0011" ∉ (C ∩ R)
 assert "0110" ∈ (C ++ C2)
 assert "10" ∈ ∁C
+assert "01" ∈ (F ∩ P)
+assert (F ∖ P).is_empty()                 // both words of F have as many 0s as 1s

@@ -1,8 +1,8 @@
 // 01-LANGUAGE.md §12: a sample from each area of the standard library; every method: option.
 let R = re"(0 ∪ 1)* 0 1"
-let N1 = nfa(R, method: "textbook")
-let N2 = nfa(R, method: "thompson")
-let N3 = nfa(R, method: "glushkov")
+let N1 = to_nfa(R, method: "textbook")
+let N2 = to_nfa(R, method: "thompson")
+let N3 = to_nfa(R, method: "glushkov")
 let D = determinize(N1)
 let Mh = minimize(D, method: "hopcroft")
 let Mm = minimize(D, method: "moore")
@@ -12,14 +12,13 @@ let Mt = minimize(D, method: "table")
 // Regex ↔ automata
 check N1 ≡ N2
 check N1 ≡ N3
-check gnfa(D) ≡ R
+check to_gnfa(D) ≡ R
 check to_regex(Mh, method: "state-elimination") ≡ R
 check to_regex(Mh, method: "arden") ≡ R
 check to_regex(Mh, method: "brzozowski-mccluskey") ≡ R
 check simplify(re"(0 ∪ ∅) ε") ≡ re"0"
 
 // Automata
-check dfa(N1) ≡ D                          // dfa is an alias of determinize
 assert Mh.size == 3
 assert Mm.size == 3
 assert Mb.size == 3

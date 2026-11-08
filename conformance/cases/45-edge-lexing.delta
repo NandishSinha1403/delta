@@ -1,0 +1,37 @@
+// 01-LANGUAGE.md §2, "Machine bodies have their own lexing mode" (Q-03).
+// Inside -[ … ]-> an ASCII -> is the label arrow, because only ]-> closes the edge.
+pda P {                                      // { 0ⁿ1ⁿ | n ≥ 0 }
+  start q0
+  accept q0, q3
+  q0 -[0, ε -> AZ]-> q1
+  q1 -[0, A -> AA]-> q1
+  q1 -[1, A -> ε]-> q2
+  q2 -[1, A → ε]-> q2                         // → and -> mean the same inside brackets
+  q2 -[ε, Z -> ε]-> q3
+}
+check P accepts "", "01", "0011"
+check P rejects "0", "10", "011"
+
+// A bracketed list of dfa labels
+dfa Both {
+  start q0
+  accept q0
+  q0 -[a, b]-> q0
+}
+check Both accepts "", "ab", "ba"
+
+// Arithmetic (and minus) only inside [ … ] and in for/if headers
+fn countdown(n) = dfa {
+  alphabet a
+  start  [n]
+  accept [0]
+  for r ∈ 1..=n {
+    [r] -a-> [r - 1]
+  }
+  [0] -a-> [0]
+}
+check countdown(2) accepts "aa", "aaa"
+check countdown(2) rejects "", "a"
+
+// Outside machine bodies - is always minus
+assert 5 -1 == 4

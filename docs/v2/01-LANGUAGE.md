@@ -11,9 +11,9 @@ Delta is a small, safe, complete language whose values are the objects of comput
 dfa EndsAB {
   start q0
   accept q2
-  q0 -a-> q1    q0 -b-> q0
-  q1 -a-> q1    q1 -b-> q2
-  q2 -a-> q1    q2 -b-> q0
+  q0 -a-> q1;   q0 -b-> q0
+  q1 -a-> q1;   q1 -b-> q2
+  q2 -a-> q1;   q2 -b-> q0
 }
 
 // A language, written the way you'd write it in math
@@ -24,12 +24,13 @@ check EndsAB ≡ re"(a ∪ b)* a b"      // exact: both are Regular
 
 // A construction, written like its definition
 fn determinize(N) = explore {
+  alphabet N.alphabet
   start  N.eclose({ N.start })
   step   R on a -> N.eclose(⋃ { N.δ(q, a) | q ∈ R })
   accept R if R ∩ N.accept ≠ ∅
 }
 
-let N = nfa(re"(a ∪ b)* a b")
+let N = to_nfa(re"(a ∪ b)* a b")
 check determinize(N) ≡ N
 show determinize(N)
 ```
@@ -41,10 +42,11 @@ show determinize(N)
 | Thing | Syntax |
 |---|---|
 | Comments | `// line`, `/* block */`, `/// doc comment` (shown in hover and docs) |
-| Statements | **one per line**; a line continues if it ends with an operator, `,`, `(`, `[` or `{`. `;` is allowed but never needed |
+| Statements | a **newline or `;`** ends a statement, everywhere (also inside machine and model bodies); a closing `}` ends the last statement of its block. A line continues if it ends with an operator, `,`, `(`, `[` or `{` |
 | Blocks | `{ … }`. Indentation is free and the formatter decides it |
 | Identifiers | letters, digits, `_`, `'` (`q0`, `p'`, `q_dead`); case-sensitive |
 | Symbols | `'a'`, `'0'`, `'<RESET>'`. Inside machine and regex syntax a bare `a` or `<RESET>` is a symbol |
+| Atoms | `:q0`, `:dead`. A `:` starts an atom only **where an expression starts** (at the start of a statement, after `(`, `[`, `{`, `,`, `=`, `:`, an operator or a keyword; never right after a name, literal, `)`, `]` or `}`) **and** only when a name follows with no space. So `x: T`, `{ from: p }` and `f(q:atom)` keep their `:`, while `{ from: :q0 }` and `{:q0:0}` contain atoms |
 | Words | `"abba"`; the empty word is `""` or `ε` |
 | Numbers | `42`, `1_000_000`; ranges `0..n` (exclusive), `0..=n` (inclusive) |
 | Regex literal | `re"(0 ∪ 1)* 0 1"` |
@@ -67,6 +69,16 @@ show determinize(N)
 
 The formatter can normalize a file to Unicode or to ASCII (a per-user setting). Meaning never depends on which spelling you used.
 
+### Machine bodies have their own lexing mode
+
+Inside the body of a machine literal (§5.1), the lexer works differently:
+
+- **Edges are tokens.** `-a->` (a bare label) and `-[ … ]->` (a bracketed label list) are each one token. A bare label runs from the `-` to the first `->`. It may contain `→` but **never an ASCII `->`**: `q0 -a, X -> YZ-> q1` is error E1xx, with the quick fix "add brackets: `q0 -[a, X -> YZ]-> q1`".
+- **Inside `-[ … ]->`**, an ASCII `->` is the label arrow (`a, X -> YZ` is the pda short form), because only `]->` closes the edge. Brackets inside must **balance**, so labels can contain lists; an unbalanced `[` or `]` is E1xx. The list is read with the model's label grammar (§5.2): `-[a, b]->` is two dfa labels, `-[a, X -> YZ]->` is one pda label.
+- **Arithmetic only inside `[ … ]`.** A state expression `[e]`, and the headers of `for` and `if` up to their `{`, are read as ordinary expressions (names are variables, `-` is minus). Everywhere else in the body, `-` after a state starts an edge, and a bare name is an atom (§3, §5.4).
+
+Outside machine bodies, `-` is always minus and `->` is always the arrow.
+
 ---
 
 ## 3. Values and types
@@ -78,18 +90,19 @@ Types are **inferred**. Annotations are optional (`fn f(N: machine[nfa]) -> mach
 | `bool` | `true`, `false` | |
 | `int` | `3`, `-7` | 64-bit, overflow is an error |
 | `symbol` | `'a'` | |
-| `word` | `"0110"`, `ε` | `len(w)`, `w[i]`, `w ++ v`, `w^3`, `rev(w)`, `count(w, '0')`, `w ends with v`, `w starts with v`, `v in w` (substring) |
+| `atom` | `:q0`, `:dead` | a name used as a value; equal only to the same atom. A bare state name inside a machine is an atom, so `M.start == :q0` |
+| `word` | `"0110"`, `ε` | `len(w)`, `w[i]`, `w ++ v`, `w^3`, `rev(w)`, `count(w, '0')`, `w ends with v`, `w starts with v`, `w contains v` (substring). `∈`/`in` always mean membership, never substring |
 | `set[T]` | `{1, 2}`, `∅` | finite; canonical order for printing |
 | `list[T]` | `[1, 2]` | |
 | tuple | `(p, q)` | |
-| `map[K, V]` | `{ q0: 0, q1: 1 }` | |
+| `map[K, V]` | `{ :q0: 0, :q1: 1 }` | keys are any values; atom keys are written as atoms (`{ :q0: 0 }` is a map, while `{ q0: 0 }` is still Q-07) |
 | record | `{ from: p, to: q }` | |
 | `regex` | `re"ab*"` | |
 | `grammar` | `cfg { S -> a S b \| ε }` | |
 | `machine[model]` | `dfa M { … }` | §5 |
 | `model` | `model pda { … }` | §4 |
 | `lang[class]` | `lang L = …` | §6 |
-| `trace` | `M.run("01")` | configurations step by step |
+| `trace` | `M.run("01")` | configurations step by step, and `.verdict`: `:accept`, `:reject`, `:loops` or `:unknown` (§13) |
 | `fn` | `fn(x) = x + 1` | first-class, closures |
 | `none` | | |
 
@@ -100,7 +113,7 @@ Types are **inferred**. Annotations are optional (`fn f(N: machine[nfa]) -> mach
 ```delta
 { q ∈ M.states | q ∉ M.accept }                 // filter
 { (p, q) | p ∈ A.states, q ∈ B.states }         // map, several generators
-{ M.δ(q, a) | q ∈ R, a ∈ Σ, q ≠ dead }          // generators and conditions mixed
+{ M.δ(q, a) | q ∈ R, a ∈ Σ, q ≠ :dead }         // generators and conditions mixed
 [ len(w) | w ∈ words ]                          // list version keeps order
 ```
 
@@ -142,7 +155,7 @@ model fst   { input one-way; epsilon; output per-transition }
 model ctr(k) { input one-way; storage counters(k); accept by final }
 ```
 
-`;` separates properties on one line, inside a model body only. Each property has a precise meaning in the semantics document (`02-ENGINE.md` §2), and the checker enforces it. For example, `deterministic` + `total` means δ maps every (state, symbol) pair to exactly one move.
+As everywhere (§2), `;` separates properties written on one line. Each property has a precise meaning in the semantics document (`02-ENGINE.md` §2), and the checker enforces it. For example, `deterministic` + `total` means δ maps every (state, symbol) pair to exactly one move.
 
 **Users can define new models** with the same building blocks: a 2-stack PDA (`storage stack, stack`), a queue automaton (`storage queue`), a counter machine.
 
@@ -211,11 +224,14 @@ q0 -[a, b]-> q1            // several labels on one arrow
 dfa M (partial) { … }               // missing transitions → implicit dead state
 tm  T (missing: error) { … }        // make a missing transition an error, not a reject
 pda P (accept: by empty-stack) { … }
+pda P (initial stack Z0) { … }      // start with Z0 on the stack (Hopcroft–Motwani–Ullman convention)
 ```
+
+A stack starts **empty** unless the machine has the option `initial stack Z`; then it starts as `Z`, which must be in Γ.
 
 ### 5.4 States are values; machines can be generated
 
-Any value can be a state. `[expr]` writes an expression in state position, and `for` / `if` generate transitions:
+Any value can be a state. A bare name in state position is an **atom**: inside the machine you write `q0`, outside it `:q0` (`EndsAB.start == :q0`, `EndsAB.δ(:q0, 'a') == :q1`). `[expr]` writes any other value in state position, and `for` / `if` generate transitions:
 
 ```delta
 fn divisible_by(n) = dfa {
@@ -233,7 +249,7 @@ check divisible_by(3) rejects "1", "10", "111"
 
 ### 5.5 Members
 
-`M.model`, `M.states`, `M.alphabet`, `M.start`, `M.accept`, `M.edges` (list of `{from, label, to}`), `M.δ(q, a)` (a state or a set, by model), `M.eclose(S)`, `M.accepts(w)`, `M.run(w)` (trace), `M.output(w)` (transducers), `M.size`, `M.rename(f)`, `M.with(field: value)`, `M.lang` (the language, §6).
+`M.model`, `M.states`, `M.alphabet`, `M.start`, `M.accept`, `M.edges` (list of `{from, label, to}`), `M.δ(q, a)` (a state or a set, by model), `M.eclose(S)`, `M.accepts(w)`, `M.run(w)` (trace, with `.verdict`), `M.output(w)` (transducers), `M.size`, `M.rename(f)`, `M.with(field: value)`, `M.lang` (the language, §6).
 
 ### 5.6 Canonical record form
 
@@ -282,14 +298,24 @@ lang T = SomeTuringMachine                           // Recognizable
 
 ### 6.2 Operations compute the class (closure properties)
 
-| Operation | Regular | DCF | CF | CS | Decidable | Recognizable |
-|---|---|---|---|---|---|---|
-| `L ∪ K` | Regular | CF | CF | CS | Decidable | Recognizable |
-| `L ∩ K` | Regular | CS | CS | CS | Decidable | Recognizable |
-| `L ∩ R` (R regular) | Regular | DCF | CF | CS | Decidable | Recognizable |
-| `∁L` | Regular | DCF | CS | CS | Decidable | Any |
-| `L ++ K`, `L*` | Regular | CF | CF | CS | Decidable | Recognizable |
-| `rev(L)` | Regular | CF | CF | CS | Decidable | Recognizable |
+| Operation | Finite | Regular | DCF | CF | CS | Decidable | Recognizable | Any |
+|---|---|---|---|---|---|---|---|---|
+| `L ∪ K` | Finite | Regular | CF | CF | CS | Decidable | Recognizable | Any |
+| `L ∩ K` | Finite | Regular | CS | CS | CS | Decidable | Recognizable | Any |
+| `L ∩ R` (R regular) | Finite | Regular | DCF | CF | CS | Decidable | Recognizable | Any |
+| `F ∩ L` (F finite) | Finite | Finite | Finite | Finite | Finite | Finite | Recognizable | Recognizable |
+| `∁L` | Regular | Regular | DCF | CS | CS | Decidable | Any | Any |
+| `L ∖ K` | as `L ∩ ∁K` | | | | | | | |
+| `F ∖ L` (F finite) | Finite | Finite | Finite | Finite | Finite | Finite | Any | Any |
+| `L ++ K` | Finite | Regular | CF | CF | CS | Decidable | Recognizable | Any |
+| `L*` | Regular | Regular | CF | CF | CS | Decidable | Recognizable | Any |
+| `rev(L)` | Finite | Regular | CF | CF | CS | Decidable | Recognizable | Any |
+
+How to read it:
+- **Mixed operands** take the larger class (the later one in the chain), then use that column. So `F ∪ C` with F Finite and C CF is CF.
+- **Rows with a finite or regular operand come first.** If one operand of `∩` is Finite, use the `F ∩ L` row, with the column of the *other* operand's class. Otherwise, if one is Regular, use `L ∩ R` the same way. `F ∖ L` works like `F ∩ L`.
+- **Why `F ∩ L` and `F ∖ L` stop at Decidable:** computing them means asking `w ∈ L` for each word of F, which is only guaranteed to finish when L is Decidable or lower. For a Recognizable or Any L, `F ∩ L` is Recognizable and `F ∖ L` is Any.
+- **`∖` in general** is `L ∩ ∁K`: compute the class of `∁K`, then use the `∩` rows.
 
 The result's class is an **upper bound** on what Delta can guarantee. For example, the intersection of two CF languages might happen to be regular, but Delta can't know that in general, so it says CS.
 
@@ -297,7 +323,7 @@ The result's class is an **upper bound** on what Delta can guarantee. For exampl
 
 | Question | Finite / Regular | DCF | CF | CS | Decidable | Recognizable |
 |---|---|---|---|---|---|---|
-| `w ∈ L` | ✓ | ✓ | ✓ | ✓ | ✓ (budgeted) | semi: may not halt → budget outcome |
+| `w ∈ L` | ✓ | ✓ | ✓ | ✓ | ✓ (budgeted) | semi: `unknown` when the budget runs out |
 | `L.is_empty()` | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ |
 | `L.is_finite()` | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ |
 | `L.is_universal()` | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
@@ -335,20 +361,21 @@ Delta checks the claim **up to a bound** and marks the value *assumed* everywher
 
 ```delta
 explore [model] {
+  alphabet <set>                             // required: the input alphabet
   start  <expr>                              // the start state (any value)
   step   <pattern> on <symbol> -> <expr>     // deterministic successor
   step   <pattern> on <symbol> -> any <set>  // nondeterministic successors (nfa)
   step   <pattern> on ε -> any <set>         // ε-moves (nfa)
   accept <pattern> if <cond>
-  [alphabet <set>]                           // default: inferred from the inputs used
 }
 ```
 
-Only states reachable from `start` are created, and creation is budgeted. The default model is `dfa` when every `step` is deterministic, and `nfa` otherwise.
+The `alphabet` clause is required: an `explore` without one is error E1xx. Only states reachable from `start` are created, and creation is budgeted. The default model is `dfa` when every `step` is deterministic, and `nfa` otherwise.
 
 **Product construction:**
 ```delta
 fn product(A, B, keep) = explore {
+  alphabet A.alphabet ∪ B.alphabet
   start  (A.start, B.start)
   step   (p, q) on a -> (A.δ(p, a), B.δ(q, a))
   accept (p, q) if keep(p ∈ A.accept, q ∈ B.accept)
@@ -403,7 +430,8 @@ fn name(a: word, k: int) -> bool {         // block body, optional types
 }
 let f = fn(x) = x + 1                      // anonymous
 
-let x = 3        var y = 0      y = y + 1
+let x = 3
+var y = 0;  y = y + 1                      // a newline or ";" ends a statement
 if c { … } else if d { … } else { … }
 for x ∈ S { … }  (or: for x in S { … })
 while c { … }
@@ -474,10 +502,12 @@ Variables are the left-hand sides unless declared. Symbols are space-separated *
 
 Every built-in takes an optional `method:` naming **the algorithm** (never a book), and returns a value that remembers its **provenance and step trace** (`steps(x)`).
 
+**Conversions are verbs**. A model name (`dfa`, `nfa`, `pda`, …) only starts a machine literal (`dfa M { … }`, `dfa { … }`), appears in types (`machine[dfa]`), and names the model value (`M.model == dfa`). It is never called: `dfa(N)` is error E2xx with the quick fix "`determinize(N)`" (likewise `nfa(R)` → `to_nfa(R)`, `gnfa(M)` → `to_gnfa(M)`).
+
 | Area | Functions |
 |---|---|
-| Regex ↔ automata | `nfa(R, method: "textbook" \| "thompson" \| "glushkov")`, `to_regex(M, method: "state-elimination" \| "arden" \| "brzozowski-mccluskey", order: […])`, `gnfa(M)`, `simplify(R)` |
-| Automata | `determinize` (alias `dfa`), `minimize(method: "hopcroft" \| "moore" \| "brzozowski" \| "table")`, `complete`, `trim`, `remove_epsilon`, `reverse`, `complement`, `union`, `intersect`, `difference`, `concat`, `star`, `product` |
+| Regex ↔ automata | `to_nfa(R, method: "textbook" \| "thompson" \| "glushkov")`, `to_regex(M, method: "state-elimination" \| "arden" \| "brzozowski-mccluskey", order: […])`, `to_gnfa(M)`, `simplify(R)` |
+| Automata | `determinize`, `minimize(method: "hopcroft" \| "moore" \| "brzozowski" \| "table")`, `complete`, `trim`, `remove_epsilon`, `reverse`, `complement`, `union`, `intersect`, `difference`, `concat`, `star`, `product` |
 | Decisions | `equivalent` (with witness), `subset_of`, `is_empty`, `is_finite`, `is_universal`, `shortest`, `words(L, upto: n)`, `count(L, length: n)`, `myhill_nerode(D)`, `pump(D, w)` |
 | Grammars | `cnf`, `gnf`, `nullable`, `useless`, `trim`, `parse(G, w, method: "cyk" \| "earley")`, `derive`, `to_pda`, `to_cfg`, `is_ambiguous(G, upto: n)` (bounded) |
 | Machines | `M.run(w, fuel:)`, `to_single_tape`, `mealy_to_moore`, `moore_to_mealy`, `F.transduce(w)` |
@@ -501,6 +531,13 @@ Every built-in takes an optional `method:` naming **the algorithm** (never a boo
 
 - **`use strict`** requires every field to be written explicitly and disables inference. Teachers use it for assignments. The default is **lenient**.
 - **Budgets:** steps, states created, recursion depth and output size. Defaults are generous; adjust with `budget { steps: 50_000_000 }`. Hitting a budget is an *outcome*, not a crash.
+- **Verdicts.** A run of a machine on a word ends with one of four verdicts, the same words everywhere (traces, JSON, the playground):
+  - **accept**: an accepting configuration was reached;
+  - **reject**: every branch ended without accepting;
+  - **loops**: no branch accepts, and a branch is proved never to halt because a configuration repeats;
+  - **unknown**: the budget ran out first.
+
+  For a decision (`w ∈ L`, `M.accepts(w)`), accept means `true`, reject and loops mean `false`, and unknown is the budget outcome.
 - **Explain profiles** (`use explain "sipser3e"`) add textbook citations to errors and steps. They're off by default.
 
 ---
@@ -535,10 +572,11 @@ modeldecl  = "model" ident [ "(" params ")" ] [ "extends" ident ] "{" { property
 machinedecl= ident ident [ "(" options ")" ] "{" { field | transition | mfor | mif } "}"   (* first ident = model *)
            | "machine" ident "{" { field } "}" ;
 field      = fieldname ( [":"] exprlist | "=" expr ) ;
-transition = state ( "-" label "->" | "-[" labels "]->" ) state
+transition = state edge state                (* edge: one token in machine-body mode, §2 *)
            | ( "δ" | "delta" ) "(" exprlist ")" "=" expr
            | ( "δ" | "delta" ) "=" table ;
-state      = ident | "[" expr "]" ;
+state      = ident | "[" expr "]" ;              (* ident = an atom *)
+edge       = "-" barelabel "->" | "-[" labels "]->" ;   (* barelabel has no ASCII "->" *)
 
 langdecl   = "lang" ident "=" ( expr | setbuilder ) [ "as" class "by" expr ] ;
 fndecl     = "fn" ident "(" params ")" [ "->" type ] ( "=" expr | block ) ;
@@ -547,11 +585,12 @@ stmt       = "let" pattern "=" expr | "var" ident "=" expr | ident "=" expr
            | "for" pattern ( "∈" | "in" ) expr block | "while" expr block
            | "return" [ expr ] | "print" exprlist | "show" expr | "assert" expr
            | "check" checkspec | "run" expr "on" expr | expr ;
-expr       = … | setbuilder | "re" string [ "over" expr ]
+expr       = … | atom | setbuilder | "re" string [ "over" expr ]
            | "explore" [ ident ] "{" { exclause } "}" | "fixpoint" ident "from" expr block ;
 setbuilder = "{" expr "|" gen { "," ( gen | expr ) } "}"
            | "{" ident ( "∈" | "in" ) expr "|" expr "}" ;
 gen        = pattern ( "∈" | "in" ) expr ;
+atom       = ":" ident ;                         (* only where an expression starts, no space, §2 *)
 ```
 
 ---

@@ -17,9 +17,9 @@ words. Σ_ε = Σ ∪ {ε}. Indexing is 0-based in the language (`w[0]` is w₁)
 
 **1.2 Canonical order.** Every value has a place in one total order ≼, used to print sets and
 maps, to iterate them (`for`, generators) and to number the states of constructions. Values of
-different types are ordered by type tag: `none < bool < int < symbol < word < tuple < list < set <
+different types are ordered by type tag: `none < bool < int < symbol < atom < word < tuple < list < set <
 map < record < regex < grammar < machine < lang < model < fn`. Within a type: `false < true`;
-integers numerically; symbols by code points of their names; words **shortlex** (shorter first,
+integers numerically; symbols and atoms by code points of their names; words **shortlex** (shorter first,
 then lexicographic by symbol order); tuples, lists and records lexicographically by components (records
 by sorted field names); sets and maps by their sorted element sequences. Functions are compared by
 creation order (they are equal only to themselves). This order is part of the semantics:
@@ -31,8 +31,14 @@ language equivalence; that is `≡` (§7.4).
 
 **1.4 Budgets.** Every evaluation runs under a budget β = (steps, states, depth, output). An
 evaluation either returns a value, raises an error (E5xx), or stops with a **budget outcome**
-B6xx. A budget outcome is not an error in the program. It is a third verdict, `unknown`, wherever
-a verdict is asked for (§3.4, §7.3) [Q-46].
+B6xx. A budget outcome is not an error in the program. Where a run of a machine is concerned it is
+the verdict `unknown` (§6.2), and a decision that runs out of budget returns the budget outcome
+instead of `true`/`false` (§7.3) [Q-46].
+
+**1.5 Atoms.** An atom `:n` is a value made from a name n. Two atoms are equal iff their names are
+equal; an atom is never equal to a symbol, word or other value (`:a ≠ 'a'`). A bare name in state
+position inside a machine literal denotes the atom with that name (§10.3). Atoms can be map keys
+(`{ :q0: 0 }`) and set elements like any other value.
 
 ---
 
@@ -81,7 +87,8 @@ the model's storages in order (§3.3), and o ∈ Δ* is the output so far (only 
   `Read a` tests the symbol under that tape's head.
 
 **3.3 Storages** (initial contents in brackets):
-- **stack** — a word over Γ, written top first [ε] [Q-62].
+- **stack** — a word over Γ, written top first [ε, or Z when the machine has the option
+  `initial stack Z`; Z ∈ Γ (an inferred Γ includes it), otherwise E3xx].
 - **tape** — a pair (l, r) with l ∈ Γ* (cells left of the head, nearest last) and r ∈ Γ⁺ (the
   head's cell and everything to its right; trailing blanks are implicit). For on-tape input the
   first tape starts as (ε, w) if w ≠ ε, else (ε, ⊔); other tapes start as (ε, ⊔). The tape is
@@ -102,7 +109,7 @@ The **computation tree** on w has the initial configuration C₀ = (q₀, 0, ini
 its root and the successors of each node as its children. The generic simulator explores it
 breadth first with a visited set on configurations, under the budget (02 §2.2). The visited set
 makes ε-loops and other configuration cycles terminate whenever the reachable configuration space
-is finite. Otherwise the budget stops it with outcome `unknown`.
+is finite. Otherwise the budget stops it with the verdict `unknown` (§6.2).
 
 ---
 
@@ -220,13 +227,28 @@ for `by halting`, and none otherwise.
 | `by final` (two-way) | … has q ∈ F (at any head position; such a configuration halts) [Q-61] |
 | `by empty-stack` | … has h = \|w\| and the (first) stack empty (q arbitrary) |
 | `by final-and-empty` | … has q ∈ F, h = \|w\| and the stack empty |
-| `by halting` | … has q ∈ F; reaching q ∈ F or q_r halts the branch immediately [Q-69] |
+| `by halting` | … has q ∈ F. Entering q ∈ F or q_r halts the branch immediately |
 
 **6.1 Language.** L(M) = { w ∈ Σ* | M accepts w }.
 
-**6.2 Verdict of a run.** `M.accepts(w)` returns `true` if an accepting configuration is found.
-It returns `false` if the whole (finite) tree is explored without one. It stops with a budget
-outcome otherwise (`unknown`, B6xx) [Q-46].
+**6.2 Verdict of a run.** The run of M on w has exactly one of four verdicts, written the same way
+in traces (`M.run(w).verdict`, as the atoms `:accept`, `:reject`, `:loops`, `:unknown`), in JSON
+output (`"verdict": "accept"`, …) and in the playground:
+
+| Verdict | When |
+|---|---|
+| `accept` | an accepting configuration (per the table above) is reachable from C₀ |
+| `reject` | not accept, and every branch **ends**: it reaches a configuration that halts (q_r, under `by halting`) or is stuck (no applicable edge, with `missing reject`) |
+| `loops` | not accept, the reachable configurations are all explored, and some branch is proved never to end because a configuration repeats on it (a cycle in the configuration graph) |
+| `unknown` | the budget runs out before one of the above is established (B6xx) |
+
+`loops` arises only under `by halting`. In the other modes acceptance is reachability of an
+accepting configuration, so a repeated configuration is simply not explored again: when everything
+reachable has been explored without acceptance, the verdict is `reject`. A stuck configuration under
+`missing error` is a runtime error E5xx, not a verdict.
+
+`M.accepts(w)` (and `w ∈ M.lang`) is `true` for `accept`, `false` for `reject` and `loops`, and the
+budget outcome for `unknown`.
 
 **6.3 Models without `accept`.** `mealy` and `moore` declare no acceptance. Their `accept` is
 treated as `by final` with F = Q, so L(M) = Σ* (for total machines) and `M.accepts` is always true
@@ -264,7 +286,8 @@ treated as `by final` with F = Q, so L(M) = Σ* (for total machines) and `M.acce
 ⟦rev L⟧ = { rev(u) | u ∈ ⟦L⟧ }. Complement is taken relative to Σ_L, so the alphabet matters:
 ∁(re"a*" over {a,b}) contains "b" [Q-71].
 
-**7.3 Membership.** `w ∈ L` is `true`/`false` when decided, and the budget outcome otherwise.
+**7.3 Membership.** `w ∈ L` is `true`/`false` when decided, and the budget outcome (verdict
+`unknown`) otherwise.
 Decided means one of: finite set lookup, a machine run (§6.2), a grammar parse, or the predicate
 returning a bool. A predicate that errors is an E5xx error. One that returns a non-bool is E2xx at
 check time (or E5xx at runtime).
@@ -280,12 +303,20 @@ time** if c is known statically, and **at run time** with the same code if not [
   allowed for every class (each membership is budgeted), and the result carries `bounded: n`.
   `L ⊆ K up to n` is defined the same way [Q-74].
 
-**7.5 Class propagation.** result_class(op, c₁, c₂) = T[op][c₁ ⊔ c₂], where T is the closure table
-(01 §6.2), with these additions [Q-75]:
-- the row `L ∩ R` applies when one operand is Regular or Finite; the column is the other operand's
-  class;
-- the **Finite** column: ∪, ∩, ++, rev → Finite; ∩ with anything → Finite; ∁ and * → Regular;
-- `Any` absorbs: T[op][Any] = Any.
+**7.5 Class propagation.** Classes form the chain Finite < Regular < DCF < CF < CS < Decidable <
+Recognizable < Any, and ⊔ is the max. T is the closure table of 01 §6.2. The class of a result is:
+
+1. `F ∩ L` or `L ∩ F` with class(F) = Finite (if both are Finite, either one): Finite if
+   class(L) ≤ Decidable, otherwise Recognizable.
+2. `F ∖ L` with class(F) = Finite: Finite if class(L) ≤ Decidable, otherwise Any.
+3. `L ∩ R` or `R ∩ L` with class(R) = Regular: T[∩R][class(L)].
+4. `L ∖ K` otherwise: the class of `L ∩ K′`, where class(K′) = T[∁][class(K)], by rules 1, 3, 5.
+5. Every other binary op: T[op][c₁ ⊔ c₂]. Unary ops: T[op][c].
+
+The rules are tried in this order. Rules 1 and 2 stop at Decidable because computing F ∩ L or
+F ∖ L asks `w ∈ L` for every w ∈ F, which is guaranteed to finish only for a Decidable or lower L.
+Unary ops on Finite: ∁ and * give Regular, rev gives Finite. Every op with an `Any` operand gives
+`Any`, except rule 1. ⟦L ∖ K⟧ = ⟦L⟧ ∩ ⟦∁K⟧ (§7.2) holds for the values in every case.
 
 **7.6 Assumed classes.** `L as c by E` has class c and source `Assumed{L, c, E, n}`. At
 construction it checks ⟦L⟧ ≡ ⟦E⟧ up to n (default n = 8) [Q-76]. If the check fails, the
@@ -297,13 +328,12 @@ the `assumed` mark, and decisions that rely on c use ⟦E⟧ (a class-c object) 
 ## 8. `explore`
 
 ```
-explore [μ] { start s₀; step clauses; accept π if φ; [alphabet S] }
+explore [μ] { alphabet S; start s₀; step clauses; accept π if φ }
 ```
 
-**8.1 Meaning.** Let S be the alphabet: the `alphabet` clause if given, otherwise the union of
-`.alphabet` over every machine value the clauses refer to (free variables evaluated in the
-enclosing scope) [Q-80]. If no machine is referred to and there is no clause, that is E2xx. The
-step clauses define a successor relation on values:
+**8.1 Meaning.** Let S be the value of the `alphabet` clause, which is required (a missing clause is
+E1xx; a value that is not a nonempty finite set of symbols is E2xx/E5xx). The step clauses define a
+successor relation on values:
 - `step π on a -> e` (deterministic): for state v matching π and each symbol a ∈ S, one edge
   v →ᵃ ⟦e⟧.
 - `step π on a -> any e`: edges v →ᵃ u for each u ∈ ⟦e⟧ (a set; ∅ adds none).
@@ -375,11 +405,12 @@ this is E2xx [Q-25].
 
 **10.3 Machine literals** desugar to `machine μ { states …; alphabet …; start …; accept …;
 edges […] }` (01 §5.6):
-- `q -ℓ-> p` adds edge (q, ℓ, p); `q -[ℓ₁, …, ℓₖ]-> p` adds k edges; `δ(q, a) = p` adds (q, a, p);
+- `q -ℓ-> p` adds edge (q, ℓ, p); `q -[ℓ₁, …, ℓₖ]-> p` adds k edges (the list is read with the
+  model's label grammar, so `-[a, X -> YZ]->` is one pda edge); `δ(q, a) = p` adds (q, a, p);
   `δ(q, a) = {p₁, …}` adds one edge per pᵢ; a `table` adds one edge per non-∅ cell.
 - `for`/`if` inside a body expand to their edges (in iteration order). `[e]` in state position is
-  the value of e, and a bare identifier is the state named by that identifier (a symbol-like name)
-  [Q-26].
+  the value of e, and a bare identifier `n` is the atom `:n` (§1.5). The headers of `for` and `if`
+  are ordinary expressions (01 §2, "Machine bodies").
 - In lenient mode, omitted `states` = all states mentioned in start, accept and edges, and omitted
   `alphabet` = all input symbols on edges. In strict mode, omitting either is E3xx.
 
@@ -392,5 +423,8 @@ edges […] }` (01 §5.6):
 - `check A ⊆ B`, `check L.is_empty()` ≡ one test each.
 - `assert c` ≡ a test that passes iff ⟦c⟧ = true. A non-bool is E2xx/E5xx.
 
-**10.5 Notation profiles** act only in the lexer and printer (01 §10): they map spellings to the
+**10.5 Statement separators.** A newline or `;` ends a statement in every context, including
+machine and model bodies; `}` ends the last statement of a block (01 §2).
+
+**10.6 Notation profiles** act only in the lexer and printer (01 §10): they map spellings to the
 same core tokens (`+`→union under `hmu`, `λ`→ε, `B`/`□`→⊔), so no core value depends on the profile.

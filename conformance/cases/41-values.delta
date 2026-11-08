@@ -6,7 +6,7 @@ let (a, b) = t
 assert a == 1 and b == 2
 let r = { from: 1, to: 2 }
 assert r.from == 1
-let m = { q0: 0, q1: 1 }
+let m = { :q0: 0, :q1: 1 }           // a map with atom keys
 fn adder(n) = fn(x) = x + n           // first-class functions, closures
 assert adder(2)(3) == 5
 assert 'a' != "a"                     // a symbol is not a word

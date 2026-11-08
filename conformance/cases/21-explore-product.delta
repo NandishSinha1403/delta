@@ -18,6 +18,7 @@ dfa B {
 }
 
 fn product(A, B, keep) = explore {
+  alphabet A.alphabet ∪ B.alphabet
   start  (A.start, B.start)
   step   (p, q) on a -> (A.δ(p, a), B.δ(q, a))
   accept (p, q) if keep(p ∈ A.accept, q ∈ B.accept)
