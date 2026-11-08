@@ -88,7 +88,7 @@ Types are **inferred**. Annotations are optional (`fn f(N: machine[nfa]) -> mach
 | Type | Examples | Notes |
 |---|---|---|
 | `bool` | `true`, `false` | |
-| `int` | `3`, `-7` | 64-bit, overflow is an error |
+| `int` | `3`, `-7` | 64-bit, overflow is an error. `/` and `%` are Euclidean: the remainder is never negative (`-7 % 3 == 2`, `-7 / 3 == -3`) |
 | `symbol` | `'a'` | |
 | `atom` | `:q0`, `:dead` | a name used as a value; equal only to the same atom. A bare state name inside a machine is an atom, so `M.start == :q0` |
 | `word` | `"0110"`, `ε` | `len(w)`, `w[i]`, `w ++ v`, `w^3`, `rev(w)`, `count(w, '0')`, `w ends with v`, `w starts with v`, `w contains v` (substring). `∈`/`in` always mean membership, never substring |
@@ -530,7 +530,7 @@ Every built-in takes an optional `method:` naming **the algorithm** (never a boo
 | X999 | internal | engine restarts; your code is kept |
 
 - **`use strict`** requires every field to be written explicitly and disables inference. Teachers use it for assignments. The default is **lenient**.
-- **Budgets:** steps, states created, recursion depth and output size. Defaults are generous; adjust with `budget { steps: 50_000_000 }`. Hitting a budget is an *outcome*, not a crash.
+- **Budgets:** steps, states created, recursion depth and output size. Defaults are generous; adjust with `budget { steps: 50_000_000 }`. Hitting a budget is an *outcome*, not a crash: the program stops there, the outputs it already produced stay, and the result has `ok: false` with a B6xx diagnostic. (A machine *run* that runs out of budget instead gets the verdict `unknown` and the program goes on.)
 - **Verdicts.** A run of a machine on a word ends with one of four verdicts, the same words everywhere (traces, JSON, the playground):
   - **accept**: an accepting configuration was reached;
   - **reject**: every branch ended without accepting;

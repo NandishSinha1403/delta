@@ -123,6 +123,7 @@ version = "0.0.1"
 dependencies = [
  "delta-core",
  "delta-dsl",
+ "delta-lang",
  "serde_json",
 ]
 
@@ -145,6 +146,15 @@ dependencies = [
  "serde",
  "serde_json",
  "ts-rs",
+]
+
+[[package]]
+name = "delta-lang"
+version = "0.0.1"
+dependencies = [
+ "proptest",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

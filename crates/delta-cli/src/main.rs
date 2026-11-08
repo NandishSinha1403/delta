@@ -35,9 +35,27 @@ fn main() -> ExitCode {
                 ExitCode::FAILURE
             }
         },
+        // Delta 2: `delta run [--json] FILE`.
+        [_, cmd, rest @ ..] if cmd == "run" => {
+            // `rest @ ..` binds the remaining arguments as a slice.
+            let json = rest.iter().any(|a| a == "--json");
+            let Some(file) = rest.iter().find(|a| !a.starts_with("--")) else {
+                eprintln!("usage: delta run [--json] FILE.delta");
+                return ExitCode::from(2);
+            };
+            match std::fs::read_to_string(file) {
+                Ok(src) => run_v2(file, &src, json),
+                Err(e) => {
+                    eprintln!("error: cannot read {file}: {e}");
+                    ExitCode::FAILURE
+                }
+            }
+        }
         // `_` matches anything that did not match an earlier arm.
         _ => {
-            eprintln!("usage: delta check FILE.delta | delta json FILE.delta");
+            eprintln!(
+                "usage: delta run [--json] FILE.delta | delta check FILE.delta | delta json FILE.delta"
+            );
             ExitCode::from(2)
         }
     }
@@ -90,5 +108,73 @@ fn report(file: &str, src: &str, doc: &delta_dsl::document::Document) -> ExitCod
         ExitCode::FAILURE
     } else {
         ExitCode::SUCCESS
+    }
+}
+
+/// Runs a Delta 2 program. Exits nonzero on errors or failed tests (Q-48).
+fn run_v2(file: &str, src: &str, json: bool) -> ExitCode {
+    // Run on a thread with a large stack: deep user recursion stays within the depth budget.
+    let src_owned = src.to_string();
+    let handle = std::thread::Builder::new()
+        .stack_size(256 * 1024 * 1024)
+        .spawn(move || delta_lang::run(&src_owned));
+    let out = match handle.map(|h| h.join()) {
+        Ok(Ok(v)) => v,
+        _ => {
+            eprintln!("error: the engine stopped unexpectedly (X999)");
+            return ExitCode::FAILURE;
+        }
+    };
+    let failed_tests = out["outputs"]
+        .as_array()
+        .map(|o| {
+            o.iter()
+                .filter(|x| x["kind"] == "test" && x["pass"] == false)
+                .count()
+        })
+        .unwrap_or(0);
+    let ok = out["ok"] == true;
+    if json {
+        match serde_json::to_string_pretty(&out) {
+            Ok(text) => println!("{text}"),
+            Err(e) => {
+                eprintln!("error: {e}");
+                return ExitCode::FAILURE;
+            }
+        }
+    } else {
+        for o in out["outputs"].as_array().into_iter().flatten() {
+            match o["kind"].as_str() {
+                Some("print") => println!("{}", o["text"].as_str().unwrap_or("")),
+                Some("test") => {
+                    let mark = if o["pass"] == true { "✓" } else { "✗" };
+                    let msg = o["message"]
+                        .as_str()
+                        .map(|m| format!("  ({m})"))
+                        .unwrap_or_default();
+                    println!(
+                        "{mark} line {}: {}{msg}",
+                        o["line"],
+                        o["name"].as_str().unwrap_or("")
+                    );
+                }
+                _ => println!("{o}"),
+            }
+        }
+        for d in out["diagnostics"].as_array().into_iter().flatten() {
+            println!(
+                "{file}:{}:{}: {}[{}]: {}",
+                d["line"],
+                d["col"],
+                d["severity"].as_str().unwrap_or(""),
+                d["code"].as_str().unwrap_or(""),
+                d["message"].as_str().unwrap_or("")
+            );
+        }
+    }
+    if ok && failed_tests == 0 {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
     }
 }

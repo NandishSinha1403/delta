@@ -1,10 +1,8 @@
 # Conformance cases expected to FAIL (the v2 language is not implemented yet).
 # Remove a line as soon as its case passes; the test suite reports when one does.
-# Phase 0 (2026-11-08): every case. 44-50 added when Q-03, Q-06, Q-26, Q-62, Q-69 and Q-80 were confirmed.
+# Phase 1 (language core) passes the cases that need no machines, languages or regexes.
 01-taste
-02-unicode-ascii
 03-set-builder
-04-sigma-star-outside-lang
 05-prelude-models
 06-user-models
 07-transition-forms
@@ -24,10 +22,7 @@
 21-explore-product
 22-explore-nfa
 23-fixpoint
-24-fixpoint-budget
 25-while-worklist
-26-functions
-27-int-overflow
 28-output-statements
 29-check-witness
 30-regex
@@ -39,15 +34,8 @@
 36-strict-mode
 37-missing-transition-E3xx
 38-explain-profile
-39-reserved-choose
-40-words
-41-values
-42-type-annotations
 43-field-aliases
 44-atoms
 45-edge-lexing
-46-bare-label-arrow
-47-conversion-verbs
-48-explore-alphabet-required
 49-initial-stack
 50-halting-verdicts
