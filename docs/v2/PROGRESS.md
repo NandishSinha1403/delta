@@ -1,6 +1,6 @@
 # Delta 2 — Progress
 
-_Last updated: 2026-11-09 (SEO pages done; 5b and 5c waiting on the owner)_
+_Last updated: 2026-11-09 (domain live on Cloudflare; SEO deploy waits for the owner)_
 
 ## Current state
 
@@ -112,18 +112,17 @@ The full check list (wasm build, size check, web lint/typecheck/test/build/e2e) 
 ## Next session: start here
 
 1. Read `CLAUDE.md`, then this file.
-2. **Domain:** `delta.nandish.dev` is added to the Pages project `delta` (status pending). The owner
-   changes the name.com CNAME `delta` → `delta-17m.pages.dev`; then watch the domain via the API
-   (`/accounts/<id>/pages/projects/delta/domains/delta.nandish.dev`) until status and certificate
-   are `active`, and confirm https://delta.nandish.dev serves v2. Rollback: CNAME back to
-   `nandishsinha1403.github.io`.
+2. **Domain — done 2026-11-09.** The CNAME `delta` → `delta-17m.pages.dev` is live; the Pages
+   domain and its Let's Encrypt certificate are `active`, and https://delta.nandish.dev serves v2.
+   Rollback: CNAME back to `nandishsinha1403.github.io`.
 3. **SEO (Phase 5) — done, committed, not yet deployed.** `/tools/` (8 pages; pumping-lemma,
    cfg-to-cnf, cyk-parser, cfg-to-pda, mealy-moore wait for Phase 6), `/learn/` (9), `/practice/`
    (8), JSON-LD/social cards (`site/src/route-data.ts`), robots.txt, `site/scripts/check-seo.mjs`
    (runs in `build-site.sh`). Lighthouse on the live site: 100 perf / 100 SEO (front page; local
    `astro preview` shows ~73 only because it doesn't compress). OG images are interim
    (`site/public/og/default.png` from the hero); diagram cards come from the 5b renderer.
-   Still to do: deploy (manual deploy below); the owner sends the Cloudflare Web Analytics site
+   All checks green 2026-11-09 and `site/dist` built; the deploy needs the owner's approval
+   (Claude's production deploy is blocked by the permission check). Still to do: deploy (manual deploy below); the owner sends the Cloudflare Web Analytics site
    token → set `BEACON_TOKEN` in `site/src/lib/analytics.mjs`; give the owner Google Search
    Console + Bing TXT-record steps for name.com.
 4. **Phase 5b (terminal and packages)** — approved deps: rustyline 19, resvg 0.45 + svg2pdf 0.13
