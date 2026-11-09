@@ -17,6 +17,8 @@ pub enum Kw {
     Return,
     Print,
     Show,
+    /// `save x to "file.svg"` (01 §8).
+    Save,
     Assert,
     Check,
     Run,
@@ -167,6 +169,7 @@ fn keyword(s: &str) -> Option<Tok> {
         "return" => Kw::Return,
         "print" => Kw::Print,
         "show" => Kw::Show,
+        "save" => Kw::Save,
         "assert" => Kw::Assert,
         "check" => Kw::Check,
         "run" => Kw::Run,

@@ -13,9 +13,11 @@ crates/
 ├─ delta-std       standard library: built-ins + the prelude (.delta source)     (NEW)
 ├─ delta-classes   the decidability-class lattice, closure and decision tables   (NEW)
 ├─ delta-explain   explain profiles (textbook citations as data)                 (NEW; content moved out of core)
-├─ delta-render    layout hints, DOT, SVG, TikZ, JFLAP, JSON                      (split out of core)
+├─ delta-render    layered layout, SVG, TikZ, ASCII (no dependencies)            (split out of core)
+├─ delta-export    SVG → PNG/PDF (resvg, svg2pdf, embedded Commit Mono)          (NEW, Phase 5b)
 ├─ delta-wasm      browser and app API                                           (KEEP; new surface)
-└─ delta-cli       delta run | check | fmt | test | migrate                      (KEEP; extended)
+├─ delta-export-wasm  the Pad's lazily loaded image export                       (NEW, Phase 5b)
+└─ delta-cli       the `deltac` binary: run | repl | check | …                   (KEEP; extended)
 ```
 
 **Rules, enforced in CI:**
@@ -175,13 +177,17 @@ Profiles: **off** (default), `sipser3e` (migrated from v1), `hmu`, `linz`, plus 
         "edges": [["q0","a","q1"]] } },
     { "kind": "test",  "line": 17, "name": "M ≡ L up to 10", "pass": true, "bounded": 10 },
     { "kind": "trace", "line": 18, "machine": "M", "input": "abab", "verdict": "accept",
-        "steps": [{ "config": "q0 ▸abab" }, { "config": "q1 a▸bab" }] }
+        "steps": [{ "config": "q0 ▸abab" }, { "config": "q1 a▸bab" }] },
+    { "kind": "save",  "line": 19, "path": "m.svg", "format": "svg", "value": { "type": "machine", … } }
   ],
   "stats": { "steps": 1342, "ms": 3 }
 }
 ```
 
-The schema is versioned and published at `/schema/output-v2.json`.
+The schema is versioned and published at `/schema/output-v2.json`. A `save` output carries the
+value, not the file: drawing it (SVG, TikZ, ASCII) is `delta-render`, and PNG/PDF is
+`delta-export` (resvg + svg2pdf), compiled into `deltac` and into a second WASM module the Pad loads
+only when an image is exported, so both produce the same bytes from the same view.
 
 ## 8. Platform boundary (`delta-wasm`)
 

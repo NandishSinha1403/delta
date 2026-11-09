@@ -1,5 +1,7 @@
 // The Lang panel (a language's class, sample words, decidable questions) and the Console
 // (print output, shown values, runtime errors and budget outcomes): 03-PRODUCTS.md §3.1.
+import { useState } from 'react';
+import { engine } from '../engine/client';
 import { useEngineStore } from '../state/engine';
 import { useUiStore } from '../state/ui';
 import { lineRange, showString, useCurrentObject } from './current';
@@ -99,13 +101,27 @@ export function ConsolePanel() {
   const lastMs = useEngineStore((s) => s.lastMs);
   const revealRange = useUiStore((s) => s.revealRange);
   if (!doc) return <EngineStatus empty="" />;
-  const lines = doc.outputs.filter((o) => o.kind === 'print' || o.kind === 'show');
+  const lines = doc.outputs.filter((o) => o.kind === 'print' || o.kind === 'show' || o.kind === 'save');
   const runtime = doc.diagnostics.filter((d) => /^(E5|B6)/.test(d.code));
   return (
     <section aria-label="Console" className="p-3 font-mono text-xs">
       {lines.length === 0 && runtime.length === 0 && <p className="text-dim">No output. Use print or show.</p>}
       <ul className="space-y-1">
         {lines.map((o, i) => {
+          if (o.kind === 'save') {
+            return (
+              <li key={i} className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => o.line && revealRange(lineRange(source, o.line))}
+                  className="w-8 shrink-0 text-right text-dim hover:text-text"
+                >
+                  {o.line}
+                </button>
+                <SaveButton output={o} />
+              </li>
+            );
+          }
           const text =
             o.kind === 'print'
               ? String(o.text ?? '')
@@ -135,5 +151,52 @@ export function ConsolePanel() {
         {doc.steps.toLocaleString()} steps{lastMs !== null ? ` · ${lastMs} ms` : ''}
       </p>
     </section>
+  );
+}
+
+const MIME: Record<string, string> = {
+  svg: 'image/svg+xml',
+  png: 'image/png',
+  pdf: 'application/pdf',
+  tex: 'text/x-tex',
+  txt: 'text/plain',
+  json: 'application/json',
+};
+
+/** A `save x to "file"` output: the Pad never writes files, it offers the download. */
+function SaveButton({ output }: { output: { [key: string]: unknown } }) {
+  const path = String(output.path ?? 'delta');
+  const format = String(output.format ?? 'txt');
+  const name = path.split('/').pop() ?? path;
+  const [state, setState] = useState<'idle' | 'busy' | 'error'>('idle');
+  const download = async () => {
+    setState('busy');
+    try {
+      const data = await engine.exportFile(output.value, format, String(output.text ?? ''));
+      // A Blob copies the bytes, so the worker's buffer can be reused.
+      const blob = new Blob([typeof data === 'string' ? data : new Uint8Array(data)], {
+        type: MIME[format] ?? 'application/octet-stream',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setState('idle');
+    } catch {
+      setState('error');
+    }
+  };
+  return (
+    <button
+      type="button"
+      data-testid="save-download"
+      onClick={() => void download()}
+      disabled={state === 'busy'}
+      className="rounded border border-border px-2 py-0.5 text-text hover:bg-surface-3 disabled:opacity-60"
+    >
+      {state === 'busy' ? `Preparing ${name}…` : state === 'error' ? `Couldn't make ${name}, try again` : `Download ${name}`}
+    </button>
   );
 }

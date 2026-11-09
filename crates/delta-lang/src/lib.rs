@@ -19,6 +19,7 @@ pub mod model;
 pub mod pad;
 pub mod parser;
 pub mod prelude;
+pub mod render;
 pub mod rx;
 pub mod sim;
 pub mod value;

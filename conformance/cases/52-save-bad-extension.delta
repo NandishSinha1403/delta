@@ -1,0 +1,6 @@
+// SEMANTICS §10.4: an extension other than svg, png, pdf, tex, txt, json is E514.
+dfa M {
+  alphabet a; start q0; accept q0
+  q0 -a-> q0
+}
+save M to "m.gif"

@@ -8,6 +8,7 @@ target/
 node_modules/
 web/dist/
 web/src/engine/pkg/
+web/src/engine/export-pkg/
 web/test-results/
 web/playwright-report/
 

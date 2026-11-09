@@ -28,10 +28,20 @@ pub fn run(src: &str, name: &str, input: &str) -> Result<String, JsError> {
         .map_err(|e| JsError::new(&e.to_string()))
 }
 
-/// The output document of 02-ENGINE.md §7 (what `delta run --json` prints).
+/// The output document of 02-ENGINE.md §7 (what `deltac run --json` prints).
 #[wasm_bindgen]
 pub fn run_json(src: &str) -> Result<String, JsError> {
     serde_json::to_string(&delta_lang::run(src)).map_err(|e| JsError::new(&e.to_string()))
+}
+
+/// A `save` output's file as text: `svg`, `tex`, `txt` or `json` (PNG and PDF are made from
+/// the SVG by the separate export module, `delta-export-wasm`).
+#[wasm_bindgen]
+pub fn render_file(value: &str, format: &str, text: &str, dark: bool) -> Result<String, JsError> {
+    let v: serde_json::Value =
+        serde_json::from_str(value).map_err(|e| JsError::new(&e.to_string()))?;
+    let text = if text.is_empty() { None } else { Some(text) };
+    delta_lang::render::text_file(format, &v, text, dark).map_err(|e| JsError::new(&e))
 }
 
 /// The engine version, shown in bug reports.

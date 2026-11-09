@@ -422,6 +422,15 @@ edges […] }` (01 §5.6):
   and grammars are coerced to their `lang` [Q-27].
 - `check A ⊆ B`, `check L.is_empty()` ≡ one test each.
 - `assert c` ≡ a test that passes iff ⟦c⟧ = true. A non-bool is E2xx/E5xx.
+- `save e to p` evaluates e, then p. p must be a string; its extension (after the last `.`, ASCII
+  case-insensitive) is one of `svg`, `png`, `pdf`, `tex`, `txt`, `json`, else E514. p is split on
+  `/` (and `\`); it must not be empty, start with `/` or `\`, contain a drive letter (`C:`), or
+  have an empty, `.` or `..` part, else E515. The image formats and `tex` need a machine, else
+  E516. The result is one output `{ kind: "save", line, path, format, value, text }`, where `path`
+  is p with `\` turned into `/`, `format` the lower-case extension, `value` the `show` view of e
+  and `text` what `print e` would print (the contents of a `.txt` file).
+  Nothing is written by the engine: the host writes `path` relative to its working folder. Two
+  `save`s to the same path both appear, in order; the host keeps the last.
 
 **10.5 Statement separators.** A newline or `;` ends a statement in every context, including
 machine and model bodies; `}` ends the last statement of a block (01 §2).

@@ -473,6 +473,57 @@ impl<'s> Interp<'s> {
                 }
                 self.emit(s.span, out)
             }
+            StmtKind::Save(e, p) => {
+                let v = self.eval(e)?;
+                let pv = self.eval(p)?;
+                let Value::Word(w) = &pv else {
+                    return err(
+                        "E504",
+                        p.span,
+                        format!(
+                            "`save … to` needs a file name string, not {} {}",
+                            pv.type_name(),
+                            pv.display()
+                        ),
+                    );
+                };
+                let path = &crate::hooks::word_text(w);
+                let format = save_format(path).ok_or_else(|| {
+                    Flow::Error(Diagnostic::error(
+                        "E514",
+                        p.span,
+                        format!(
+                            "can't save to \"{path}\": use .svg, .png, .pdf, .tex, .txt or .json"
+                        ),
+                    ))
+                })?;
+                let path = save_path(path).ok_or_else(|| {
+                    Flow::Error(Diagnostic::error(
+                        "E515",
+                        p.span,
+                        format!("can't save to \"{path}\": the path must be relative and stay inside this folder (no leading /, drive letter or ..)"),
+                    ))
+                })?;
+                if matches!(format, "svg" | "png" | "pdf" | "tex")
+                    && v.downcast::<crate::machine::Machine>().is_none()
+                {
+                    return err(
+                        "E516",
+                        e.span,
+                        format!(
+                            "only machines can be drawn; save {} {} as .txt or .json instead",
+                            v.type_name(),
+                            v.display()
+                        ),
+                    );
+                }
+                let line = self.line(s.span);
+                let value = self.value_json(&v);
+                self.emit(
+                    s.span,
+                    json!({ "kind": "save", "line": line, "path": path, "format": format, "value": value, "text": v.print_text() }),
+                )
+            }
             StmtKind::Check(subject, kind) => self.check(s, subject, kind),
             StmtKind::Run(m, w) => self.run_stmt(s, m, w),
             StmtKind::Expr(e) => {
@@ -1341,7 +1392,7 @@ fn free_in_stmt(s: &Stmt, out: &mut BTreeSet<String>) {
                 CheckKind::Holds(None) => {}
             }
         }
-        StmtKind::Run(a, b) => {
+        StmtKind::Run(a, b) | StmtKind::Save(a, b) => {
             free_in_expr(a, out);
             free_in_expr(b, out);
         }
@@ -1492,7 +1543,7 @@ fn walk_stmt(s: &Stmt, f: &mut dyn FnMut(&Expr)) {
                 CheckKind::Holds(None) => {}
             }
         }
-        StmtKind::Run(a, b) => {
+        StmtKind::Run(a, b) | StmtKind::Save(a, b) => {
             walk_expr(a, f);
             walk_expr(b, f);
         }
@@ -1554,4 +1605,29 @@ fn walk_mitems(items: &[MItem], f: &mut dyn FnMut(&Expr)) {
             }
         }
     }
+}
+
+/// The format a `save` path asks for: its extension, lower-cased (SEMANTICS §10.4).
+pub fn save_format(path: &str) -> Option<&'static str> {
+    // `rsplit_once` splits at the last `.`; `?` returns None early if there is none.
+    let (_, ext) = path.rsplit_once('.')?;
+    ["svg", "png", "pdf", "tex", "txt", "json"]
+        .into_iter()
+        .find(|f| f.eq_ignore_ascii_case(ext))
+}
+
+/// A `save` path with `\\` turned into `/`, or None if it is absolute or leaves the folder.
+pub fn save_path(path: &str) -> Option<String> {
+    let p = path.replace('\\', "/");
+    let bytes = p.as_bytes();
+    let drive = bytes.len() >= 2 && bytes[1] == b':' && bytes[0].is_ascii_alphabetic();
+    if p.is_empty() || p.starts_with('/') || drive {
+        return None;
+    }
+    if p.split('/')
+        .any(|part| part.is_empty() || part == "." || part == "..")
+    {
+        return None;
+    }
+    Some(p)
 }

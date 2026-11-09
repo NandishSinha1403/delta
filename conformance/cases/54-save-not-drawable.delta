@@ -1,0 +1,3 @@
+// SEMANTICS §10.4: images and TikZ need a machine (E516); txt and json take any value.
+save {1, 2} to "set.txt"
+save {1, 2} to "set.svg"

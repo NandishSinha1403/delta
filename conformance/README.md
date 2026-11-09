@@ -8,7 +8,7 @@ spec is changed first when a case has to change.
 
 ```
 cases/NN-name.delta         the program: spec examples verbatim where possible
-cases/NN-name.expect.json   what `delta run --json` must print (partial match)
+cases/NN-name.expect.json   what `deltac run --json` must print (partial match)
 xfail.txt                   cases expected to fail for now
 ```
 
@@ -23,7 +23,7 @@ cargo test -p delta-cli --test conformance                 # passes iff exactly 
 cargo test -p delta-cli --test conformance -- --ignored    # requires every case to pass
 ```
 
-The harness (`crates/delta-cli/tests/conformance.rs`) runs `delta run --json FILE` and kills it
+The harness (`crates/delta-cli/tests/conformance.rs`) runs `deltac run --json FILE` and kills it
 after 10 s. It fails a case that is not in `xfail.txt` and doesn't match, and it also fails when a
 case listed in `xfail.txt` now passes, so the list only shrinks.
 

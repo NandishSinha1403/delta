@@ -34,6 +34,7 @@ export default defineConfig({
         { label: 'Reference', items: ['docs/library', 'docs/models', 'docs/languages', 'docs/notation'] },
         { label: 'Cookbook', items: [{ autogenerate: { directory: 'docs/cookbook' } }] },
         { label: 'Errors', items: [{ autogenerate: { directory: 'docs/errors' } }] },
+        { label: 'Terminal', items: ['docs/terminal'] },
         { label: 'AI', items: ['docs/ai'] },
       ],
     }),

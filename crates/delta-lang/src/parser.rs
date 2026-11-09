@@ -446,6 +446,21 @@ impl<'a> Parser<'a> {
                 self.bump();
                 Ok(StmtKind::Show(self.expr()?))
             }
+            Tok::Kw(Kw::Save) => {
+                self.bump();
+                let v = self.expr()?;
+                if !self.at_ident("to") {
+                    let t = self.peek();
+                    return Err(self.error(
+                        "E101",
+                        t.span,
+                        "expected `to` in `save x to \"file\"`",
+                    ));
+                }
+                self.bump();
+                let path = self.expr()?;
+                Ok(StmtKind::Save(v, path))
+            }
             Tok::Kw(Kw::Assert) => {
                 self.bump();
                 Ok(StmtKind::Assert(self.expr()?))

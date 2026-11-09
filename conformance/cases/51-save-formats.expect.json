@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "diagnostics": [],
+  "outputs": [
+    { "kind": "save", "line": 7, "path": "even-zeros.svg", "format": "svg", "value": { "type": "machine", "model": "dfa" } },
+    { "kind": "save", "line": 8, "path": "out/min.PDF", "format": "pdf", "value": { "type": "machine" } },
+    { "kind": "save", "line": 9, "path": "m.png", "format": "png" },
+    { "kind": "save", "line": 10, "path": "m.tex", "format": "tex" },
+    { "kind": "save", "line": 11, "path": "states.txt", "format": "txt" },
+    { "kind": "save", "line": 12, "path": "sub/m.json", "format": "json" }
+  ]
+}

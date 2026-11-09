@@ -4,7 +4,7 @@ import * as Comlink from 'comlink';
 import type { Graphviz } from '@hpcc-js/wasm-graphviz';
 import type { Document } from './api';
 import type { RunResult } from './generated/RunResult';
-import init, { evaluate, run, version } from './pkg/delta_wasm';
+import init, { evaluate, render_file, run, version } from './pkg/delta_wasm';
 
 // Fetches and instantiates delta_wasm_bg.wasm (Vite resolves its URL at build time).
 const ready = init();
@@ -14,6 +14,17 @@ let graphviz: Promise<Graphviz> | undefined;
 function loadGraphviz(): Promise<Graphviz> {
   graphviz ??= import('@hpcc-js/wasm-graphviz').then((m) => m.Graphviz.load());
   return graphviz;
+}
+
+// The image export module (resvg + svg2pdf, ~900 KB) is loaded the first PNG or PDF download.
+type Exporter = typeof import('./export-pkg/delta_export_wasm');
+let exporter: Promise<Exporter> | undefined;
+function loadExporter(): Promise<Exporter> {
+  exporter ??= import('./export-pkg/delta_export_wasm').then(async (m) => {
+    await m.default();
+    return m;
+  });
+  return exporter;
 }
 
 const api = {
@@ -27,6 +38,17 @@ const api = {
   },
   async layout(dot: string): Promise<string> {
     return (await loadGraphviz()).layout(dot, 'json', 'dot');
+  },
+  /** A `save` output's file: text for svg, tex, txt and json; bytes for png and pdf. */
+  async exportFile(value: unknown, format: string, text: string): Promise<string | Uint8Array> {
+    await ready;
+    const json = JSON.stringify(value);
+    if (format === 'png' || format === 'pdf') {
+      const svg = render_file(json, 'svg', text, false);
+      const m = await loadExporter();
+      return format === 'png' ? m.png(svg, 2) : m.pdf(svg);
+    }
+    return render_file(json, format, text, false);
   },
   async version(): Promise<string> {
     await ready;

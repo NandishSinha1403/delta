@@ -1,0 +1,5 @@
+{
+  "ok": false,
+  "diagnostics": [{ "code": "E515", "severity": "error", "line": 7 }],
+  "outputs": [{ "kind": "save", "path": "ok.svg" }]
+}

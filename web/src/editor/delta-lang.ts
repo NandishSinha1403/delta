@@ -20,7 +20,7 @@ import type { OutlineView } from '../engine/api';
 
 /** Statement keywords (01-LANGUAGE.md §8, §15). */
 const KEYWORDS = [
-  'let', 'var', 'fn', 'if', 'else', 'for', 'while', 'return', 'print', 'show', 'assert', 'check',
+  'let', 'var', 'fn', 'if', 'else', 'for', 'while', 'return', 'print', 'show', 'save', 'assert', 'check',
   'run', 'model', 'machine', 'lang', 'use', 'budget', 'explore', 'fixpoint', 'cfg', 'and', 'or',
   'not', 'in', 'true', 'false', 'none', 'union', 'inter', 'minus', 'subset', 'equiv', 'union_all',
   'eps', 'empty',

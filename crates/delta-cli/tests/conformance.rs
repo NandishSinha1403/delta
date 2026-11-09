@@ -1,5 +1,5 @@
 //! The v2 conformance suite (docs/v2/04-ROADMAP.md §3, "Language"): every example in
-//! docs/v2/01-LANGUAGE.md, run through `delta run --json`, checked against its `.expect.json`.
+//! docs/v2/01-LANGUAGE.md, run through `deltac run --json`, checked against its `.expect.json`.
 //!
 //! Cases live in `conformance/cases/NAME.delta` + `NAME.expect.json`. Matching is partial (see
 //! `conformance/README.md`): only what the expectation states is checked.
@@ -55,7 +55,7 @@ fn run_case(name: &str) -> Result<(), String> {
     let expected: Value =
         serde_json::from_str(&expect_text).map_err(|e| format!("bad expect.json: {e}"))?;
 
-    let mut child = Command::new(env!("CARGO_BIN_EXE_delta"))
+    let mut child = Command::new(env!("CARGO_BIN_EXE_deltac"))
         .args(["run", "--json"])
         .arg(dir.join(format!("{name}.delta")))
         .stdout(Stdio::piped())

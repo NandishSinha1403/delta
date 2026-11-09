@@ -283,6 +283,22 @@ test('fast evaluations never flash the loader', async ({ page }) => {
 
 
 // with one box per sub-expression and dashed ε-arrows, and no DFA unless the code asks for one.
+test('save offers a download: a PNG from the lazily loaded export module', async ({ page }, testInfo) => {
+  const layout = layoutOf(testInfo);
+  const editor = page.getByRole('textbox', { name: 'Delta code' });
+  await editor.click();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.insertText('dfa M {\n  start q0; accept q0\n  q0 -a-> q0\n}\nsave M to "out/m.png"\nsave M to "m.txt"\n');
+  await openView(page, layout, 'Console');
+  const buttons = page.getByTestId('save-download');
+  await expect(buttons).toHaveText(['Download m.png', 'Download m.txt']);
+  const [download] = await Promise.all([page.waitForEvent('download'), buttons.first().click()]);
+  expect(download.suggestedFilename()).toBe('m.png');
+  const path = await download.path();
+  const bytes = await import('node:fs').then((fs) => fs.readFileSync(path));
+  expect(bytes.subarray(1, 4).toString()).toBe('PNG');
+});
+
 test('the Lang view shows a language’s class and sample words', async ({ page }, testInfo) => {
   const layout = layoutOf(testInfo);
   await pickObject(page, layout, 'L');

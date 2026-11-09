@@ -90,12 +90,23 @@
               "null"
             ]
           },
+          "format": {
+            "enum": [
+              "svg",
+              "png",
+              "pdf",
+              "tex",
+              "txt",
+              "json"
+            ]
+          },
           "kind": {
             "enum": [
               "print",
               "show",
               "test",
-              "trace"
+              "trace",
+              "save"
             ]
           },
           "line": {
@@ -106,6 +117,10 @@
           },
           "pass": {
             "type": "boolean"
+          },
+          "path": {
+            "description": "save: relative, `/`-separated, never leaves the working folder",
+            "type": "string"
           },
           "text": {
             "type": "string"

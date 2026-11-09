@@ -9,6 +9,7 @@ export default tseslint.config(
     ignores: [
       'dist',
       'src/engine/pkg',
+      'src/engine/export-pkg',
       'src/engine/generated',
       'playwright-report',
       'test-results',

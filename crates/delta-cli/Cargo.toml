@@ -4,13 +4,27 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+
+description = "deltac: run Delta programs, draw machines, and a REPL"
+
+[package.metadata.wix]
+upgrade-guid = "046161E7-6C6C-4702-B425-61F017E7E4CF"
+path-guid = "DC1BCF08-C458-4214-8DB0-ACE7E8007609"
+license = false
+eula = false
 
 [[bin]]
-name = "delta"
+name = "deltac"
 path = "src/main.rs"
 
 [dependencies]
 delta-core = { version = "0.0.1", path = "../delta-core" }
 delta-dsl = { version = "0.0.1", path = "../delta-dsl" }
 delta-lang = { version = "0.0.1", path = "../delta-lang" }
+delta-export = { version = "0.0.1", path = "../delta-export" }
+delta-render = { version = "0.0.1", path = "../delta-render" }
+icy_sixel = "0.7"
+rustyline = "19"
 serde_json = "1.0.154"

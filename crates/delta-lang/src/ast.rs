@@ -240,6 +240,8 @@ pub enum StmtKind {
     Return(Option<Expr>),
     Print(Vec<Expr>),
     Show(Expr),
+    /// `save value to path`.
+    Save(Expr, Expr),
     Assert(Expr),
     Check(Expr, CheckKind),
     Run(Expr, Expr),

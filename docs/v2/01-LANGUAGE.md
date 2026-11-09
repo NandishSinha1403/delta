@@ -449,6 +449,28 @@ return e
 | `check M accepts "…", …` / `rejects` | Tests, one per word |
 | `check A ≡ B` / `check A ≡ B up to n` | Tests; on failure, the shortest word that tells them apart |
 | `check A ⊆ B`, `check L.is_empty()` | Tests |
+| `save x to "file.svg"` | A file: the CLI writes it, the Pad downloads it |
+
+`save` writes a value to a file whose extension picks the format:
+
+| Extension | Contents | Values |
+|---|---|---|
+| `.svg`, `.png`, `.pdf` | The diagram, drawn the same way by the Pad and the CLI | machines |
+| `.tex` | A TikZ picture of the diagram | machines |
+| `.txt` | The text that `print` shows | any |
+| `.json` | The value as JSON (the `show` value of the output schema) | any |
+
+```delta
+save M to "even-zeros.svg"
+save M.minimize() to "out/min.pdf"
+save M.states to "states.txt"
+```
+
+The path is relative and stays inside the folder the program runs in: no leading `/`, no drive
+letter, no `..`. The engine itself never writes files. It emits a `save` output and the host
+writes it: `deltac` writes inside the current folder (creating subfolders), the Pad offers a
+download. Another extension, a path that leaves the folder, or a value with no diagram saved to
+an image is an error (E514, E515, E516).
 
 ---
 
@@ -586,6 +608,7 @@ stmt       = "let" pattern "=" expr | "var" ident "=" expr | ident "=" expr
            | "if" expr block { "else" "if" expr block } [ "else" block ]
            | "for" pattern ( "∈" | "in" ) expr block | "while" expr block
            | "return" [ expr ] | "print" exprlist | "show" expr | "assert" expr
+           | "save" expr "to" expr
            | "check" checkspec | "run" expr "on" expr | expr ;
 expr       = … | atom | setbuilder | "re" string [ "over" expr ]
            | "explore" [ ident ] "{" { exclause } "}" | "fixpoint" ident "from" expr block ;

@@ -1,0 +1,2 @@
+# Cloudflare Pages redirects. v1 was one page at /, so it has no old deep links to keep.
+/sitemap.xml /sitemap-index.xml 301

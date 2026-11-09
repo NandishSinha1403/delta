@@ -1,6 +1,6 @@
 # Delta 2 — Progress
 
-_Last updated: 2026-11-09 (domain live on Cloudflare; SEO deploy waits for the owner)_
+_Last updated: 2026-11-09 (Phase 5b built: deltac, save, renderer, export; next: 5c manual)_
 
 ## Current state
 
@@ -8,10 +8,10 @@ _Last updated: 2026-11-09 (domain live on Cloudflare; SEO deploy waits for the o
 |---|---|
 | Branch | `v2` (long-lived; **never merge into `main`** until the v2 beta) |
 | v1 | Tag `v1.0-final` = `50bf153` (= `origin/main` at the time, incl. both CNAME commits). v1 stays live from `main` |
-| Phase | **1–5 built** (language, engine, Pad, front page and docs). Next: **5b** (terminal and packages) |
+| Phase | **1–5 and 5b built** (language, engine, Pad, site, terminal and packages). Next: **5c** (private manual) |
 | Hosting | Cloudflare Pages, project `delta` (`delta-17m.pages.dev`), direct upload from a Mac with wrangler 4.42.0 until GitHub Actions is unlocked; then `deploy.yml` deploys on push to `main`. `delta.nandish.dev` moves from GitHub Pages (v1) to it |
-| Conformance | 100 cases, `xfail.txt` empty: all pass |
-| Tests | 121 Rust (incl. conformance); 26 Vitest; 84 Playwright (phone, tablet, desktop) |
+| Conformance | 54 cases, `xfail.txt` empty: all pass |
+| Tests | 145 Rust (incl. conformance); 26 Vitest; 90 Playwright (phone, tablet, desktop) |
 
 ## What Phase 0 produced
 
@@ -22,7 +22,7 @@ _Last updated: 2026-11-09 (domain live on Cloudflare; SEO deploy waits for the o
 | `docs/v2/SEMANTICS.md` | Formal meaning of configurations, label ops, every model property, acceptance modes, languages/classes, `explore`, `fixpoint`, the core and desugaring. Provisional choices tagged `[Q-nn]` |
 | `docs/v2/QUESTIONS.md` | ~70 questions/contradictions, each with a recommended default and the phase it blocks. Top section: proposed answers |
 | `conformance/` | 43 cases (`cases/NN-name.delta` + `.expect.json`), `xfail.txt`, README with the matching rules |
-| `crates/delta-cli/tests/conformance.rs` | Harness: runs `delta run --json` on each case, partial-matches the expectation, enforces the xfail list |
+| `crates/delta-cli/tests/conformance.rs` | Harness: runs `deltac run --json` on each case, partial-matches the expectation, enforces the xfail list |
 | `CLAUDE.md` | Updated for v2 (sources of truth, citation rule, layout) |
 
 ## Decisions
@@ -71,8 +71,36 @@ Q-43, Q-45–Q-48, Q-93.
   domain, noindex; no tokens, keys or account IDs in it. Every phase's done-definition then
   includes its manual chapters.
 
-**Open:** Pad PNG/PDF for `save` (owner wants to clarify), the MANUAL.md template, the Web
-Analytics token.
+**Made 2026-11-09 (Phase 5b):**
+- Owner: Pad PNG/PDF via a separate, lazily loaded export WASM (resvg + svg2pdf) shared with
+  `deltac`, so both produce the same bytes. Built as `crates/delta-export-wasm`; 887 KB gzipped,
+  budget 1000 KB in `check-wasm-size.sh` (C); loaded on the first PNG/PDF download only.
+- (C) `save` formats: svg, png, pdf, tex (TikZ), txt (the `print` text), json; E514 unknown
+  extension, E515 path leaves the folder, E516 image of a non-machine. `save` is a keyword, `to`
+  contextual. The output carries `text` (the print form) for `.txt`.
+- (C) `deltac run --json` never writes files; plain `run` writes `save` files inside the cwd
+  (checked again after resolving symlinks). The Pad never downloads by itself (it re-runs on every
+  keystroke): each `save` line in the Console gets a Download button.
+- (C) Renderer `render/layered`: DFS cycle breaking, longest-path columns, label boxes as layout
+  items in odd columns (labels never overlap), barycentre ordering, isotonic (PAV) placement,
+  Catmull-Rom curves; long state names become ellipses; fixed-size self-loops with labels above.
+  The Pad's on-screen diagram still uses Graphviz; exports, `deltac` and social cards use this.
+- (C) Fonts: Commit Mono 1.143 and a Noto Sans Math 3.000 subset (⊔ ⊢ ▸ … that Commit Mono lacks),
+  both OFL, subsets with licences in `crates/delta-export/fonts/` (77 KB together).
+- (C) Terminal images: kitty (also Ghostty), iTerm2 (also WezTerm), sixel (foot, mlterm,
+  contour), else text; `DELTAC_IMAGES` overrides. `--show`, `--format svg|png|pdf|tikz|txt`,
+  `--out DIR`, `--dark`, `run -` reads stdin.
+- (C) REPL: the session is a growing program, re-run per entry; only the entry's lines print; an
+  entry with an error is dropped; a lone expression is printed; `:show :load :program :reset :quit`.
+- (C) Social cards: `deltac gen-docs` renders a 1200×630 card per docs page whose first example
+  shows a machine (11 pages now) into `site/public/og/<id>.png`; others keep `default.png`.
+- (C) cargo-dist 0.34.0: `dist-workspace.toml`, installers shell/powershell/homebrew/msi, tap
+  `NandishSinha1403/homebrew-tap`, 5 targets, generated `release.yml` (runs on `v*` tags once
+  Actions is on). `[profile.dist]` uses opt-level 3. Workspace `authors`/`homepage` added for MSI.
+- (C) `/sitemap.xml` 301 → `/sitemap-index.xml` (`site/public/_redirects`). v1 was one page at
+  `/` with no routes or share links, so no other old URL needs a redirect.
+
+**Open:** the Web Analytics token (owner is enabling it in Pages → Metrics).
 
 ## Key findings of the audit
 
@@ -101,7 +129,7 @@ Prefix if Rust or Node 22 aren't on PATH:
 
 ```bash
 cargo test --workspace                                   # everything; conformance passes iff exactly xfail.txt fails
-cargo test -p delta-cli --test conformance -- --nocapture # prints "conformance: N of 43 cases pass"
+cargo test -p delta-cli --test conformance -- --nocapture # prints "conformance: N of M cases pass"
 cargo test -p delta-cli --test conformance -- --ignored  # strict: every case must pass (shows each failure)
 cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
@@ -115,33 +143,24 @@ The full check list (wasm build, size check, web lint/typecheck/test/build/e2e) 
 2. **Domain — done 2026-11-09.** The CNAME `delta` → `delta-17m.pages.dev` is live; the Pages
    domain and its Let's Encrypt certificate are `active`, and https://delta.nandish.dev serves v2.
    Rollback: CNAME back to `nandishsinha1403.github.io`.
-3. **SEO (Phase 5) — done, committed, not yet deployed.** `/tools/` (8 pages; pumping-lemma,
-   cfg-to-cnf, cyk-parser, cfg-to-pda, mealy-moore wait for Phase 6), `/learn/` (9), `/practice/`
-   (8), JSON-LD/social cards (`site/src/route-data.ts`), robots.txt, `site/scripts/check-seo.mjs`
-   (runs in `build-site.sh`). Lighthouse on the live site: 100 perf / 100 SEO (front page; local
-   `astro preview` shows ~73 only because it doesn't compress). OG images are interim
-   (`site/public/og/default.png` from the hero); diagram cards come from the 5b renderer.
-   All checks green 2026-11-09 and `site/dist` built; the deploy needs the owner's approval
-   (Claude's production deploy is blocked by the permission check). Still to do: deploy (manual deploy below); the owner sends the Cloudflare Web Analytics site
-   token → set `BEACON_TOKEN` in `site/src/lib/analytics.mjs`; give the owner Google Search
-   Console + Bing TXT-record steps for name.com.
-4. **Phase 5b (terminal and packages)** — approved deps: rustyline 19, resvg 0.45 + svg2pdf 0.13
-   (same usvg 0.45), icy_sixel 0.7, the cargo-dist tool; own layered layout, own iTerm2/kitty
-   protocols, hand-parsed args (no clap/viuer/layout-rs); embed Commit Mono (OFL). The binary is
-   renamed **`deltac`** (git-delta owns `delta`). Renderer = the planned `crates/delta-render`
-   (layout, SVG, TikZ, ASCII; no deps; also in WASM). Spec first: `save <value> to "<file>"` in
-   01-LANGUAGE.md §Output, SEMANTICS §10.4, conformance cases; output kind `save`, the engine
-   never writes files (CLI writes inside the cwd only; the Pad downloads). **Open question for the
-   owner** (they wanted to clarify before answering): how the Pad makes PNG/PDF — lazy second
-   "export" WASM with resvg+svg2pdf (recommended) / browser canvas + print / PDF CLI-only.
-   Releases on tags need GitHub Actions (locked); build and test locally.
-5. **Phase 5c (private manual)** — plan changed: source in this repo under `manual/` (own Starlight
-   site, never in `site/dist`), excerpts pulled by path + marker at build time (CI fails on a
-   missing marker), separate Pages project protected by Cloudflare Access on `<project>.pages.dev`
-   and `*.<project>.pages.dev` (owner's email, one-time PIN, 30-day session), never a custom
-   domain, noindex + robots disallow, no links from the public site. No nameserver move needed.
-   **Waiting for the owner's MANUAL.md template** (never received). Test the Access login in a
-   private window, then give the owner the URL.
+3. **SEO (Phase 5) — deployed 2026-11-09.** Live: `/tools/` (8), `/learn/` (9), `/practice/`
+   (8), robots.txt, sitemap-index.xml. Still to do: the owner's Web Analytics token (if Pages →
+   Metrics needs one) → `BEACON_TOKEN` in `site/src/lib/analytics.mjs`; give the owner Google
+   Search Console + Bing TXT-record steps for name.com. The 5b changes (Terminal page, E514–E516,
+   social cards, `_redirects`) are committed but **not deployed**: deploy after the owner says so.
+4. **Phase 5b — built 2026-11-09.** Not done, needs the owner: publish to crates.io for
+   `cargo install delta-cli` (every path dependency must be published first: delta-core,
+   delta-render, delta-lang, delta-dsl, delta-export; needs a crates.io token); create the
+   `NandishSinha1403/homebrew-tap` repo and a `HOMEBREW_TAP_TOKEN` secret; Actions for
+   `release.yml`. The TikZ output is untested with a real LaTeX (none on this Mac). Local release:
+   `dist build --artifacts=local --target aarch64-apple-darwin` → `target/distrib/`.
+5. **Phase 5c (private manual) — next.** The template arrived: `manual/MANUAL-TEMPLATE.md`. Plan:
+   source in this repo under `manual/` (own Starlight site, never in `site/dist`), excerpts pulled
+   by path + marker at build time (CI fails on a missing marker), interview-prep chapters, separate
+   Pages project protected by Cloudflare Access on `<project>.pages.dev` and
+   `*.<project>.pages.dev` (owner's email, one-time PIN, 30-day session), never a custom domain,
+   noindex + robots disallow, no links from the public site. Test the Access login in a private
+   window, then give the owner the URL.
 6. PR #6 (`v2` → `main`) carries the Cloudflare `deploy.yml`; merge only when the owner says so,
    after Actions is unlocked and `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` are set. The owner
    still needs the step-by-step for a Pages-only API token.

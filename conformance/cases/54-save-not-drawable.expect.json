@@ -1,0 +1,5 @@
+{
+  "ok": false,
+  "diagnostics": [{ "code": "E516", "severity": "error", "line": 3 }],
+  "outputs": [{ "kind": "save", "path": "set.txt", "format": "txt" }]
+}

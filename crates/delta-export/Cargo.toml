@@ -1,0 +1,18 @@
+[package]
+name = "delta-export"
+description = "Turns Delta's SVG drawings into PNG and PDF with embedded fonts."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+# The fonts are OFL-licensed; their licences ship next to them in fonts/.
+include = ["src/**", "fonts/**", "Cargo.toml"]
+
+[dependencies]
+# No system fonts and no raster images: only the two embedded fonts are ever used, so the
+# output is the same on every machine and in the browser.
+resvg = { version = "0.45", default-features = false, features = ["text"] }
+svg2pdf = { version = "0.13", default-features = false, features = ["text"] }
+
+[lints]
+workspace = true
