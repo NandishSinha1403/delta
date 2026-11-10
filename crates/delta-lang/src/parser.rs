@@ -1719,6 +1719,33 @@ impl<'a> Parser<'a> {
 
     fn machine_item(&mut self) -> PResult<MItem> {
         let t = self.peek_in(Mode::Machine);
+        // `λ(q) = w` / `lambda(q) = w`: λ followed by `(` is the Moore output function.
+        let word = self.lx.source().get(t.span.from..t.span.to).unwrap_or("");
+        if matches!(word, "λ" | "lambda") {
+            self.bump_in(Mode::Machine);
+            if self.peek_in(Mode::Machine).tok == Tok::Op(Op::LParen) {
+                self.bump_in(Mode::Machine);
+                let state = self.mval()?;
+                self.expect_m(Op::RParen, "to close λ's argument")?;
+                self.expect_m(Op::Assign, "after λ(…)")?;
+                let out = if matches!(self.peek().tok, Tok::Word(_)) {
+                    vec![MVal::Expr(self.expr()?)]
+                } else {
+                    self.mval_list()?
+                };
+                return Ok(MItem::Lambda {
+                    state,
+                    out,
+                    span: Span::new(t.span.from, self.prev_end),
+                });
+            }
+            let next = self.peek_in(Mode::Machine);
+            return Err(self.error(
+                "E101",
+                next.span,
+                "expected `(` after λ: a Moore output is written `λ(q) = w`",
+            ));
+        }
         match t.tok {
             Tok::Ident(ref kw) if kw == "for" => {
                 self.bump_in(Mode::Machine);

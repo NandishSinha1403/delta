@@ -566,6 +566,9 @@ impl Checker<'_> {
                 MItem::Delta { args, targets, .. } => {
                     args.iter().chain(targets).for_each(|v| self.mval(v))
                 }
+                MItem::Lambda { state, out, .. } => {
+                    std::iter::once(state).chain(out).for_each(|v| self.mval(v))
+                }
                 MItem::Table { header, rows, .. } => {
                     header.iter().for_each(|v| self.mval(v));
                     for (s, cells) in rows {

@@ -234,6 +234,149 @@ Whether L(A) ⊆ L(B).
 assert subset_of(re"a b", re"a (a ∪ b)")
 ```
 
+## Grammars
+
+### `nullable`
+
+`nullable(G)`
+
+The variables that derive ε.
+
+```delta
+cfg G {
+  S -> A b | ε
+  A -> a | ε
+}
+assert nullable(G) == {'S', 'A'}
+```
+
+### `useless`
+
+`useless(G)`
+
+The variables that derive no word or can't be reached from the start; trim(G) drops them.
+
+```delta
+cfg G {
+  S -> a | D
+  D -> d D
+}
+assert useless(G) == {'D'}
+assert trim(G).variables == {'S'}
+```
+
+### `cnf`
+
+`cnf(G)`
+
+An equivalent grammar in Chomsky normal form (START, DEL, UNIT, TERM, BIN, then trim); steps(cnf(G)) lists each phase.
+
+```delta
+cfg G {
+  S -> a S b | ε
+}
+let C = cnf(G)
+assert C.start == '<S0>'
+check C ≡ G up to 8
+```
+
+### `parse`
+
+`parse(G, w, method: "earley")`
+
+A parse tree of w (T.root, T.children, T.yield, T.text), or none if w ∉ L(G). CYK parses with cnf(G); steps(T) lists the table cells.
+
+Methods: `"earley"`, `"cyk"`.
+
+```delta
+cfg G {
+  S -> a S b | ε
+}
+let T = parse(G, "aabb")
+assert T.yield == "aabb"
+assert parse(G, "aab", method: "cyk") == none
+```
+
+### `derive`
+
+`derive(G, w)`
+
+The sentential forms of a leftmost derivation of w, or none.
+
+```delta
+cfg G {
+  S -> a S b | ε
+}
+assert derive(G, "ab") == ["S", "aSb", "ab"]
+```
+
+### `to_pda`
+
+`to_pda(G)`
+
+A pushdown automaton for L(G): states :start, :loop, :accept; the stack holds the rest of a leftmost derivation.
+
+```delta
+cfg G {
+  S -> a S b | ε
+}
+check to_pda(G) accepts "", "ab", "aabb"
+```
+
+### `to_cfg`
+
+`to_cfg(P)`
+
+A grammar for a pushdown automaton's language, with variables <p,q> (trimmed).
+
+```delta
+pda P {
+  alphabet a, b
+  start q0
+  accept q1
+  q0 -a, ε → A-> q0
+  q0 -ε, ε → ε-> q1
+  q1 -b, A → ε-> q1
+}
+check to_cfg(P) ≡ P up to 6
+```
+
+## Machines
+
+### `mealy_to_moore`
+
+`mealy_to_moore(M)`
+
+A Moore machine with the same outputs; its states are (q, o).
+
+```delta
+mealy M {
+  alphabet a, b
+  start q0
+  q0 -a / 1-> q0; q0 -b / 0-> q0
+}
+assert mealy_to_moore(M).output("ab") == M.output("ab")
+```
+
+### `moore_to_mealy`
+
+`moore_to_mealy(M)`
+
+A Mealy machine whose output is M's without the first λ(q₀).
+
+```delta
+moore M {
+  alphabet a
+  start q0
+  λ(q0) = 0
+  λ(q1) = 1
+  q0 -a-> q1; q1 -a-> q0
+}
+assert M.output("aa") == "0" ++ moore_to_mealy(M).output("aa")
+```
+
+## Decisions
+
 ### `is_empty`
 
 `is_empty(L)`

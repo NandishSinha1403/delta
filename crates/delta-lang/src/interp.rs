@@ -1587,6 +1587,11 @@ fn walk_mitems(items: &[MItem], f: &mut dyn FnMut(&Expr)) {
             MItem::Delta { args, targets, .. } => {
                 args.iter().chain(targets.iter()).for_each(|v| mval(v, f));
             }
+            MItem::Lambda { state, out, .. } => {
+                std::iter::once(state)
+                    .chain(out.iter())
+                    .for_each(|v| mval(v, f));
+            }
             MItem::Table { header, rows, .. } => {
                 header.iter().for_each(|v| mval(v, f));
                 for (s, cells) in rows {

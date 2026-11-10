@@ -55,6 +55,15 @@ Run programs at https://delta.nandish.dev/pad/ or with `deltac run --json FILE`.
 - `product(A, B, keep)`: The product DFA accepting where `keep(a_accepts, b_accepts)` is true.
 - `equivalent(A, B)`: Whether two languages are equal (decidable for Finite and Regular).
 - `subset_of(A, B)`: Whether L(A) ⊆ L(B).
+- `nullable(G)`: The variables that derive ε.
+- `useless(G)`: The variables that derive no word or can't be reached from the start; trim(G) drops them.
+- `cnf(G)`: An equivalent grammar in Chomsky normal form (START, DEL, UNIT, TERM, BIN, then trim); steps(cnf(G)) lists each phase.
+- `parse(G, w, method: "earley")`: A parse tree of w (T.root, T.children, T.yield, T.text), or none if w ∉ L(G). CYK parses with cnf(G); steps(T) lists the table cells. Methods: earley, cyk.
+- `derive(G, w)`: The sentential forms of a leftmost derivation of w, or none.
+- `to_pda(G)`: A pushdown automaton for L(G): states :start, :loop, :accept; the stack holds the rest of a leftmost derivation.
+- `to_cfg(P)`: A grammar for a pushdown automaton's language, with variables <p,q> (trimmed).
+- `mealy_to_moore(M)`: A Moore machine with the same outputs; its states are (q, o).
+- `moore_to_mealy(M)`: A Mealy machine whose output is M's without the first λ(q₀).
 - `is_empty(L)`: Whether the language is empty (decidable up to CF).
 - `is_finite(L)`: Whether the language is finite (decidable up to CF).
 - `is_universal(L)`: Whether every word over its alphabet is in it (decidable up to DCF).

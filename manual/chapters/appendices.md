@@ -26,7 +26,11 @@ Every code has a page with an example on the public site: `/docs/errors/<code>/`
 | `to_nfa/textbook`, `to_nfa/thompson`, `to_nfa/glushkov` | `crates/delta-core/src/fa/regex.rs` |
 | `to_regex/state-elimination`, `to_regex/arden`, `to_regex/brzozowski-mccluskey` | `crates/delta-core/src/fa/to_regex.rs` |
 | `complete/dead-state`, `trim/useful`, `reverse/edges`, `union/epsilon`, `concat/epsilon`, `star/epsilon`, `remove-epsilon/closure`, `complement/swap` | `crates/delta-core/src/fa/ops.rs` |
-| `parse/earley`, `cfg/generating`, `cfg/finiteness` | `crates/delta-lang/src/grammar.rs` |
+| `parse/earley`, `cfg/generating`, `cfg/finiteness`, `cfg/nullable`, `cfg/useless` | `crates/delta-lang/src/grammar.rs` |
+| `cfg/cnf` | `crates/delta-lang/src/cnf.rs` |
+| `parse/cyk` (and Earley trees, `derive`) | `crates/delta-lang/src/parse_tree.rs` |
+| `cfg/to-pda`, `pda/to-cfg` | `crates/delta-lang/src/pda_cfg.rs` |
+| `mealy/to-moore`, `moore/to-mealy` | `crates/delta-lang/src/transducers.rs` |
 | `classes/closure`, `classes/decision` | `crates/delta-lang/src/lang.rs` |
 | `render/layered` | `crates/delta-render/src/layered.rs` |
 

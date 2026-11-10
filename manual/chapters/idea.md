@@ -63,8 +63,9 @@ sides are regular), with the shortest counterexample if they differ.
    `check M accepts "w"`, `assert expr`. Each becomes a test result with pass/fail and, for ≡ and
    ⊆, a counterexample word.
 4. **"What's the scope today?"** — Finite automata and regexes fully (constructions, minimization,
-   decisions); every machine model can be simulated; context-free grammars have membership
-   (Earley), emptiness and finiteness. CNF, CYK and PDA↔CFG conversions are Phase 6.
+   decisions); every machine model can be simulated, with its stack, tape or counters shown; context-free
+   grammars have membership, parse trees (Earley and CYK), derivations, CNF and conversions to and
+   from pushdown automata.
 5. **"Why not just a Python library?"** — Notation. `q0 -a-> q1`, `{ w ∈ Σ* | … }` and `M ≡ L` are
    how the course writes things, and a dedicated checker can reject an undecidable question
    before running. A library can't give you either without a lot of ceremony.

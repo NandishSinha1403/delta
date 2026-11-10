@@ -1,3 +1,4 @@
+import { lastStep } from './run-steps';
 import { addLet, type Conversion } from '../conversions';
 import type { ObjectView, RunView } from '../engine/api';
 import { pickObject, useEngineStore, useObjects } from '../state/engine';
@@ -36,7 +37,7 @@ export function useActiveRun(object: ObjectView | null): { run: RunView | null; 
   const runPos = useEngineStore((s) => s.runPos);
   const results = useEngineStore((s) => s.doc?.results);
   if (!object) return { run: null, pos: 0 };
-  if (run && run.object === object.name) return { run, pos: Math.min(runPos, run.input.length) };
+  if (run && run.object === object.name) return { run, pos: Math.min(runPos, lastStep(run)) };
   const fromProgram = results?.find((r) => r.kind === 'run' && r.object === object.name)?.run ?? null;
   return { run: fromProgram, pos: 0 };
 }

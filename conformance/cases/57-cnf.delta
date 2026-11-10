@@ -1,0 +1,19 @@
+// SEMANTICS §11.1–11.2: nullable, useless, trim and cnf.
+// Context: a grammar with ε, unit and long rules, a useless variable and terminals in long rules.
+cfg G {
+  S -> A S A | a B
+  A -> B | S
+  B -> b | ε
+  D -> d D
+}
+assert nullable(G) == {'A', 'B'}
+assert useless(G) == {'D'}
+assert trim(G).variables == {'S', 'A', 'B'}
+let C = cnf(G)
+assert C.start == '<S0>'
+fn binary(r) = len(r[1]) == 2 and r[1][0] ∈ C.variables and r[1][1] ∈ C.variables
+fn terminal(r) = len(r[1]) == 1 and r[1][0] ∈ C.terminals
+fn ok(r) = binary(r) or terminal(r) or (r[0] == '<S0>' and len(r[1]) == 0)
+assert { r ∈ C.rules | not ok(r) } == {}
+check C ≡ G up to 7
+assert len(steps(C)) >= 5

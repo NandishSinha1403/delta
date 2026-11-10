@@ -210,7 +210,7 @@ The machine option `(partial)` means: `total` is removed for this machine and `m
 
 **5.9 `output per-transition | per-state`** (dynamic): per-transition — the output is the
 concatenation of the `Emit` ops along the run. Per-state — o starts as λ(q₀), and each step into
-state p appends λ(p). So a Moore machine on w of length n emits n+1 outputs.
+state p appends λ(p). λ is given by `λ(q) = w` lines (01 §5.2); λ(q) = ε for a state without one. So a Moore machine on w of length n emits n+1 outputs.
 `M.output(w)` is defined for deterministic machines and returns o at the end of the run. For a
 nondeterministic transducer (`fst`) it returns the **set** of outputs of accepting runs [Q-68].
 
@@ -437,3 +437,55 @@ machine and model bodies; `}` ends the last statement of a block (01 §2).
 
 **10.6 Notation profiles** act only in the lexer and printer (01 §10): they map spellings to the
 same core tokens (`+`→union under `hmu`, `λ`→ε, `B`/`□`→⊔), so no core value depends on the profile.
+
+## 11. Grammar and transducer built-ins (01 §12)
+
+Let G = (V, Σ, R, S), with rules in source order. Every result records its algorithm id and steps.
+
+**11.1 `nullable(G)`** (`cfg/nullable`) is the least N ⊆ V with A ∈ N whenever A → X₁…Xₖ ∈ R and
+every Xᵢ ∈ N (k = 0 included). **`useless(G)`** is V minus the variables that are both
+generating (derive a terminal word) and reachable from S through generating rules only; `trim(G)`
+removes them and every rule that mentions one. If S itself is useless, `trim(G)` has the single
+variable S and no rules (L = ∅).
+
+**11.2 `cnf(G)`** (`cfg/cnf`) applies, in order: **START** add S0 → S; **DEL** for each nullable
+A ≠ S0 remove A → ε and add every rule obtained by deleting a subset of the nullable occurrences
+on a right side (never producing B → ε for B ≠ S0; S0 → ε stays iff ε ∈ L(G)); **UNIT** replace
+A → B by A → u for every non-unit B → u reachable through unit rules, then drop unit rules;
+**TERM** in a right side of length ≥ 2, replace each terminal a by U_a with U_a → a; **BIN**
+replace A → B₁…Bₖ (k ≥ 3) by A → B₁X₁, X₁ → B₂X₂, …, X_{k−2} → B_{k−1}Bₖ (numbering continues
+across rules); finally `trim`. L(cnf(G)) = L(G). Each phase adds a `GrammarEdit` step.
+
+**11.3 `parse(G, w)`.** `earley` (default, `parse/earley`): the Earley chart (items over G), then the tree
+found by trying, for a variable over a span, its rules in source order and split points from left
+to right, never re-entering the same (variable, span) on one path. `cyk` (`parse/cyk`): G' = G if
+G is already in Chomsky normal form, else cnf(G); T[i][j] = { A | A ⇒* w[i..j] } by spans of increasing length, splits left to right, rules
+in order, keeping the first back-pointer for each variable; the tree is read from S0 (or S) in
+T[0][n]. Each filled cell adds a `CykCell` step. A tree node is a variable with its children; a
+leaf is a terminal, or ε for an empty right side. `T.yield` is the word of the leaves.
+
+**11.4 `derive(G, w)`** is the leftmost derivation of the `earley` tree: the list of sentential
+forms, from [S] to w, each a word whose variables are single symbols.
+
+**11.5 `to_pda(G)`** (`cfg/to-pda`): states :start, :loop, :accept; Γ = V ∪ Σ ∪ {$}; edges
+`:start -ε, ε → S$-> :loop`, `:loop -ε, A → u-> :loop` for each A → u, `:loop -a, a → ε-> :loop`
+for each a ∈ Σ, `:loop -ε, $ → ε-> :accept`; accept {:accept} by final state. L(to_pda(G)) = L(G).
+
+**11.6 `to_cfg(P)`** (`pda/to-cfg`) for a one-stack, one-way machine P. First P is normalized to
+P′: a new start :s₀ pushes $ (then P's initial stack symbol, if any) and moves to q₀; each edge is
+split into a chain through fresh states so that every edge pushes exactly one symbol or pops
+exactly one symbol (an edge that does neither pushes and pops a fresh symbol #); from each
+accepting configuration (by P's acceptance mode) an ε-edge goes to :drain, which pops every
+symbol except $, and `:drain -ε, $ → ε-> :acc`. Then the grammar has variables ⟨p,q⟩ for states p,
+q of P′ and rules ⟨p,p⟩ → ε; ⟨p,q⟩ → ⟨p,r⟩⟨r,q⟩; ⟨p,q⟩ → a ⟨r,s⟩ b whenever p reads a (or ε),
+pushes t and goes to r, and s reads b (or ε), pops t and goes to q. Start ⟨:s₀,:acc⟩; the result
+is trimmed. L(to_cfg(P)) = L(P). Membership in a one-stack, one-way machine's language
+(`P.accepts(w)`, `w ∈ P.lang`, `check P accepts …`) is decided this way, through to_cfg(P) and the
+Earley recognizer, so it always ends; `P.run(w)` still explores configurations (§3).
+
+**11.7 Transducers.** `mealy_to_moore(M)` (`mealy/to-moore`) for a deterministic Mealy machine:
+states (q₀, ε) and (q, o) for every edge p -a / o-> q; λ((q, o)) = o, λ((q₀, ε)) = ε; an edge
+(p, o′) -a-> (q, o) for each such edge and each state (p, o′). `moore_to_mealy(M)`
+(`moore/to-mealy`): the same states, and p -a / λ(q)-> q for each edge p -a-> q. Both preserve
+`output` as stated in 01 §12. Either on another model is E504.
+

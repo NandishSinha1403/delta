@@ -48,6 +48,17 @@ fn subsets(N) = explore {
 
 Then `check subsets(N) ≡ N`.
 
+## How to work with grammars
+
+`cnf(G)`, `parse(G, w)` (or `method: "cyk"`), `derive(G, w)`, `to_pda(G)`, `to_cfg(P)`,
+`nullable(G)`, `useless(G)`, `trim(G)`. A parse tree shows as an indented tree; `steps(cnf(G))`
+and `steps(parse(G, w, method: "cyk"))` replay the phases and the table in the Steps view.
+
+## How to write a Moore machine
+
+Give each state's output with `λ(q) = w` (or `lambda(q) = w`); `mealy_to_moore` and
+`moore_to_mealy` convert between the two kinds.
+
 ## How to share
 
 **Share** copies a link with the program in it; **Embed** copies an `<iframe>` snippet for a

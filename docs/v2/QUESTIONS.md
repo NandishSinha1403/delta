@@ -150,6 +150,13 @@ The owner's answers, with the refinements agreed in the same session. They are a
 | Q-92 | 01 §6.2, SEMANTICS §7.5 | With L = ∁T (T Recognizable, so L is Any), `F ∩ L` gets **Recognizable** but `F ∖ T`, the same language, gets **Any**. Recognizable over-promises: a member w needs a proof that T does *not* accept w, which a run may never give | `F ∩ L` → Recognizable only for a Recognizable L, and → Any for an Any L. Conformance case 15 tests neither cell, so this changes one table cell only | P3 |
 | Q-93 | 01 §5.3 | Option syntax: `(initial stack Z0)` has no colon, while `(missing: error)` and `(accept: by empty-stack)` do. How are several options combined? | Options are `,`-separated; `initial stack Z0` stays as written. Settle in the EBNF (Q-14) | P1 |
 
+## H3. Raised in Phase 6 (2026-11-11)
+
+| # | Where | Question | Answer |
+|---|---|---|---|
+| Q-94 | 01 §5.2, SEMANTICS §5.9 | How is a Moore state's output λ(q) written? `λ` already lexes as ε | **CONFIRMED 2026-11-11 (owner):** `λ(q) = w` lines (ASCII `lambda(q) = w`), like `δ(q, a) = p`; `λ` followed by `(` in a machine body is the output function, elsewhere it stays ε |
+| Q-95 | SEMANTICS §11.6 | Breadth-first simulation never ends on a PDA whose ε-moves grow the stack, so `P.accepts(w)` could only end as `unknown` | Decided (C): membership in a one-stack, one-way machine's language goes through `to_cfg(P)` and Earley (always ends); `P.run(w)` still explores configurations |
+
 ## I. Process
 
 | # | Problem | Recommended default |

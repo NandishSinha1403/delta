@@ -228,6 +228,9 @@ impl Interp<'_> {
             Src::Finite(ws) => Ok(Some(ws.contains(w))),
             Src::Machine(m) => {
                 let fuel = self.fuel();
+                if let Some(g) = m.pda_grammar() {
+                    return Ok(g.accepts(w, fuel));
+                }
                 match m.run(w, fuel, false) {
                     Ok(r) => Ok(match r.verdict {
                         Verdict::Accept => Some(true),
@@ -889,6 +892,32 @@ impl Interp<'_> {
                 _ => err("E505", span, format!("a trace has no member `{name}`")),
             };
         }
+        if let Some(t) = v.downcast::<crate::parse_tree::ParseTree>() {
+            let wrap = |tree: &crate::parse_tree::Tree| {
+                obj(crate::parse_tree::ParseTree {
+                    tree: tree.clone(),
+                    algorithm: t.algorithm,
+                    steps: Vec::new(),
+                })
+            };
+            return match name {
+                "root" => Ok(if t.tree.label.is_empty() {
+                    Value::empty_word()
+                } else {
+                    Value::sym(&t.tree.label)
+                }),
+                "children" => Ok(Value::list(t.tree.children.iter().map(wrap).collect())),
+                "yield" => Ok(Value::Word(Rc::new(t.tree.yield_word()))),
+                "text" => Ok(text_word(&t.tree.indented())),
+                _ => err(
+                    "E505",
+                    span,
+                    format!(
+                        "a parse tree has no member `{name}` (see T.root, T.children, T.yield, T.text)"
+                    ),
+                ),
+            };
+        }
         if let Some(g) = v.downcast::<Grammar>() {
             let var = |i: usize| Value::sym(g.vars.get(i).map(|s| s.as_str()).unwrap_or(""));
             let gsym = |x: &grammar::GSym| match x {
@@ -1111,6 +1140,11 @@ impl Interp<'_> {
                     return Ok(Value::Bool(false));
                 }
                 let fuel = self.fuel();
+                if let Some(g) = m.pda_grammar()
+                    && let Some(b) = g.accepts(&w, fuel)
+                {
+                    return Ok(Value::Bool(b));
+                }
                 match m.run(&w, fuel, false) {
                     Ok(r) => match r.verdict {
                         Verdict::Accept => Ok(Value::Bool(true)),
@@ -1231,6 +1265,28 @@ impl Interp<'_> {
             })
     }
 
+    /// A grammar argument: a `cfg` value, or a `lang` defined by one.
+    fn arg_grammar(&mut self, args: &Args, i: usize, span: Span) -> R<Rc<Grammar>> {
+        let (v, s) = args.get(i).cloned().unwrap_or((Value::None, span));
+        if let Some(g) = v.rc::<Grammar>() {
+            return Ok(g);
+        }
+        if let Some(l) = v.rc::<LangVal>()
+            && let Src::Grammar(g) = &l.src
+        {
+            return Ok(g.clone());
+        }
+        err(
+            "E504",
+            s,
+            format!(
+                "expected a grammar, found {} {}",
+                v.type_name(),
+                v.display()
+            ),
+        )
+    }
+
     fn arg_machine(&mut self, args: &Args, i: usize, span: Span) -> R<Rc<Machine>> {
         let (v, s) = args.get(i).cloned().unwrap_or((Value::None, span));
         if let Some(m) = v.rc::<Machine>() {
@@ -1332,6 +1388,7 @@ impl Interp<'_> {
             reject: None,
             blank: label::blank(),
             initial_stack: None,
+            lambda: Default::default(),
             provenance: prov,
         })
     }
@@ -1480,6 +1537,120 @@ impl Interp<'_> {
                 }
                 let model = if c.is_dfa() { "dfa" } else { "nfa" };
                 obj(self.fa_machine(&c, &alpha, &values, model, None))
+            }
+            "trim"
+                if args
+                    .first()
+                    .is_some_and(|(v, _)| v.downcast::<Grammar>().is_some()) =>
+            {
+                let g = self.arg_grammar(args, 0, span)?;
+                obj(g.trim())
+            }
+            "nullable" | "useless" => {
+                let g = self.arg_grammar(args, 0, span)?;
+                let ix: Vec<usize> = if name == "nullable" {
+                    g.nullable()
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, n)| **n)
+                        .map(|(i, _)| i)
+                        .collect()
+                } else {
+                    g.useless()
+                };
+                Value::set(
+                    ix.iter()
+                        .map(|i| Value::sym(g.vars.get(*i).map(String::as_str).unwrap_or("")))
+                        .collect(),
+                )
+            }
+            "cnf" => {
+                let g = self.arg_grammar(args, 0, span)?;
+                obj(crate::cnf::cnf(&g, max).map_err(|_| budget_states(span, max))?)
+            }
+            "parse" | "derive" => {
+                let g = self.arg_grammar(args, 0, span)?;
+                let (wv, ws) = args.get(1).cloned().unwrap_or((Value::None, span));
+                let w = self.word_of(&wv, ws)?;
+                let fuel = self.fuel();
+                let cyk = name == "parse" && method.as_deref() == Some("cyk");
+                if let Some(m) = method.as_deref()
+                    && !matches!(m, "cyk" | "earley")
+                {
+                    return err(
+                        "E507",
+                        span,
+                        format!("unknown method \"{m}\": use \"earley\" or \"cyk\""),
+                    );
+                }
+                if cyk {
+                    // A grammar already in normal form is used as it is.
+                    let c = if g.is_cnf() {
+                        g.clone()
+                    } else {
+                        Rc::new(crate::cnf::cnf(&g, max).map_err(|_| budget_states(span, max))?)
+                    };
+                    let (t, steps) = crate::parse_tree::cyk(&c, &w);
+                    match t {
+                        Some(tree) => obj(crate::parse_tree::ParseTree {
+                            tree,
+                            algorithm: "parse/cyk",
+                            steps,
+                        }),
+                        None => Value::None,
+                    }
+                } else {
+                    let t = crate::parse_tree::earley(&g, &w, fuel)
+                        .map_err(|_| budget_steps(span, fuel))?;
+                    match (t, name) {
+                        (None, _) => Value::None,
+                        (Some(tree), "parse") => obj(crate::parse_tree::ParseTree {
+                            tree,
+                            algorithm: "parse/earley",
+                            steps: Vec::new(),
+                        }),
+                        (Some(tree), _) => Value::list(
+                            crate::parse_tree::derive(&tree)
+                                .into_iter()
+                                .map(|f| Value::Word(Rc::new(f)))
+                                .collect(),
+                        ),
+                    }
+                }
+            }
+            "to_pda" => {
+                let g = self.arg_grammar(args, 0, span)?;
+                let model = self
+                    .model_named("pda")
+                    .unwrap_or_else(|| Rc::new(Model::blank("pda")));
+                obj(crate::pda_cfg::to_pda(&g, model))
+            }
+            "to_cfg" => {
+                let m = self.arg_machine(args, 0, span)?;
+                match crate::pda_cfg::to_cfg(&m, max) {
+                    Ok(g) => obj(g),
+                    Err(msg) => return err("E504", span, msg),
+                }
+            }
+            "mealy_to_moore" | "moore_to_mealy" => {
+                let m = self.arg_machine(args, 0, span)?;
+                let target = if name == "mealy_to_moore" {
+                    "moore"
+                } else {
+                    "mealy"
+                };
+                let model = self
+                    .model_named(target)
+                    .unwrap_or_else(|| Rc::new(Model::blank(target)));
+                let r = if name == "mealy_to_moore" {
+                    crate::transducers::mealy_to_moore(&m, model)
+                } else {
+                    crate::transducers::moore_to_mealy(&m, model)
+                };
+                match r {
+                    Ok(x) => obj(x),
+                    Err(msg) => return err("E504", span, msg),
+                }
             }
             "trim" => {
                 let m = self.arg_machine(args, 0, span)?;
@@ -1716,10 +1887,22 @@ impl Interp<'_> {
             }
             "steps" => {
                 let (x, _) = args.first().cloned().unwrap_or((Value::None, span));
-                match x.rc::<Machine>().and_then(|m| m.provenance.clone()) {
-                    Some(p) => Value::list(p.steps.iter().map(|s| text_word(&s.text)).collect()),
-                    None => Value::list(Vec::new()),
-                }
+                let steps = if let Some(t) = x.downcast::<crate::parse_tree::ParseTree>() {
+                    Some(t.steps.clone())
+                } else if let Some(g) = x.downcast::<Grammar>() {
+                    g.provenance.as_ref().map(|p| p.steps.clone())
+                } else {
+                    x.rc::<Machine>()
+                        .and_then(|m| m.provenance.clone())
+                        .map(|p| p.steps)
+                };
+                Value::list(
+                    steps
+                        .unwrap_or_default()
+                        .iter()
+                        .map(|s| text_word(&s.text))
+                        .collect(),
+                )
             }
             _ => return Ok(None),
         };
@@ -1791,6 +1974,7 @@ impl Interp<'_> {
             reject: None,
             blank: label::blank(),
             initial_stack: None,
+            lambda: Default::default(),
             provenance: Some(Provenance {
                 algorithm: "to_gnfa/special-form".to_string(),
                 steps: Vec::new(),
@@ -2332,6 +2516,7 @@ impl Interp<'_> {
             reject: None,
             blank: label::blank(),
             initial_stack: None,
+            lambda: Default::default(),
             provenance: Some(Provenance {
                 algorithm: "explore".to_string(),
                 steps,
@@ -2464,6 +2649,16 @@ fn widen(m: &Machine, alpha: &[Sym]) -> Machine {
         p.eff.missing = Missing::Dead;
     }
     Machine::assemble(p)
+}
+
+pub fn budget_steps(span: Span, fuel: u64) -> Flow {
+    Flow::Budget(Diagnostic::warning(
+        "B601",
+        span,
+        format!(
+            "stopped after {fuel} steps (the step budget); raise it with `budget {{ steps: … }}`"
+        ),
+    ))
 }
 
 pub fn budget_states(span: Span, max: usize) -> Flow {

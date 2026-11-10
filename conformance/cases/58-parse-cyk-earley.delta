@@ -1,0 +1,18 @@
+// SEMANTICS §11.3–11.4: parse trees by Earley and CYK, and derivations.
+cfg Expr {
+  start <E>
+  <E> -> <E> + <T> | <T>
+  <T> -> <T> * <F> | <F>
+  <F> -> ( <E> ) | a
+}
+let T = parse(Expr, "a+a*a")
+assert T.root == 'E'
+assert T.yield == "a+a*a"
+assert len(T.children) == 3
+let K = parse(Expr, "a+a*a", method: "cyk")
+assert K.yield == "a+a*a"
+assert K.root == '<S0>'
+assert parse(Expr, "a+") == none
+assert parse(Expr, "a+", method: "cyk") == none
+assert derive(Expr, "a") == ["E", "T", "F", "a"]
+assert len(steps(K)) > 0

@@ -28,6 +28,8 @@ struct Body {
     /// (from, label, to, span of the edge)
     edges: Vec<(Value, Label, Value, Span)>,
     mentioned: Vec<(Value, Span)>,
+    /// `λ(q) = w` lines: (state, output, span).
+    lambda: Vec<(Value, Vec<Sym>, Span)>,
 }
 
 fn e3(code: &'static str, span: Span, msg: impl Into<String>) -> Diagnostic {
@@ -72,6 +74,40 @@ impl Interp<'_> {
     }
 
     /// Values in symbol context: bare `0` is the symbol '0' (Q-04).
+    /// An output word in `λ(q) = w`: ε is empty, a name or number is its characters, an
+    /// expression is a word, symbol or number.
+    fn mval_word(&mut self, v: &MVal, out: &mut Vec<Sym>) -> R<()> {
+        let chars = |t: &str, out: &mut Vec<Sym>| {
+            out.extend(t.chars().map(|c| Sym::from(c.to_string().as_str())))
+        };
+        match v {
+            MVal::Eps(_) => {}
+            MVal::Name(n, _) => chars(n, out),
+            MVal::Sym(n, _) => out.push(Sym::from(n.as_str())),
+            MVal::Blank(_) => out.push(self.blank_sym()),
+            MVal::Set(_, s) => {
+                return Err(Flow::Error(e3(
+                    "E309",
+                    *s,
+                    "λ(q) = w takes a word, not a set",
+                )));
+            }
+            MVal::Expr(e) => match self.eval(e)? {
+                Value::Word(w) => out.extend(w.iter().cloned()),
+                Value::Sym(s) => out.push(s),
+                Value::Int(n) => chars(&n.to_string(), out),
+                other => {
+                    return Err(Flow::Error(e3(
+                        "E504",
+                        e.span,
+                        format!("λ(q) = w needs a word, found {}", other.display()),
+                    )));
+                }
+            },
+        }
+        Ok(())
+    }
+
     fn mval_syms(&mut self, v: &MVal, out: &mut Vec<(Sym, Span)>) -> R<()> {
         match v {
             MVal::Name(n, s) | MVal::Sym(n, s) => out.push((Sym::from(n.as_str()), *s)),
@@ -198,6 +234,26 @@ impl Interp<'_> {
                         body.edges
                             .push((from.clone(), label::read_label(sym.clone()), t, *span));
                     }
+                }
+                MItem::Lambda { state, out, span } => {
+                    if eff.output != crate::model::OutputMode::PerState {
+                        return Err(Flow::Error(e3(
+                            "E309",
+                            *span,
+                            "λ(q) = w gives a state's output; only per-state output models (moore) have one",
+                        )));
+                    }
+                    let mut st = Vec::new();
+                    self.mval_states(state, &mut st)?;
+                    let Some((q, qs)) = st.pop() else {
+                        return Err(Flow::Error(e3("E309", *span, "λ(q) needs a state")));
+                    };
+                    let mut word = Vec::new();
+                    for v in out {
+                        self.mval_word(v, &mut word)?;
+                    }
+                    body.mentioned.push((q.clone(), qs));
+                    body.lambda.push((q, word, *span));
                 }
                 MItem::Table { header, rows, span } => {
                     let mut syms: Vec<Option<Sym>> = Vec::new();
@@ -546,6 +602,12 @@ impl Interp<'_> {
             .map(|o| o.iter().map(|(x, _)| x.clone()).collect())
             .unwrap_or_default();
         out_alpha.extend(emitted);
+        out_alpha.extend(body.lambda.iter().flat_map(|(_, w, _)| w.iter().cloned()));
+        let lambda: std::collections::BTreeMap<Value, Vec<Sym>> = body
+            .lambda
+            .iter()
+            .map(|(q, w, _)| (q.clone(), w.clone()))
+            .collect();
 
         let mut accept: BTreeSet<Value> = body.accept.iter().map(|(v, _)| v.clone()).collect();
         if eff.accept == AcceptMode::Unstated {
@@ -604,6 +666,7 @@ impl Interp<'_> {
             reject: body.reject.map(|(v, _)| v),
             blank,
             initial_stack,
+            lambda,
             provenance: None,
         });
         let _ = span;
@@ -801,6 +864,7 @@ impl Interp<'_> {
             reject: None,
             blank: label::blank(),
             initial_stack: None,
+            lambda: Default::default(),
             provenance: None,
         }))))
     }

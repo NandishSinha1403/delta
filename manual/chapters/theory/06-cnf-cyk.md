@@ -1,6 +1,6 @@
 ---
 title: "CNF and CYK"
-description: "Chomsky normal form and the CYK membership algorithm — and what Delta does today (Earley)."
+description: "Chomsky normal form and the CYK membership algorithm, as Delta builds them (cnf, parse with method cyk), next to Earley."
 sidebar:
   order: 6
 ---
@@ -8,8 +8,9 @@ sidebar:
 Readers: **owner**. Sipser 3e: Definition 2.8 and Theorem 2.9 (CNF); Theorem 7.16 (every CFL is
 in P, by the dynamic-programming algorithm usually called CYK).
 
-**Status in Delta: not built yet (Phase 6).** Grammar membership today uses the Earley
-algorithm; CNF conversion and a CYK table view are planned. Know the theory and say this plainly.
+**Status in Delta: built (Phase 6).** `cnf(G)` converts with a step per phase; `parse(G, w,
+method: "cyk")` fills the table (a `CykCell` step per non-empty cell) and returns the tree;
+`parse(G, w)` (Earley) is the default and works on the grammar as written.
 
 ## Definitions
 
@@ -41,11 +42,21 @@ number of nullable symbols per rule if done naively (quadratic if long rules are
 Earley is O(n³) in general, O(n²) for unambiguous grammars and linear for many LR grammars, and
 needs no normal form — which is why Delta uses it for membership.
 
-## In Delta today
+## In Delta
 
-`crates/delta-lang/src/grammar.rs`: `parse/earley` (`Grammar::accepts`, with a chart-item
-budget), emptiness (`cfg/generating`) and finiteness. The nullable-variable fixpoint — the first
-step of ε-removal — already exists:
+`crates/delta-lang/src/cnf.rs`, id `cfg/cnf`. The phases run in Sipser's order (START, DEL,
+UNIT, then TERM and BIN), then `trim`. DEL is the interesting one: for each rule it deletes every
+subset of its nullable occurrences, never creating a new ε-rule except for the start:
+
+<!-- excerpt: crates/delta-lang/src/cnf.rs#cnf-del -->
+
+`crates/delta-lang/src/parse_tree.rs`, id `parse/cyk`. The table is `table[i][len-1]`, a map from
+variable to its first back-pointer, filled by span length, split point, then rule order (that
+order makes the tree deterministic, SEMANTICS §11.3). A grammar already in CNF is used as is.
+
+<!-- excerpt: crates/delta-lang/src/parse_tree.rs#cyk-fill -->
+
+The nullable fixpoint that DEL starts from (`crates/delta-lang/src/grammar.rs`):
 
 <!-- excerpt: crates/delta-lang/src/grammar.rs#grammar-nullable -->
 
@@ -62,13 +73,14 @@ step of ε-removal — already exists:
    the tree from T[1][n] ∋ S.
 5. **"Is A_CFG decidable?"** — Yes (Theorem 4.7): convert to CNF, try all derivations of 2n − 1
    steps — or run CYK.
-6. **"What's the honest status?"** — Membership, emptiness and finiteness work; CNF and CYK are
-   Phase 6.
+6. **"Why does `parse(C, w, method: "cyk")` on a CNF grammar keep its variables?"** — Converting
+   a grammar that is already in normal form would add a second start variable (`S01`), so a CNF
+   grammar is used as it is (`Grammar::is_cnf`). That was a bug found while writing the tool page.
 
 ## Self-test
 
 <details class="selftest"><summary>1. The two CNF rule shapes?</summary>A → BC and A → a (plus S → ε).</details>
 <details class="selftest"><summary>2. CYK recurrence?</summary>A ∈ T[i][j] if A → BC, B ∈ T[i][k], C ∈ T[k+1][j] for some i ≤ k &lt; j.</details>
 <details class="selftest"><summary>3. CYK complexity?</summary>O(n³ · |G|).</details>
-<details class="selftest"><summary>4. Which algorithm does Delta use for grammar membership today?</summary>Earley (<code>parse/earley</code>).</details>
+<details class="selftest"><summary>4. Which parser is the default, and why?</summary>Earley (<code>parse/earley</code>): it works on the grammar as written, so trees use the student's own rules.</details>
 <details class="selftest"><summary>5. Which CNF step needs the nullable set?</summary>Removing ε-rules.</details>

@@ -3,6 +3,7 @@ import type { MachineView, RunView } from '../engine/api';
 import { useEngineStore } from '../state/engine';
 import { useUiStore } from '../state/ui';
 import { useActiveRun, useCurrentObject } from './current';
+import { configsAt, hasStorage, inputHead, lastStep, type StorageConfig } from './run-steps';
 import { EngineStatus } from './Status';
 
 const STEP_MS = 650;
@@ -10,6 +11,7 @@ const STEP_MS = 650;
 /** The active states after `pos` symbols, as the book writes them: q2 for a DFA, {q1,q2} for an NFA. */
 function configuration(machine: MachineView, run: RunView, pos: number): string {
   const names = (run.steps[pos]?.active ?? []).map((i) => machine.states[i]?.name ?? '?');
+  if (hasStorage(run)) return names.length === 1 ? (names[0] ?? '?') : names.length === 0 ? '∅' : `{${names.join(',')}}`;
   if (run.kind === 'dfa') return names[0] ?? '?';
   return names.length === 0 ? '∅' : `{${names.join(',')}}`;
 }
@@ -89,19 +91,124 @@ function Tape({ input, pos, big }: { input: readonly string[]; pos: number; big:
   );
 }
 
+/** One storage tape: cells with the head's cell outlined. */
+function TapeStrip({ cells, head, label }: { cells: string[]; head: number; label: string }) {
+  const shown = head >= cells.length ? [...cells, '⊔'] : cells;
+  return (
+    <ol aria-label={label} data-testid="storage-tape" className="flex gap-0.5 overflow-x-auto font-mono text-sm">
+      {shown.map((c, i) => (
+        <li
+          key={i}
+          aria-current={i === head ? 'true' : undefined}
+          className={`grid h-8 min-w-7 shrink-0 place-items-center rounded px-1.5 ${
+            i === head ? 'border-2 border-accent bg-navy text-accent' : 'bg-surface-3 text-text'
+          }`}
+        >
+          {c}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** A stack drawn as a column, top first. */
+function StackColumn({ items, label }: { items: string[]; label: string }) {
+  return (
+    <div className="flex flex-col items-center gap-0.5">
+      <span className="text-[10px] tracking-wide text-muted uppercase">{label}</span>
+      <ol aria-label={label} data-testid="storage-stack" className="flex flex-col items-stretch gap-0.5 font-mono text-sm">
+        {items.length === 0 && <li className="rounded border border-dashed border-border-strong px-3 py-0.5 text-muted">ε</li>}
+        {items.map((s, i) => (
+          <li
+            key={i}
+            className={`min-w-10 rounded px-3 py-0.5 text-center ${i === 0 ? 'border border-accent bg-navy text-accent' : 'bg-surface-3 text-text'}`}
+          >
+            {s}
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+/** The storage of one configuration: tapes, stacks, counters, the queue and the output. */
+function StorageView({ c, index }: { c: StorageConfig; index: number }) {
+  return (
+    <div data-testid="storage" className="flex flex-wrap items-start gap-3 rounded-lg border border-border bg-surface-2 p-2">
+      <span className="font-mono text-xs text-text-2">{index > 0 ? `branch ${index + 1}: ` : ''}state {c.state}</span>
+      {c.tapes.map((t, i) => (
+        <div key={`t${i}`} className="flex min-w-0 flex-col gap-0.5">
+          <span className="text-[10px] tracking-wide text-muted uppercase">{c.tapes.length > 1 ? `tape ${i + 1}` : 'tape'}</span>
+          <TapeStrip cells={t.cells} head={t.head} label={`Tape ${i + 1}`} />
+        </div>
+      ))}
+      {c.stacks.map((s, i) => (
+        <StackColumn key={`s${i}`} items={s} label={c.stacks.length > 1 ? `stack ${i + 1}` : 'stack'} />
+      ))}
+      {c.counters.length > 0 && (
+        <ul aria-label="Counters" data-testid="storage-counters" className="flex gap-1.5 font-mono text-xs">
+          {c.counters.map((n, i) => (
+            <li key={i} className="rounded-full bg-surface-3 px-2.5 py-1 text-text">
+              c{i + 1} = {n}
+            </li>
+          ))}
+        </ul>
+      )}
+      {c.queue && (
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[10px] tracking-wide text-muted uppercase">queue (front first)</span>
+          <TapeStrip cells={c.queue.length ? c.queue : ['ε']} head={-1} label="Queue" />
+        </div>
+      )}
+      {c.output !== '' && (
+        <span className="font-mono text-xs text-text-2">
+          output <span className="text-accent">{c.output}</span>
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** The configurations of a step: the first one or two in full, then a count of the rest. */
+function Storage({ configs, more, compact }: { configs: StorageConfig[]; more: number; compact: boolean }) {
+  const shown = configs.slice(0, compact ? 1 : 3);
+  const rest = configs.length - shown.length + more;
+  return (
+    <div aria-label="Storage" className={`flex flex-col gap-1.5 ${compact ? 'shrink-0' : ''}`}>
+      {shown.map((c, i) => (
+        <StorageView key={i} c={c} index={i} />
+      ))}
+      {rest > 0 && (
+        <p className="text-[11px] text-muted">
+          and {rest} more branch{rest === 1 ? '' : 'es'} (nondeterministic)
+        </p>
+      )}
+    </div>
+  );
+}
+
 /** {q1} —a→ {q1,q2} —a→ … : the configurations so far; later ones are still "?". */
 function Timeline({ machine, run, pos, go }: { machine: MachineView; run: RunView; pos: number; go: (i: number) => void }) {
   return (
     <ol aria-label="Configurations" className="flex flex-wrap items-center gap-1.5 font-mono text-xs">
       {run.steps.map((_, i) => {
         const known = i <= pos;
+        // Long runs (Turing machines) show a window around the current step.
+        if (run.steps.length > 60 && Math.abs(i - pos) > 12 && i !== 0 && i !== run.steps.length - 1) {
+          return Math.abs(i - pos) === 13 ? (
+            <li key={i} aria-hidden="true" className="text-dim">
+              …
+            </li>
+          ) : null;
+        }
+        const arrow = hasStorage(run) ? '→' : `—${run.input[i - 1]}→`;
         return (
           <li key={i} className="flex items-center gap-1.5">
-            {i > 0 && <span className={i <= pos ? 'text-accent' : 'text-dim'}>—{run.input[i - 1]}→</span>}
+            {i > 0 && <span className={i <= pos ? 'text-accent' : 'text-dim'}>{arrow}</span>}
             <button
               type="button"
               onClick={() => go(i)}
-              aria-label={known ? `After ${i} symbols: ${configuration(machine, run, i)}` : `Step ${i}`}
+              aria-label={known ? `${hasStorage(run) ? `Step ${i}` : `After ${i} symbols`}: ${configuration(machine, run, i)}` : `Step ${i}`}
               className={`rounded-md px-2 py-1 ${
                 i === pos
                   ? 'border border-accent bg-navy text-accent'
@@ -168,7 +275,7 @@ export function RunPanel({ variant = 'stack' }: { variant?: 'strip' | 'stack' })
   const showRun = useEngineStore((s) => s.showRun);
   const [playing, setPlaying] = useState(false);
 
-  const n = run?.input.length ?? 0;
+  const n = run ? lastStep(run) : 0;
   // The input box shows what the user typed for this machine, else the program's own run.
   const input = runObject === object?.name ? runInput : (run?.input.join('') ?? '');
 
@@ -182,7 +289,7 @@ export function RunPanel({ variant = 'stack' }: { variant?: 'strip' | 'stack' })
     if (!playing) return;
     const timer = window.setInterval(() => {
       const { runPos, run: r, setRunPos: set } = useEngineStore.getState();
-      if (!r || runPos >= r.input.length) {
+      if (!r || runPos >= lastStep(r)) {
         setPlaying(false);
         return;
       }
@@ -191,13 +298,13 @@ export function RunPanel({ variant = 'stack' }: { variant?: 'strip' | 'stack' })
     return () => window.clearInterval(timer);
   }, [playing]);
 
-  if (!object) return <EngineStatus empty="Declare a dfa or nfa, then run it on an input string." />;
+  if (!object) return <EngineStatus empty="Declare a machine (dfa, nfa, pda, tm, …), then run it on an input string." />;
   const machine = object.machine;
   if (!machine || machine.kind === 'gnfa') {
     return (
       <p className="p-4 text-sm text-muted">
-        {object.name} is a {object.kind === 'regex' ? 'regular expression' : 'GNFA'}. Runs work on DFAs and NFAs: try → DFA, or{' '}
-        <code className="font-mono text-text">let N = nfa({object.name})</code>.
+        {object.name} is a {object.kind === 'regex' ? 'regular expression' : 'GNFA'}. Runs work on machines: try → DFA, or{' '}
+        <code className="font-mono text-text">let N = to_nfa({object.name})</code>.
       </p>
     );
   }
@@ -303,12 +410,13 @@ export function RunPanel({ variant = 'stack' }: { variant?: 'strip' | 'stack' })
         </div>
         {run && (
           <div className="flex shrink-0 flex-col gap-1">
-            <Tape input={run.input} pos={pos} big={false} />
+            <Tape input={run.input} pos={inputHead(run, pos)} big={false} />
             <span className="text-[11px] text-muted">
               step {pos} of {n}
             </span>
           </div>
         )}
+        {run && hasStorage(run) && <Storage {...configsAt(run, pos)} compact />}
         {run && (
           <div className="min-w-48 shrink">
             <Timeline machine={machine} run={run} pos={pos} go={go} />
@@ -330,9 +438,10 @@ export function RunPanel({ variant = 'stack' }: { variant?: 'strip' | 'stack' })
       </div>
       {run && (
         <div className="flex justify-center">
-          <Tape input={run.input} pos={pos} big />
+          <Tape input={run.input} pos={inputHead(run, pos)} big />
         </div>
       )}
+      {run && hasStorage(run) && <Storage {...configsAt(run, pos)} compact={false} />}
       <div className="rounded-xl border border-border bg-surface-2 p-3">{explanation}</div>
       {run && <Timeline machine={machine} run={run} pos={pos} go={go} />}
       <div className="flex-1" />

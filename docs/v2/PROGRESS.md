@@ -1,6 +1,6 @@
 # Delta 2 — Progress
 
-_Last updated: 2026-11-11 (5c manual deployed behind a password gate; next: Phase 6)_
+_Last updated: 2026-11-11 (Phase 6 built: grammars, Moore λ, transducer conversions, storage views, tool pages)_
 
 ## Current state
 
@@ -8,10 +8,10 @@ _Last updated: 2026-11-11 (5c manual deployed behind a password gate; next: Phas
 |---|---|
 | Branch | `v2` (long-lived; **never merge into `main`** until the v2 beta) |
 | v1 | Tag `v1.0-final` = `50bf153` (= `origin/main` at the time, incl. both CNAME commits). v1 stays live from `main` |
-| Phase | **1–5, 5b and 5c done** (language, engine, Pad, site, terminal, private manual). Next: **6** (beyond finite automata) |
+| Phase | **1–6 done** (6: grammars, PDA↔CFG, Mealy↔Moore, storage views). Next: **7** (polish) |
 | Hosting | Cloudflare Pages, project `delta` (`delta-17m.pages.dev`), direct upload from a Mac with wrangler 4.42.0 until GitHub Actions is unlocked; then `deploy.yml` deploys on push to `main`. `delta.nandish.dev` moves from GitHub Pages (v1) to it |
-| Conformance | 54 cases, `xfail.txt` empty: all pass |
-| Tests | 145 Rust (incl. conformance); 26 Vitest; 90 Playwright (phone, tablet, desktop) |
+| Conformance | 60 cases, `xfail.txt` empty: all pass |
+| Tests | 149 Rust (incl. conformance); 26 Vitest; 96 Playwright (phone, tablet, desktop) |
 
 ## What Phase 0 produced
 
@@ -100,6 +100,22 @@ Q-43, Q-45–Q-48, Q-93.
 - (C) `/sitemap.xml` 301 → `/sitemap-index.xml` (`site/public/_redirects`). v1 was one page at
   `/` with no routes or share links, so no other old URL needs a redirect.
 
+**Made 2026-11-11 (Phase 6):**
+- Owner: Moore outputs are `λ(q) = w` / `lambda(q) = w` (Q-94).
+- (C) Grammar built-ins: `nullable`, `useless`, `trim(G)`, `cnf` (START, DEL, UNIT, TERM, BIN,
+  trim; new variables S0, U_a, X1…), `parse(G, w, method: "earley" | "cyk")` → a parse-tree value
+  (`root`, `children`, `yield`, `text`), `derive` (leftmost, from the Earley tree), `to_pda`
+  (:start, :loop, :accept), `to_cfg` (⟨p,q⟩ variables after normalizing), `mealy_to_moore`,
+  `moore_to_mealy`. SEMANTICS §11. CYK uses a grammar that is already in CNF as it is.
+- (C) Q-95: PDA membership is decided through `to_cfg` + Earley (cached per machine), because
+  breadth-first simulation never ends when ε-moves grow the stack.
+- (C) Traced runs keep structured configurations; the Pad's Run view shows the stack (top
+  first), tapes with the head, counters, the queue and the output, for up to 3 branches, and a
+  run has as many steps as breadth-first layers (not input symbols). Parse trees and constructed
+  grammars are Pad objects with their steps.
+- (C) Tool pages: cfg-to-cnf, cyk-parser, cfg-to-pda, mealy-moore (12 tools). pumping-lemma waits.
+- Not done from 01 §12: `gnf`, `is_ambiguous`, `to_single_tape`, `myhill_nerode`, `pump` (E509).
+
 **Open:** the Web Analytics token (owner is enabling it in Pages → Metrics).
 
 ## Key findings of the audit
@@ -170,7 +186,9 @@ The full check list (wasm build, size check, web lint/typecheck/test/build/e2e) 
 6. PR #6 (`v2` → `main`) carries the Cloudflare `deploy.yml`; merge only when the owner says so,
    after Actions is unlocked and `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` are set. The owner
    still needs the step-by-step for a Pages-only API token.
-7. **Follow-ups for later (owner, 2026-11-10; don't do yet):**
+7. **Phase 7 (polish) is next.** Also left from Phase 6: `to_single_tape`, `gnf`, bounded
+   `is_ambiguous`, `myhill_nerode`, `pump`, and the pumping-lemma tool page.
+8. **Follow-ups for later (owner, 2026-11-10; don't do yet):**
    - Fonts for exports. Why Commit Mono now: it was the font approved for 5b, and it's DESIGN.md's
      code font for the site. The plan (03-PRODUCTS §7, README) says Courier Prime for code, but
      Q-32 is still open because Courier Prime lacks most maths glyphs (∪ ∩ ∈ ⊆ ≡ δ Σ ⊔ …), and the
@@ -181,7 +199,7 @@ The full check list (wasm build, size check, web lint/typecheck/test/build/e2e) 
    - Unify on-screen diagrams (Graphviz) and exports (`delta-render`) on `delta-render` in Phase 7
      if its layout holds up, so what you see is what you download.
    - Verify TikZ output with tectonic (single binary) in CI.
-8. Known: the TM loop detector stores every configuration with its tape (quadratic); the Pad's
+9. Known: the TM loop detector stores every configuration with its tape (quadratic); the Pad's
    language preview is capped at 1,000 steps per word (`pad.rs`, `PREVIEW_STEPS`).
 
 Manual deploy (from the repo root, after all checks): `./scripts/build-site.sh`, then

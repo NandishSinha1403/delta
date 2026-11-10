@@ -16,12 +16,12 @@ Readers: **owner**, **visitor**.
 | 4 | The Pad on the v2 engine: share links, embeds, PWA, six viewports | 08 NOV 2026 |
 | 5 | Front page, docs, SEO pages; live on Cloudflare at `delta.nandish.dev` | 09 NOV 2026 |
 | 5b | `deltac`, `save`, the renderer, PNG/PDF export, REPL, cargo-dist | 09 NOV 2026 |
-| 5c | This manual | 10 NOV 2026 |
+| 5c | This manual, behind a password gate | 11 NOV 2026 |
+| 6 | Grammars (`cnf`, `parse` with CYK and Earley, `derive`, `to_pda`, `to_cfg`), Moore λ syntax and Mealy ↔ Moore, storage views in the Pad, four new tool pages | 11 NOV 2026 |
 
 ## Next
 
-- **Phase 6, beyond finite automata:** grammars (CNF, CYK, derivations, CFG↔PDA), DCF
-  equivalence where possible, transducers, counters; the five remaining tool pages.
+- **Left from Phase 6:** `to_single_tape`, `gnf`, bounded `is_ambiguous`, a pumping-lemma tool.
 - **Phase 7, polish:** notation profiles (other textbooks), JFLAP import/export, accessibility
   audit, performance; one renderer for screen and export (`delta-render` everywhere, if its
   layout holds up); fonts for exports that match the Pad; TikZ checked with tectonic in CI.
@@ -47,7 +47,7 @@ and saved projects with short links, `choose` (nondeterministic programs), reduc
 
 ## Self-test
 
-<details class="selftest"><summary>1. What does Phase 6 add?</summary>Grammars (CNF, CYK, derivations, CFG↔PDA), transducers, counters, the remaining tool pages.</details>
+<details class="selftest"><summary>1. What did Phase 6 add?</summary>cnf, parse (CYK and Earley), derive, to_pda, to_cfg, Moore λ and Mealy ↔ Moore, storage views in the Pad, four tool pages.</details>
 <details class="selftest"><summary>2. Which phase unifies the renderer?</summary>Phase 7 (polish).</details>
 <details class="selftest"><summary>3. How will mobile apps be built?</summary>Capacitor around the web Pad.</details>
 <details class="selftest"><summary>4. What's the MCP server for?</summary>AI assistants writing, running and fixing Delta programs.</details>

@@ -1,4 +1,5 @@
 // What the diagram shows for a trace step or a run position: pure functions over engine views.
+import { hasStorage, lastStep } from './run-steps';
 import type { MachineView, ObjectView, RunView } from '../engine/api';
 import type { Overlay } from '../diagram/Diagram';
 
@@ -49,14 +50,14 @@ export function traceFrame(object: ObjectView, step: number): Frame | null {
  */
 export function runOverlay(run: RunView, pos: number, machine?: MachineView): Overlay {
   const at = run.steps[Math.min(pos, run.steps.length - 1)];
-  const done = pos >= run.input.length;
+  const done = pos >= lastStep(run);
   const overlay: Overlay = {
     active: at?.active ?? [],
     verdict: done ? (run.accepted ? 'accept' : 'reject') : null,
   };
   const before = run.steps[pos - 1];
   const symbol = run.input[pos - 1];
-  if (machine && before && at && symbol !== undefined) {
+  if (machine && before && at && symbol !== undefined && !hasStorage(run)) {
     const from = new Set(before.active);
     const to = new Set(at.active);
     overlay.taken = new Set(

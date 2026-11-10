@@ -54,6 +54,8 @@ pub struct Config {
 pub struct RunResult {
     pub verdict: Verdict,
     pub steps: Vec<Vec<String>>,
+    /// The same configurations as `steps`, structured (for the Pad's storage views).
+    pub configs: Vec<Vec<Config>>,
     /// The output of an accepting (or, for transducers, the finished) run.
     pub output: Option<Vec<Sym>>,
 }
@@ -113,7 +115,12 @@ impl Machine {
             tapes,
             queue: Vec::new(),
             counters,
-            out: Vec::new(),
+            // A Moore machine outputs λ(q₀) before reading anything (SEMANTICS §5.9).
+            out: if self.eff.output == crate::model::OutputMode::PerState {
+                self.lambda.get(&self.start).cloned().unwrap_or_default()
+            } else {
+                Vec::new()
+            },
         }
     }
 
@@ -249,6 +256,11 @@ impl Machine {
             }
         }
         c.q = to;
+        if self.eff.output == crate::model::OutputMode::PerState
+            && let Some(w) = self.lambda.get(&to)
+        {
+            c.out.extend(w.iter().cloned());
+        }
         Some(c)
     }
 
@@ -340,6 +352,7 @@ impl Machine {
         graph.push(Vec::new());
         let mut frontier = vec![0usize];
         let mut steps: Vec<Vec<String>> = Vec::new();
+        let mut configs: Vec<Vec<Config>> = Vec::new();
         let mut explored: u64 = 0;
         let mut final_out: Option<Vec<Sym>> = None;
         while !frontier.is_empty() {
@@ -351,6 +364,13 @@ impl Machine {
                         .map(|c| self.config_text(c, w))
                         .collect(),
                 );
+                configs.push(
+                    frontier
+                        .iter()
+                        .filter_map(|i| nodes.get(*i))
+                        .cloned()
+                        .collect(),
+                );
             }
             let mut next = Vec::new();
             for &i in &frontier {
@@ -359,6 +379,7 @@ impl Machine {
                     return Ok(RunResult {
                         verdict: Verdict::Unknown,
                         steps,
+                        configs,
                         output: None,
                     });
                 }
@@ -369,6 +390,7 @@ impl Machine {
                     return Ok(RunResult {
                         verdict: Verdict::Accept,
                         steps,
+                        configs,
                         output: Some(c.out.clone()),
                     });
                 }
@@ -426,6 +448,7 @@ impl Machine {
         Ok(RunResult {
             verdict,
             steps,
+            configs,
             output: final_out,
         })
     }
@@ -464,6 +487,7 @@ impl Machine {
             }
             if used > fuel {
                 return RunResult {
+                    configs: Vec::new(),
                     verdict: Verdict::Unknown,
                     steps: Vec::new(),
                     output: None,
@@ -477,6 +501,7 @@ impl Machine {
         }
         let accept = cur.iter().any(|q| self.is_accepting(*q));
         RunResult {
+            configs: Vec::new(),
             verdict: if accept {
                 Verdict::Accept
             } else {

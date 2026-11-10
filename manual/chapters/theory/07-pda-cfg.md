@@ -8,8 +8,9 @@ sidebar:
 Readers: **owner**. Sipser 3e: Theorem 2.20, with Lemma 2.21 (CFG → PDA) and Lemma 2.27
 (PDA → CFG).
 
-**Status in Delta:** PDAs and DPDAs run today (any model runs on the generic simulator, with
-acceptance by final state or by empty stack). The conversions `to_pda` and `to_cfg` are Phase 6.
+**Status in Delta: built (Phase 6).** `to_pda(G)` and `to_cfg(P)` (`crates/delta-lang/src/pda_cfg.rs`,
+ids `cfg/to-pda` and `pda/to-cfg`). PDAs and DPDAs also run on the generic simulator, with
+acceptance by final state or by empty stack, and the Pad's Run view shows the stack at each step.
 
 ## CFG → PDA
 
@@ -47,12 +48,28 @@ middle.
 CFG → PDA: linear in the grammar. PDA → CFG: O(n³) rules of the A_pq A_rq kind for n states,
 plus one rule per matched push/pop pair — big and unreadable, which is the teaching point.
 
-## In Delta today
+## In Delta
 
-The generic simulator explores PDA configurations (state, input position, stack) breadth first.
-The edge-expansion step is shared by every model — see
-[TM simulation](/theory/08-tm-simulation/). A PDA label `a, X → YZ` is a list of operations (read
-a, pop X, push Z, push Y) applied to a configuration by `Machine::apply`.
+`to_pda` is a direct transcription: one edge per rule (pop the variable, push the right side; `push
+YZ` leaves Y on top) and one per terminal (read it, pop it):
+
+<!-- excerpt: crates/delta-lang/src/pda_cfg.rs#to-pda-rules -->
+
+`to_cfg` normalizes first (SEMANTICS §11.6): a new start pushes `$`, every edge is split into a
+chain of single pushes or pops through fresh states (an edge that does neither pushes and pops a
+fresh `#`), and accepting runs drain the stack into one state `acc`. Then the matched push/pop
+rule, the heart of the construction:
+
+<!-- excerpt: crates/delta-lang/src/pda_cfg.rs#to-cfg-pairs -->
+
+The ⟨p,r⟩⟨r,q⟩ rules are generated only over states that occur on a move, and the result is
+trimmed; for a 3-state PDA that leaves about 40 rules. A cubic guard refuses machines whose
+normalized form would need more rules than the states budget.
+
+**Membership uses it.** The simulator's breadth-first search never ends on a PDA whose ε-moves can
+grow the stack (`to_pda` of `S → S S | ε`). So `P.accepts(w)` and `check P accepts …` decide
+membership through `to_cfg(P)` and Earley, cached per machine (`Machine::pda_grammar`); `P.run(w)`
+still explores configurations so the Run view can show the stack.
 
 ## Questions they'll ask
 
@@ -62,8 +79,9 @@ a, pop X, push Z, push Y) applied to a configuration by `Machine::apply`.
    closed under complement, CFLs aren't, so they differ.
 3. **"Accept by final state vs empty stack?"** — Equivalent for PDAs (convert either way); not
    for DPDAs. Delta has both (`accept: by-final-state`, `by empty-stack`).
-4. **"How does simulation terminate with ε-loops?"** — The visited set of configurations; a PDA
-   can grow its stack forever on ε-moves, so the step budget is the backstop (verdict unknown).
+4. **"How does simulation terminate with ε-loops?"** — The visited set catches repeated
+   configurations, but ε-moves can grow the stack forever without repeating one. A run then ends
+   at the step budget (`unknown`); membership questions avoid that by going through the grammar.
 5. **"Why is the grammar from a PDA so big?"** — One variable per state pair and all splits;
    most are useless and can be trimmed (non-generating, unreachable).
 
@@ -73,4 +91,4 @@ a, pop X, push Z, push Y) applied to a configuration by `Machine::apply`.
 <details class="selftest"><summary>2. What does A_pq generate?</summary>Words taking the PDA from p (empty stack) to q (empty stack).</details>
 <details class="selftest"><summary>3. Name the three A_pq rule kinds.</summary>A_pp → ε; A_pq → A_pr A_rq; A_pq → a A_rs b (matched push/pop).</details>
 <details class="selftest"><summary>4. Which Sipser theorem?</summary>Theorem 2.20 (Lemmas 2.21 and 2.27).</details>
-<details class="selftest"><summary>5. Which conversions exist in Delta today?</summary>None of these two; PDAs simulate today, to_pda/to_cfg are Phase 6.</details>
+<details class="selftest"><summary>5. How does Delta decide P.accepts(w) for a PDA, and why not by simulation?</summary>Through to_cfg(P) and the Earley recognizer, which always finishes; breadth-first simulation can run forever when ε-moves grow the stack.</details>

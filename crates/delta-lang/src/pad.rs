@@ -106,8 +106,17 @@ pub fn machine_view(m: &Machine) -> Json {
 }
 
 fn trace_view(m: &Machine, cite: Option<String>) -> Json {
-    let Some(p) = &m.provenance else {
-        return Json::Null;
+    match &m.provenance {
+        Some(p) => steps_view(&p.algorithm, &p.steps, cite),
+        None => Json::Null,
+    }
+}
+
+/// A construction's steps for the Steps panel.
+fn steps_view(algorithm: &str, all: &[delta_core::fa::Step], cite: Option<String>) -> Json {
+    let p = crate::machine::Provenance {
+        algorithm: algorithm.to_string(),
+        steps: all.to_vec(),
     };
     let title = match cite {
         Some(c) => format!("{} · {c}", p.algorithm),
@@ -225,11 +234,27 @@ fn object_view(it: &Interp, name: &str, v: &Value, from: usize, to: usize) -> Op
         }));
     }
     if let Some(g) = v.downcast::<crate::grammar::Grammar>() {
+        let trace = g.provenance.as_ref().map_or(Json::Null, |p| {
+            steps_view(&p.algorithm, &p.steps, it.citation(&p.algorithm))
+        });
         return Some(json!({
-            "name": name, "kind": "cfg", "from": from, "to": to, "derived": Json::Null,
+            "name": name, "kind": "cfg", "from": from, "to": to,
+            "derived": g.provenance.as_ref().map(|p| p.algorithm.clone()),
             "machine": Json::Null, "regex": g.text(),
-            "sigma": g.terminals.iter().map(|s| sym_text(s)).collect::<Vec<_>>(), "trace": Json::Null,
+            "sigma": g.terminals.iter().map(|s| sym_text(s)).collect::<Vec<_>>(), "trace": trace,
             "class": "CF",
+        }));
+    }
+    if let Some(t) = v.downcast::<crate::parse_tree::ParseTree>() {
+        let trace = if t.steps.is_empty() {
+            Json::Null
+        } else {
+            steps_view(t.algorithm, &t.steps, it.citation(t.algorithm))
+        };
+        return Some(json!({
+            "name": name, "kind": "tree", "from": from, "to": to, "derived": t.algorithm,
+            "machine": Json::Null, "regex": t.tree.indented(),
+            "sigma": [], "trace": trace, "class": Json::Null,
         }));
     }
     None
@@ -423,6 +448,37 @@ pub fn parse_input(s: &str) -> Vec<Sym> {
     out
 }
 
+/// How many configurations of one breadth-first step the Run view shows.
+const MAX_CONFIGS: usize = 6;
+
+/// A configuration for the storage views: stacks top first, tapes as cells with the head,
+/// counters, the queue front first, and the output so far.
+fn config_json(m: &Machine, names: &[String], c: &crate::sim::Config) -> Json {
+    let word = |s: &[Sym]| s.iter().map(|x| sym_text(x)).collect::<Vec<_>>();
+    let tapes: Vec<Json> = c
+        .tapes
+        .iter()
+        .map(|t| json!({ "cells": word(&t.left).into_iter().chain(word(&t.right)).collect::<Vec<_>>(), "head": t.left.len() }))
+        .collect();
+    let stacks: Vec<Json> = c
+        .stacks
+        .iter()
+        .map(|s| json!(word(&s.iter().rev().cloned().collect::<Vec<_>>())))
+        .collect();
+    let mut out = json!({
+        "state": names.get(c.q).cloned().unwrap_or_default(),
+        "head": c.h,
+        "tapes": tapes,
+        "stacks": stacks,
+        "counters": c.counters,
+        "output": word(&c.out).concat(),
+    });
+    if m.eff.storage.contains(&crate::model::StorageKind::Queue) {
+        out["queue"] = json!(word(&c.queue));
+    }
+    out
+}
+
 /// A step-by-step run. Finite automata: the active states after each symbol (ε-closed).
 /// Other models: the configurations of each breadth-first step.
 fn run_view(it: &Interp, name: &str, m: &Rc<Machine>, w: &[Sym]) -> Option<Json> {
@@ -486,14 +542,19 @@ fn run_view(it: &Interp, name: &str, m: &Rc<Machine>, w: &[Sym]) -> Option<Json>
         let r = m.run(w, it.budget.steps, true).ok()?;
         accepted = r.verdict == crate::sim::Verdict::Accept;
         for (i, layer) in r.steps.iter().enumerate() {
-            let active: Vec<usize> = layer
+            let cs = r.configs.get(i).map(Vec::as_slice).unwrap_or(&[]);
+            let mut active: Vec<usize> = cs.iter().map(|c| c.q).collect();
+            active.sort_unstable();
+            active.dedup();
+            // The input head of the first branch (one-way and two-way input).
+            let pos = cs.first().map_or(i.min(w.len()), |c| c.h.min(w.len()));
+            let shown: Vec<Json> = cs
                 .iter()
-                .filter_map(|c| {
-                    let first = c.split([' ', '|']).next().unwrap_or("");
-                    names.iter().position(|n| n == first)
-                })
+                .take(MAX_CONFIGS)
+                .map(|c| config_json(m, &names, c))
                 .collect();
-            steps.push(json!({ "pos": i.min(w.len()), "active": active, "message": layer.join("   "), "explain": layer.join("; ") }));
+            steps.push(json!({ "pos": pos, "active": active, "message": layer.join("   "), "explain": layer.join("; "),
+                               "configs": shown, "more": cs.len().saturating_sub(MAX_CONFIGS) }));
         }
         steps.push(json!({ "pos": w.len(), "active": [], "message": format!("Verdict: {}", r.verdict.name()), "explain": format!("The run's verdict is {}.", r.verdict.name()) }));
     }
@@ -533,4 +594,27 @@ pub fn trace_text(t: &TraceVal) -> String {
         word_text(&t.input),
         t.verdict.name()
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn runs_carry_storage_for_the_views() {
+        let src = "pda P {\n  alphabet a, b\n  start q0\n  accept q1\n  q0 -a, ε → A-> q0\n  q0 -ε, ε → ε-> q1\n  q1 -b, A → ε-> q1\n}\ntm T {\n  alphabet 0\n  start s\n  accept h\n  s -0 → 1, R-> s\n  s -⊔ → R-> h\n}";
+        let r = run(src, "P", "aab");
+        let steps = r["run"]["steps"].as_array().cloned().unwrap_or_default();
+        // After two a's the stack holds A A (top first).
+        let stacks: Vec<Json> = steps
+            .iter()
+            .flat_map(|s| s["configs"].as_array().cloned().unwrap_or_default())
+            .map(|c| c["stacks"][0].clone())
+            .collect();
+        assert!(stacks.contains(&json!(["A", "A"])), "{stacks:?}");
+        let t = run(src, "T", "00");
+        let tape = &t["run"]["steps"][1]["configs"][0]["tapes"][0];
+        assert_eq!(tape["cells"], json!(["1", "0"]), "{t}");
+        assert_eq!(tape["head"], json!(1));
+    }
 }

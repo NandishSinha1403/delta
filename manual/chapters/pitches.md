@@ -64,8 +64,9 @@ Use the 2-minute version, then pick **two** of these depending on the audience:
   algorithms the plan said would be "ported" didn't exist. Each phase ends green: format, lint,
   all tests, WASM size budget, end-to-end tests.
 
-Close with what's next: pushdown automata and grammars (CNF, CYK, PDA↔CFG) in Phase 6, then
-mobile apps wrapped with Capacitor.
+Close with what's next: Phase 6 just added grammars (CNF, CYK and Earley parse trees, PDA↔CFG) and
+storage views for pushdown and Turing machines; next is polish (one renderer, other textbooks'
+notation), then mobile apps wrapped with Capacitor.
 
 ## Résumé bullets
 

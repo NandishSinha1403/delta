@@ -330,6 +330,12 @@ pub enum MItem {
         targets: Vec<MVal>,
         span: Span,
     },
+    /// `λ(q) = w`: a Moore state's output (01 §5.2).
+    Lambda {
+        state: MVal,
+        out: Vec<MVal>,
+        span: Span,
+    },
     /// `δ = table { … }`: header labels, then rows (state, cells).
     Table {
         header: Vec<MVal>,

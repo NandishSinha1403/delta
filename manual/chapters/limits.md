@@ -45,7 +45,8 @@ The site has 143 pages; the largest file is the export WASM (2.2 MB raw).
   long runs.
 - On-screen diagrams (Graphviz) and exported ones (`delta-render`) are laid out differently.
 - TikZ output hasn't been compiled with LaTeX yet (no LaTeX on the build Mac).
-- CNF, CYK, PDA↔CFG conversions and DCF equivalence (E702, not implemented) are missing.
+- DCF equivalence (E702), `gnf`, `is_ambiguous`, `to_single_tape`, `myhill_nerode` and `pump` are not built yet (E509 or E702).
+- `to_cfg` grows with the cube of the normalized state count; large PDAs hit the states budget.
 - Hopcroft here rebuilds the partition per splitter, so it's slower than the textbook
   O(k·n log n) on large DFAs.
 

@@ -174,8 +174,9 @@ export function DiagramPanel({
             {object.regex ?? object.derived ?? object.name}
           </pre>
           <p className="max-w-sm text-sm text-muted">
-            {object.name} is {object.kind === 'cfg' ? 'a grammar' : 'a language'} ({object.class}). Its class, sample words and
-            decidable questions are in the Lang view.
+            {object.kind === 'tree'
+              ? `${object.name} is a parse tree (${object.derived ?? 'parse'}). The Steps view lists how it was built.`
+              : `${object.name} is ${object.kind === 'cfg' ? 'a grammar' : 'a language'} (${object.class}). Its class, sample words and decidable questions are in the Lang view.`}
           </p>
         </div>
       );

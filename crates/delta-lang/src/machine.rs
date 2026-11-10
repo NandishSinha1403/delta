@@ -42,10 +42,14 @@ pub struct Machine {
     pub reject: Option<usize>,
     pub blank: Sym,
     pub initial_stack: Option<Sym>,
+    /// Moore outputs λ(q) by state index (states without one output ε).
+    pub lambda: std::collections::BTreeMap<usize, Vec<Sym>>,
     pub provenance: Option<Provenance>,
     /// Outgoing edges per state, built on first use.
     out: OnceCell<Vec<Vec<usize>>>,
     key: OnceCell<String>,
+    /// A pushdown machine's grammar (`pda/to-cfg`), built on first membership question.
+    cfg: OnceCell<Option<Rc<crate::grammar::Grammar>>>,
 }
 
 /// The parts of a machine before indexing.
@@ -64,6 +68,8 @@ pub struct Parts {
     pub reject: Option<Value>,
     pub blank: Sym,
     pub initial_stack: Option<Sym>,
+    /// Moore outputs λ(q).
+    pub lambda: std::collections::BTreeMap<Value, Vec<Sym>>,
     pub provenance: Option<Provenance>,
 }
 
@@ -84,6 +90,7 @@ impl Machine {
         edges.sort();
         edges.dedup();
         let accept = p.accept.iter().map(ix).collect();
+        let lambda = p.lambda.iter().map(|(q, w)| (ix(q), w.clone())).collect();
         Machine {
             start: ix(&p.start),
             reject: p.reject.as_ref().map(ix),
@@ -98,10 +105,12 @@ impl Machine {
             out_alpha: p.out_alpha,
             blank: p.blank,
             initial_stack: p.initial_stack,
+            lambda,
             provenance: p.provenance,
             states,
             out: OnceCell::new(),
             key: OnceCell::new(),
+            cfg: OnceCell::new(),
         }
     }
 
@@ -126,6 +135,11 @@ impl Machine {
             reject: self.reject.map(|q| self.state(q)),
             blank: self.blank.clone(),
             initial_stack: self.initial_stack.clone(),
+            lambda: self
+                .lambda
+                .iter()
+                .map(|(q, w)| (self.state(*q), w.clone()))
+                .collect(),
             provenance: self.provenance.clone(),
         }
     }
@@ -157,6 +171,14 @@ impl Machine {
     }
 
     /// A finite automaton whose labels are all "read a" or ε.
+    /// For a one-stack, one-way machine: its grammar, so membership is decided exactly (Earley)
+    /// instead of by searching configurations, which never ends when ε-moves can grow the stack.
+    pub fn pda_grammar(&self) -> Option<Rc<crate::grammar::Grammar>> {
+        self.cfg
+            .get_or_init(|| crate::pda_cfg::to_cfg(self, 200_000).ok().map(Rc::new))
+            .clone()
+    }
+
     pub fn is_fa(&self) -> bool {
         self.eff.is_finite_automaton() && self.edges.iter().all(|e| e.label.is_simple())
     }
@@ -271,6 +293,18 @@ impl Machine {
                     .map(|q| Self::display_state(&self.state(*q)))
                     .collect::<Vec<_>>()
                     .join(", ")
+            ));
+        }
+        for (q, w) in &self.lambda {
+            let out: String = w.iter().map(|s| sym_text(s)).collect();
+            lines.push(format!(
+                "  λ({}) = {}",
+                Self::display_state(&self.state(*q)),
+                if out.is_empty() {
+                    "ε".to_string()
+                } else {
+                    format!("\"{out}\"")
+                }
             ));
         }
         for e in &self.edges {

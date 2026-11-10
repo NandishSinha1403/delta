@@ -19,6 +19,8 @@ pub struct Grammar {
     pub start: usize,
     pub rules: Vec<(usize, Vec<GSym>)>,
     pub terminals: BTreeSet<Sym>,
+    /// The construction that made this grammar (`cnf`, `to_cfg`, …), if any.
+    pub provenance: Option<crate::machine::Provenance>,
 }
 
 impl Object for Grammar {
@@ -131,6 +133,118 @@ impl Grammar {
     }
 
     /// Useful variables: generating and reachable from the start through generating rules.
+    /// A grammar from its parts; the terminals are read off the rules.
+    pub fn build(
+        name: Option<String>,
+        vars: Vec<String>,
+        start: usize,
+        rules: Vec<(usize, Vec<GSym>)>,
+        provenance: Option<crate::machine::Provenance>,
+    ) -> Grammar {
+        let terminals = rules
+            .iter()
+            .flat_map(|(_, r)| r.iter())
+            .filter_map(|s| match s {
+                GSym::T(t) => Some(t.clone()),
+                GSym::V(_) => None,
+            })
+            .collect();
+        // Duplicate rules (from constructions) are dropped, keeping the first.
+        let mut seen = HashSet::new();
+        let rules = rules
+            .into_iter()
+            .filter(|r| seen.insert(r.clone()))
+            .collect();
+        Grammar {
+            name,
+            vars,
+            start,
+            rules,
+            terminals,
+            provenance,
+        }
+    }
+
+    /// Whether every rule is A → BC (B, C not the start), A → a, or start → ε.
+    pub fn is_cnf(&self) -> bool {
+        self.rules.iter().all(|(l, r)| match r.as_slice() {
+            [GSym::V(a), GSym::V(b)] => *a != self.start && *b != self.start,
+            [GSym::T(_)] => true,
+            [] => *l == self.start,
+            _ => false,
+        })
+    }
+
+    /// A variable name not used yet: `base`, else `base1`, `base2`, … (01 §12).
+    pub fn fresh(vars: &[String], base: &str) -> String {
+        if !vars.iter().any(|v| v == base) {
+            return base.to_string();
+        }
+        (1..)
+            .map(|i| format!("{base}{i}"))
+            .find(|n| !vars.iter().any(|v| v == n))
+            .unwrap_or_else(|| base.to_string())
+    }
+
+    /// `cfg/useless`: variables that are not generating, or not reachable from the start
+    /// through generating rules (SEMANTICS §11.1).
+    pub fn useless(&self) -> Vec<usize> {
+        let useful = self.useful();
+        (0..self.vars.len())
+            .filter(|v| !useful.get(*v).copied().unwrap_or(false))
+            .collect()
+    }
+
+    /// The grammar without its useless variables and the rules that mention them.
+    pub fn trim(&self) -> Grammar {
+        let useful = self.useful();
+        let mut new_ix: Vec<Option<usize>> = vec![None; self.vars.len()];
+        let mut vars = Vec::new();
+        for (v, keep) in useful.iter().enumerate() {
+            if *keep {
+                new_ix[v] = Some(vars.len());
+                vars.push(self.vars[v].clone());
+            }
+        }
+        let Some(start) = new_ix.get(self.start).copied().flatten() else {
+            // The language is empty: keep just the start variable.
+            return Grammar::build(
+                self.name.clone(),
+                vec![
+                    self.vars
+                        .get(self.start)
+                        .cloned()
+                        .unwrap_or_else(|| "S".into()),
+                ],
+                0,
+                Vec::new(),
+                self.provenance.clone(),
+            );
+        };
+        let rules = self
+            .rules
+            .iter()
+            .filter_map(|(l, rhs)| {
+                let l = new_ix.get(*l).copied().flatten()?;
+                let rhs: Option<Vec<GSym>> = rhs
+                    .iter()
+                    .map(|s| match s {
+                        GSym::V(x) => new_ix.get(*x).copied().flatten().map(GSym::V),
+                        GSym::T(t) => Some(GSym::T(t.clone())),
+                    })
+                    .collect();
+                Some((l, rhs?))
+            })
+            .collect();
+        Grammar::build(
+            self.name.clone(),
+            vars,
+            start,
+            rules,
+            self.provenance.clone(),
+        )
+    }
+
     fn useful(&self) -> Vec<bool> {
         let generates = self.generating();
         let mut reach = vec![false; self.vars.len()];
@@ -248,6 +362,21 @@ impl Grammar {
         if w.iter().any(|s| !self.terminals.contains(s)) {
             return Some(false);
         }
+        let chart = self.earley_chart(w, fuel)?;
+        let n = w.len();
+        Some(chart.get(n).is_some_and(|items| {
+            items.iter().any(|(r, dot, origin)| {
+                *origin == 0
+                    && self
+                        .rules
+                        .get(*r)
+                        .is_some_and(|(l, rhs)| *l == self.start && *dot == rhs.len())
+            })
+        }))
+    }
+
+    /// The Earley chart: for each position, the items (rule, dot, origin). None if `fuel` runs out.
+    pub fn earley_chart(&self, w: &[Sym], fuel: u64) -> Option<Vec<Vec<(usize, usize, usize)>>> {
         let null = self.nullable();
         // An item is (rule, dot, origin).
         let n = w.len();
@@ -311,13 +440,7 @@ impl Grammar {
                 }
             }
         }
-        Some(chart[n].iter().any(|(r, dot, origin)| {
-            *origin == 0
-                && self
-                    .rules
-                    .get(*r)
-                    .is_some_and(|(l, rhs)| *l == self.start && *dot == rhs.len())
-        }))
+        Some(chart)
     }
 }
 
@@ -423,6 +546,7 @@ pub fn parse(name: Option<&str>, body: &str) -> Result<Grammar, (usize, String)>
         start,
         rules,
         terminals,
+        provenance: None,
     })
 }
 
@@ -479,6 +603,7 @@ mod tests {
             start: 0,
             rules: vec![],
             terminals: BTreeSet::new(),
+            provenance: None,
         }
     }
 }

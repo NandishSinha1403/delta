@@ -1,0 +1,3 @@
+// SEMANTICS §11.7: the transducer conversions need their models.
+dfa M { alphabet a; start q0; accept q0; q0 -a-> q0 }
+let X = mealy_to_moore(M)

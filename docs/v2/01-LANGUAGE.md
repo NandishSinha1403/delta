@@ -218,6 +218,22 @@ q0 -[a, b]-> q1            // several labels on one arrow
 
 `push YZ` leaves `Y` on top. Moves are `L`, `R` and `S`.
 
+**Moore outputs.** A Moore machine gives each state's output with `λ(q) = w` (ASCII
+`lambda(q) = w`), the same shape as `δ(q, a) = p`. In a machine body, `λ` followed by `(` is the
+output function; everywhere else `λ` still means ε. A state without a `λ` line outputs ε.
+
+```delta
+moore M {
+  alphabet a, b
+  start q0
+  λ(q0) = 0
+  λ(q1) = 1
+  q0 -a-> q1; q0 -b-> q0
+  q1 -a-> q1; q1 -b-> q0
+}
+assert M.output("ab") == "010"      // λ(q0), then one output per step
+```
+
 ### 5.3 Options
 
 ```delta
@@ -525,6 +541,29 @@ Variables are the left-hand sides unless declared. Symbols are space-separated *
 Every built-in takes an optional `method:` naming **the algorithm** (never a book), and returns a value that remembers its **provenance and step trace** (`steps(x)`).
 
 **What the states of a result are.** `determinize` gives sets of the input's states; `minimize` keeps a state that merges with nothing and makes a merged class the set of its states; `union`/`intersect`/`difference`/`product` give pairs `(p, q)`; `concat` tags states `(1, q)` and `(2, q)`; `complete` adds `:dead`, and `reverse`, `star` and `to_gnfa` add `:start` (and `:accept`), renamed `:dead1`, `:start1`, … if taken; `to_nfa` numbers its states `0, 1, …`. Every result remembers its algorithm id, and `steps(x)` lists its trace.
+
+**What grammar and transducer results are** (SEMANTICS §11). Variables are symbols (as in
+`G.rules`). `nullable(G)` and `useless(G)` are sets of variables; `trim(G)` drops the useless
+ones. `cnf(G)` is an equivalent grammar in Chomsky normal form whose new variables are `S0` (the
+new start), `U_a` (for terminal `a` in a long rule) and `X1`, `X2`, … (splitting long rules); a
+name already used gets the next free number. `parse(G, w, method: "earley" | "cyk")` is a
+**parse tree** (`T.root`, `T.children`, `T.yield`; `show T` draws it), or `none` if w ∉ L(G);
+`cyk` parses with `cnf(G)` (or G itself if it is already in normal form), so its tree uses that
+grammar's variables. `derive(G, w)` is the list
+of sentential forms of a leftmost derivation (from the Earley tree), or `none`. `to_pda(G)` is a
+`pda` with states `:start`, `:loop`, `:accept`; `to_cfg(P)` is a trimmed grammar whose variables
+are `<p,q>` for states p, q of P (plus three helper states). `mealy_to_moore(M)` has states
+`(q, o)` and the same outputs; `moore_to_mealy(M)` keeps M's states and outputs everything but
+the initial λ(q₀): `M.output(w) == λ(q₀) ++ moore_to_mealy(M).output(w)`.
+
+```delta
+cfg G { S -> a S b | ε }
+let T = parse(G, "aabb")
+assert T.yield == "aabb"
+assert derive(G, "ab") == ["S", "aSb", "ab"]
+check to_pda(G) accepts "", "aabb"
+check to_cfg(to_pda(G)) ≡ G up to 6
+```
 
 **Conversions are verbs**. A model name (`dfa`, `nfa`, `pda`, …) only starts a machine literal (`dfa M { … }`, `dfa { … }`), appears in types (`machine[dfa]`), and names the model value (`M.model == dfa`). It is never called: `dfa(N)` is error E2xx with the quick fix "`determinize(N)`" (likewise `nfa(R)` → `to_nfa(R)`, `gnfa(M)` → `to_gnfa(M)`).
 

@@ -97,6 +97,33 @@ test('runs EndsAB step by step: tape, timeline, sentence, verdict', async ({ pag
   await expect(page.getByTestId('verdict')).toHaveAttribute('data-status', 'rejected');
 });
 
+test('a pushdown run shows its stack, and a Turing machine run its tape', async ({ page }, testInfo) => {
+  const layout = layoutOf(testInfo);
+  const editor = page.getByRole('textbox', { name: 'Delta code' });
+  await editor.click();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.insertText(
+    'pda P {\n  alphabet a, b\n  start q0\n  accept q1\n  q0 -a, ε → A-> q0\n  q0 -ε, ε → ε-> q1\n  q1 -b, A → ε-> q1\n}\n' +
+      'tm T {\n  alphabet 0\n  start s\n  accept h\n  s -0 → 1, R-> s\n  s -⊔ → R-> h\n}\n',
+  );
+  await pickObject(page, layout, 'P');
+  await openView(page, layout, 'Run');
+  await page.getByRole('textbox', { name: 'Input for P' }).fill('aab');
+  await page.getByRole('button', { name: 'Run', exact: true }).click();
+  for (let i = 0; i < 2; i++) await page.getByRole('button', { name: 'Step forward' }).click();
+  await expect(page.getByTestId('storage-stack').first()).toContainText('A');
+  const forward = page.getByRole('button', { name: 'Step forward' });
+  for (let i = 0; i < 12 && (await forward.isEnabled()); i++) await forward.click();
+  await expect(page.getByTestId('verdict')).toHaveAttribute('data-status', 'accepted');
+
+  await pickObject(page, layout, 'T');
+  await openView(page, layout, 'Run');
+  await page.getByRole('textbox', { name: 'Input for T' }).fill('00');
+  await page.getByRole('button', { name: 'Run', exact: true }).click();
+  await page.getByRole('button', { name: 'Step forward' }).click();
+  await expect(page.getByTestId('storage-tape').first()).toContainText('10');
+});
+
 test('an empty input shows an ε cell before ⊣', async ({ page }, testInfo) => {
   const layout = layoutOf(testInfo);
   await openView(page, layout, 'Run');
