@@ -204,4 +204,5 @@ The full check list (wasm build, size check, web lint/typecheck/test/build/e2e) 
 
 Manual deploy (from the repo root, after all checks): `./scripts/build-site.sh`, then
 `npx wrangler@4.42.0 pages deploy site/dist --project-name=delta --branch=main`. Newer wrangler
-(4.158) creates `~/.wrangler` and then ignores the OAuth login; move that folder away if it appears.
+(4.158) creates `~/.wrangler` and then ignores the OAuth login; move that folder away if it appears,
+including between two deploys in a row (site, then manual).

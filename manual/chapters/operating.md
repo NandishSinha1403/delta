@@ -25,7 +25,8 @@ login (`npx wrangler@4.42.0 login`), Rust, Node 22.
 2. `./scripts/build-site.sh` — builds the Pad into `site/public/pad`, runs `deltac gen-docs`,
    builds the site, runs the SEO check.
 3. `npx wrangler@4.42.0 pages deploy site/dist --project-name=delta --branch=main`
-4. If `~/.wrangler` now exists, move it away (see the runbook below).
+4. If `~/.wrangler` now exists, move it away (see the runbook below) — **also between two
+   deploys in a row** (site, then manual): the second one otherwise fails without saying much.
 
 **You should see:** `✨ Deployment complete!` and a preview URL. Check `/`, `/pad/`, `/tools/`,
 `/robots.txt`, `/sitemap-index.xml`. New pages can 404 for a few seconds while the deployment
