@@ -87,6 +87,7 @@ impl Grammar {
         lines.join("\n")
     }
 
+    // manual:begin grammar-nullable
     /// The nullable variables.
     pub fn nullable(&self) -> Vec<bool> {
         let mut null = vec![false; self.vars.len()];
@@ -102,6 +103,7 @@ impl Grammar {
         }
         null
     }
+    // manual:end grammar-nullable
 
     /// `cfg/generating`: variables that derive some terminal word.
     pub fn generating(&self) -> Vec<bool> {

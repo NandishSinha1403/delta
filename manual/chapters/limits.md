@@ -1,0 +1,72 @@
+---
+title: "11. Limits and costs"
+description: Known issues, budgets, platform limits and what Delta costs to run.
+---
+
+Readers: **owner**, **operator**.
+
+## Running cost: ₹0
+
+- Cloudflare Pages (Free): static hosting, no build minutes used (direct upload).
+- Cloudflare Zero Trust (Free) for Access on the manual: one user.
+- Domain `nandish.dev`: already owned; the subdomain costs nothing extra.
+- GitHub: free repository; Actions is currently off.
+
+How it stays at ₹0: no server, no database, no paid plan enabled. The Zero Trust Free checkout
+asks for consent to overage charges (reported by users in NOV 2026); with one user (limit 50) no
+overage applies. Re-check the billing page after enrolling.
+
+## Platform limits
+
+| Limit | Value | Source, verified |
+|---|---|---|
+| Pages files per site (Free) | 20,000 | [Pages limits](https://developers.cloudflare.com/pages/platform/limits/), verified 10 NOV 2026 |
+| Pages file size | 25 MiB | same page, verified 10 NOV 2026 |
+| Zero Trust Free users | 50 | [Zero Trust pricing](https://www.cloudflare.com/teams-pricing/), verified 10 NOV 2026 |
+
+The site has 143 pages; the largest file is the export WASM (2.2 MB raw).
+
+## Engine limits (defaults, `crates/delta-lang/src/interp.rs` `Budget`)
+
+| Budget | Default | When hit |
+|---|---|---|
+| steps | 10,000,000 | B6xx outcome; a machine run gets verdict `unknown` |
+| states created | 100,000 | B6xx (constructions, decisions) |
+| recursion depth | 400 | B6xx |
+| outputs | 10,000 | B6xx |
+| Pad language preview | 1,000 steps per sample word | sample omitted |
+| Browser watchdog | 10 s per call | worker restarted |
+| Engine WASM | 298 KB gzipped (budget 700) | size check fails |
+| Export WASM | 887 KB gzipped (budget 1,000) | size check fails |
+| PNG export | 8,192 px per side | image scaled down to fit |
+
+## Known issues
+
+- The TM loop detector stores every configuration with its tape: memory grows quadratically on
+  long runs.
+- On-screen diagrams (Graphviz) and exported ones (`delta-render`) are laid out differently.
+- TikZ output hasn't been compiled with LaTeX yet (no LaTeX on the build Mac).
+- CNF, CYK, PDA↔CFG conversions and DCF equivalence (E702, not implemented) are missing.
+- Hopcroft here rebuilds the partition per splitter, so it's slower than the textbook
+  O(k·n log n) on large DFAs.
+
+## Questions they'll ask
+
+1. **"How does it scale?"** — The engine runs on the user's device, so hosting cost doesn't grow
+   with users. The budgets bound per-program cost.
+2. **"What's the largest machine you can determinize?"** — Up to 100,000 subset states by
+   default; the user can raise it with `budget { states: … }`. Diagrams above ~300 states fall
+   back to tables.
+3. **"Why not a server for heavy work?"** — Cost, privacy and offline use. An HTTP API on Workers
+   is planned for tools and AI, not for the Pad.
+4. **"What are you worst at?"** — Long Turing-machine runs (configuration storage) and big
+   Hopcroft inputs; both are known and listed.
+5. **"What does it cost per user?"** — Nothing measurable: static files from a CDN.
+
+## Self-test
+
+<details class="selftest"><summary>1. What does Delta cost to run per month?</summary>₹0 (Cloudflare Free plans, existing domain).</details>
+<details class="selftest"><summary>2. Default state budget?</summary>100,000.</details>
+<details class="selftest"><summary>3. Pages Free file limit?</summary>20,000 files per site; 25 MiB per file.</details>
+<details class="selftest"><summary>4. Name two known issues.</summary>TM loop detector memory; Graphviz vs delta-render layouts; TikZ untested; CNF/CYK/PDA↔CFG missing.</details>
+<details class="selftest"><summary>5. What verdict does a run get when the step budget runs out?</summary><code>unknown</code>.</details>

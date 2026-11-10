@@ -1,0 +1,20 @@
+{
+  "name": "delta-manual",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "packageManager": "pnpm@12.16.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "prepare-content": "node scripts/prepare.mjs",
+    "build": "node scripts/prepare.mjs && astro build && node scripts/check-dist.mjs",
+    "dev": "node scripts/prepare.mjs && astro dev"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "0.42.7",
+    "astro": "7.4.2",
+    "sharp": "0.35.5"
+  }
+}

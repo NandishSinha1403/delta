@@ -28,10 +28,12 @@ function loadExporter(): Promise<Exporter> {
 }
 
 const api = {
+  // manual:begin worker-evaluate
   async evaluate(src: string): Promise<Document> {
     await ready;
     return JSON.parse(evaluate(src)) as Document;
   },
+  // manual:end worker-evaluate
   async run(src: string, name: string, input: string): Promise<RunResult> {
     await ready;
     return JSON.parse(run(src, name, input)) as RunResult;

@@ -346,6 +346,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Skips to the end of the current line (outside nested braces).
+    // manual:begin parser-recover
     fn recover(&mut self, depth: usize) {
         self.nl_ctx.truncate(depth.max(1));
         self.unpeek();
@@ -375,6 +376,7 @@ impl<'a> Parser<'a> {
             }
         }
     }
+    // manual:end parser-recover
 
     fn stmt(&mut self) -> PResult<StmtKind> {
         let t = self.peek();
@@ -902,8 +904,10 @@ impl<'a> Parser<'a> {
             Tok::Op(Op::In) => (BinOp::In, 5, 6, 1),
             Tok::Op(Op::NotIn) => (BinOp::NotIn, 5, 6, 1),
             Tok::Kw(Kw::Not) if self.peek_nth(1) == Tok::Op(Op::In) => (BinOp::NotIn, 5, 6, 2),
+            // manual:begin parser-equiv
             Tok::Op(Op::Subset) => (BinOp::Subset, 5, 6, 1),
             Tok::Op(Op::Equiv) => (BinOp::Equiv, 5, 6, 1),
+            // manual:end parser-equiv
             Tok::Ident(ref n) if n == "ends" && self.peek_nth(1) == Tok::Ident("with".into()) => {
                 (BinOp::EndsWith, 5, 6, 2)
             }

@@ -416,6 +416,7 @@ impl<'a> Lexer<'a> {
             ("|", Op::Bar),
             ("?", Op::Question),
             ("~", Op::Compl),
+            // manual:begin lexer-symbols
             ("∪", Op::Union),
             ("∩", Op::Inter),
             ("∖", Op::SetMinus),
@@ -424,6 +425,7 @@ impl<'a> Lexer<'a> {
             ("∉", Op::NotIn),
             ("⊆", Op::Subset),
             ("≡", Op::Equiv),
+            // manual:end lexer-symbols
             ("≠", Op::Ne),
             ("≤", Op::Le),
             ("≥", Op::Ge),

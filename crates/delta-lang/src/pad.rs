@@ -334,6 +334,7 @@ pub fn document(src: &str) -> Json {
     let mut tests = Vec::new();
     let mut prints = Vec::new();
     let mut by_line: BTreeMap<u64, Vec<&Json>> = BTreeMap::new();
+    // manual:begin pad-tests
     for o in &ex.outputs {
         if let Some(l) = o["line"].as_u64() {
             by_line.entry(l).or_default().push(o);
@@ -344,6 +345,7 @@ pub fn document(src: &str) -> Json {
             _ => {}
         }
     }
+    // manual:end pad-tests
     for s in &ex.program.stmts {
         let line = lines.line_col(src, s.span.from).0 as u64;
         let (from, to) = (u16(src, s.span.from), u16(src, s.span.to));

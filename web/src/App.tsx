@@ -35,12 +35,14 @@ export function App() {
   const evaluate = useEngineStore((s) => s.evaluate);
   const clearRun = useEngineStore((s) => s.clearRun);
 
+  // manual:begin pad-debounce
   // Auto on: live, re-evaluating shortly after typing stops. Off: only Execute updates.
   useEffect(() => {
     if (!auto) return;
     const t = window.setTimeout(() => void evaluate(source), DEBOUNCE_MS);
     return () => window.clearTimeout(t);
   }, [source, auto, evaluate]);
+  // manual:end pad-debounce
 
   // Opening a file (and the first load) always evaluates it; a run belongs to its file.
   useEffect(() => {

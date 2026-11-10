@@ -12,6 +12,7 @@ pub struct Exhausted;
 
 type Pair = (Vec<usize>, Vec<usize>);
 
+// manual:begin equivalence-search
 /// Searches the product of the two subset automata for a pair where `bad(a accepts, b accepts)`;
 /// returns the shortlex-least word reaching one, if any.
 fn search(
@@ -51,6 +52,7 @@ fn search(
     }
     Ok(None)
 }
+// manual:end equivalence-search
 
 /// `None` if equivalent, else the shortest word in exactly one of them.
 pub fn equivalence(a: &Fa, b: &Fa, max: usize) -> Result<Option<Vec<u32>>, Exhausted> {

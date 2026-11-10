@@ -1,6 +1,6 @@
 # Delta 2 — Progress
 
-_Last updated: 2026-11-09 (Phase 5b built: deltac, save, renderer, export; next: 5c manual)_
+_Last updated: 2026-11-10 (5b deployed; 5c manual written and built, waiting for Access before its first deploy)_
 
 ## Current state
 
@@ -8,7 +8,7 @@ _Last updated: 2026-11-09 (Phase 5b built: deltac, save, renderer, export; next:
 |---|---|
 | Branch | `v2` (long-lived; **never merge into `main`** until the v2 beta) |
 | v1 | Tag `v1.0-final` = `50bf153` (= `origin/main` at the time, incl. both CNAME commits). v1 stays live from `main` |
-| Phase | **1–5 and 5b built** (language, engine, Pad, site, terminal and packages). Next: **5c** (private manual) |
+| Phase | **1–5, 5b and 5c built** (5c: manual written, not deployed until Access is on). Next: **6** (beyond finite automata) |
 | Hosting | Cloudflare Pages, project `delta` (`delta-17m.pages.dev`), direct upload from a Mac with wrangler 4.42.0 until GitHub Actions is unlocked; then `deploy.yml` deploys on push to `main`. `delta.nandish.dev` moves from GitHub Pages (v1) to it |
 | Conformance | 54 cases, `xfail.txt` empty: all pass |
 | Tests | 145 Rust (incl. conformance); 26 Vitest; 90 Playwright (phone, tablet, desktop) |
@@ -143,28 +143,46 @@ The full check list (wasm build, size check, web lint/typecheck/test/build/e2e) 
 2. **Domain — done 2026-11-09.** The CNAME `delta` → `delta-17m.pages.dev` is live; the Pages
    domain and its Let's Encrypt certificate are `active`, and https://delta.nandish.dev serves v2.
    Rollback: CNAME back to `nandishsinha1403.github.io`.
-3. **SEO (Phase 5) — deployed 2026-11-09.** Live: `/tools/` (8), `/learn/` (9), `/practice/`
-   (8), robots.txt, sitemap-index.xml. Still to do: the owner's Web Analytics token (if Pages →
-   Metrics needs one) → `BEACON_TOKEN` in `site/src/lib/analytics.mjs`; give the owner Google
-   Search Console + Bing TXT-record steps for name.com. The 5b changes (Terminal page, E514–E516,
-   social cards, `_redirects`) are committed but **not deployed**: deploy after the owner says so.
-4. **Phase 5b — built 2026-11-09.** Not done, needs the owner: publish to crates.io for
-   `cargo install delta-cli` (every path dependency must be published first: delta-core,
-   delta-render, delta-lang, delta-dsl, delta-export; needs a crates.io token); create the
-   `NandishSinha1403/homebrew-tap` repo and a `HOMEBREW_TAP_TOKEN` secret; Actions for
-   `release.yml`. The TikZ output is untested with a real LaTeX (none on this Mac). Local release:
-   `dist build --artifacts=local --target aarch64-apple-darwin` → `target/distrib/`.
-5. **Phase 5c (private manual) — next.** The template arrived: `manual/MANUAL-TEMPLATE.md`. Plan:
-   source in this repo under `manual/` (own Starlight site, never in `site/dist`), excerpts pulled
-   by path + marker at build time (CI fails on a missing marker), interview-prep chapters, separate
-   Pages project protected by Cloudflare Access on `<project>.pages.dev` and
-   `*.<project>.pages.dev` (owner's email, one-time PIN, 30-day session), never a custom domain,
-   noindex + robots disallow, no links from the public site. Test the Access login in a private
-   window, then give the owner the URL.
+3. **SEO and 5b site — deployed 2026-11-09/10** and verified live: tools/learn/practice, the
+   Terminal page, E514–E516, social cards, `/sitemap.xml` → 301. Still to do: the owner's Web
+   Analytics token if Pages → Metrics needs one (`BEACON_TOKEN` in `site/src/lib/analytics.mjs`);
+   Google Search Console + Bing TXT-record steps for name.com.
+4. **Phase 5b — done.** Needs the owner: crates.io token for `cargo install delta-cli` (publish
+   delta-core, delta-render, delta-lang, delta-dsl, delta-export first); a
+   `NandishSinha1403/homebrew-tap` repo and `HOMEBREW_TAP_TOKEN`; Actions for `release.yml`.
+5. **Phase 5c — written and built, not deployed.** `manual/` (Starlight; `chapters/` → prepare
+   script fills excerpts from `// manual:begin NAME` markers in the source, `deltac --help` and the
+   error list; fails on a missing marker or a secret-shaped string; `check-dist.mjs` checks
+   noindex and no outside requests). Build: `./scripts/build-manual.sh`. 29 pages: the 13 template
+   chapters, 0b Pitches, Life of one program (`check EndsAB ≡ L`, three paths), 9 theory deep
+   dives, Language design, Architecture, War stories, Appendices; each chapter ends with
+   "Questions they'll ask" and a 5-question self-test. Pages project `delta-manual` exists
+   (`delta-manual.pages.dev`, **no deployment yet**). **Blocked on the owner:** the wrangler OAuth
+   login has no Access scope (`/access/organizations` → authentication error), so Access can't be
+   created through it. The owner must (a) enroll in Zero Trust Free (dashboard; the checkout asks
+   for overage consent, one user of 50 is ₹0), choosing a team name, and (b) create an API token
+   with Account → Access: Apps and Policies → Edit (and Access: Organizations, Identity Providers,
+   and Groups → Edit), then paste it for this session only. Then: create the Access app for
+   `delta-manual.pages.dev` + `*.delta-manual.pages.dev`, policy include = owner's email,
+   one-time PIN, session 720h; verify an unauthenticated request redirects to
+   `<team>.cloudflareaccess.com`; only then `npx wrangler@4.42.0 pages deploy manual/dist
+   --project-name=delta-manual --branch=main`; test in a private window; give the owner the URL.
+   From now on every phase's done-definition includes updating its manual chapters.
 6. PR #6 (`v2` → `main`) carries the Cloudflare `deploy.yml`; merge only when the owner says so,
    after Actions is unlocked and `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` are set. The owner
    still needs the step-by-step for a Pages-only API token.
-7. Known: the TM loop detector stores every configuration with its tape (quadratic); the Pad's
+7. **Follow-ups for later (owner, 2026-11-10; don't do yet):**
+   - Fonts for exports. Why Commit Mono now: it was the font approved for 5b, and it's DESIGN.md's
+     code font for the site. The plan (03-PRODUCTS §7, README) says Courier Prime for code, but
+     Q-32 is still open because Courier Prime lacks most maths glyphs (∪ ∩ ∈ ⊆ ≡ δ Σ ⊔ …), and the
+     Pad actually uses IBM Plex Mono + KaTeX's serif for state names. Both Courier Prime and Plex
+     are OFL, so licence isn't the blocker; coverage is. Plan: try Courier Prime (or whatever the
+     Pad settles on) + the Noto Sans Math fallback subset in `delta-export`, so exports match the
+     Pad; settle Q-32 first.
+   - Unify on-screen diagrams (Graphviz) and exports (`delta-render`) on `delta-render` in Phase 7
+     if its layout holds up, so what you see is what you download.
+   - Verify TikZ output with tectonic (single binary) in CI.
+8. Known: the TM loop detector stores every configuration with its tape (quadratic); the Pad's
    language preview is capped at 1,000 steps per word (`pad.rs`, `PREVIEW_STEPS`).
 
 Manual deploy (from the repo root, after all checks): `./scripts/build-site.sh`, then

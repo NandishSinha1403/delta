@@ -532,6 +532,7 @@ impl Checker<'_> {
                 }
             }
             ExprKind::Member(x, _) => self.expr(x),
+            // manual:begin checker-equiv
             ExprKind::Binary(op @ (BinOp::Equiv | BinOp::Subset), a, b) => {
                 self.expr(a);
                 self.expr(b);
@@ -546,6 +547,7 @@ impl Checker<'_> {
                     self.question(q, ca, Some(cb), e.span);
                 }
             }
+            // manual:end checker-equiv
             _ => {
                 // Every other expression: check its direct sub-expressions.
                 for_each_child(e, &mut |c| self.expr(c));
@@ -646,6 +648,7 @@ impl Checker<'_> {
         }
     }
 
+    // manual:begin checker-question
     /// Reports a question that is undecidable (E701) or not implemented (E702) for its class.
     fn question(&mut self, q: Question, a: Class, b: Option<Class>, span: Span) {
         let joined = b.map(|b| a.max(b)).unwrap_or(a);
@@ -659,6 +662,7 @@ impl Checker<'_> {
                 .push(crate::hooks::not_implemented(q, joined, span)),
         }
     }
+    // manual:end checker-question
 
     /// The language class of an expression, when it is known without running.
     fn class_of(&self, e: &Expr) -> Option<Class> {

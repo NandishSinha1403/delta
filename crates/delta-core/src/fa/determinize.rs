@@ -14,6 +14,7 @@ pub fn subset(fa: &Fa, max_states: usize) -> Result<Subset, usize> {
     subset_from(fa, &[fa.start], max_states)
 }
 
+// manual:begin subset
 /// The subset construction from a set of start states.
 pub fn subset_from(fa: &Fa, starts: &[usize], max_states: usize) -> Result<Subset, usize> {
     let mut sets: Vec<Vec<usize>> = Vec::new();
@@ -61,6 +62,7 @@ pub fn subset_from(fa: &Fa, starts: &[usize], max_states: usize) -> Result<Subse
     }
     Ok((dfa, sets, steps))
 }
+// manual:end subset
 
 fn show(set: &[usize]) -> String {
     let parts: Vec<String> = set.iter().map(|q| q.to_string()).collect();

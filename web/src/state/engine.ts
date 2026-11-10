@@ -55,6 +55,7 @@ export const useEngineStore = create<EngineStore>()((set, get) => ({
   doc: null,
   docSource: '',
   version: null,
+  // manual:begin store-evaluate
   evaluate: async (source) => {
     const ticket = ++latest;
     const started = performance.now();
@@ -76,6 +77,7 @@ export const useEngineStore = create<EngineStore>()((set, get) => ({
       window.clearTimeout(timer);
     }
   },
+  // manual:end store-evaluate
   evaluating: false,
   slow: false,
   lastMs: null,

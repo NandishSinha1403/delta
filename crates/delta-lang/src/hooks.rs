@@ -565,6 +565,7 @@ impl Interp<'_> {
         b: Option<&LangVal>,
         span: Span,
     ) -> R<(bool, Option<Vec<Sym>>)> {
+        // manual:begin hooks-decide
         let class = b.map(|b| a.class.max(b.class)).unwrap_or(a.class);
         match lang::decidable(q, class) {
             Decidability::No => {
@@ -615,6 +616,7 @@ impl Interp<'_> {
             };
             return Ok((w.is_none(), w.map(to_word)));
         }
+        // manual:end hooks-decide
         if b.is_none() {
             if let Src::Grammar(g) = &a.src {
                 match q {
@@ -682,6 +684,7 @@ impl Interp<'_> {
         let mut sigma = a.sigma.clone();
         sigma.extend(b.sigma.iter().cloned());
         let syms: Vec<Sym> = sigma.into_iter().collect();
+        // manual:begin bounded-check
         let mut layer: Vec<Vec<Sym>> = vec![Vec::new()];
         for len in 0..=n {
             for w in &layer {
@@ -719,6 +722,7 @@ impl Interp<'_> {
             }
             layer = next;
         }
+        // manual:end bounded-check
         Ok((true, None))
     }
 
@@ -1832,6 +1836,7 @@ impl Interp<'_> {
                 }
                 Ok(())
             }
+            // manual:begin interp-check-holds
             CheckKind::Holds(bound) => {
                 let name = self.text(subject.span);
                 if let ExprKind::Binary(op @ (BinOp::Equiv | BinOp::Subset), a, b) = &subject.kind {
@@ -1870,6 +1875,7 @@ impl Interp<'_> {
                     }
                     return self.emit(s.span, out);
                 }
+                // manual:end interp-check-holds
                 if bound.is_some() {
                     return err(
                         "E504",

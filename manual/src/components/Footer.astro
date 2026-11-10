@@ -1,0 +1,9 @@
+---
+// The default footer (previous/next links) plus the line every manual page carries (MANUAL-TEMPLATE §11).
+import Default from '@astrojs/starlight/components/Footer.astro';
+import { COMMIT, UPDATED } from '../build-info.mjs';
+---
+<Default {...Astro.props}><slot /></Default>
+<p class="manual-footer">
+  Describes commit <code>{COMMIT}</code> · Updated {UPDATED} · Source in <code>manual/chapters/</code>
+</p>

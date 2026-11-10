@@ -158,6 +158,7 @@ fn column(row: [Class; 8], c: Class) -> Class {
 }
 
 use Class::*;
+// manual:begin closure-table
 const UNION: [Class; 8] = [Finite, Regular, Cf, Cf, Cs, Decidable, Recognizable, Any];
 const INTER: [Class; 8] = [Finite, Regular, Cs, Cs, Cs, Decidable, Recognizable, Any];
 const INTER_R: [Class; 8] = [Finite, Regular, Dcf, Cf, Cs, Decidable, Recognizable, Any];
@@ -176,6 +177,7 @@ const DIFF_F: [Class; 8] = [Finite, Finite, Finite, Finite, Finite, Finite, Any,
 const CONCAT: [Class; 8] = [Finite, Regular, Cf, Cf, Cs, Decidable, Recognizable, Any];
 const STAR: [Class; 8] = [Regular, Regular, Cf, Cf, Cs, Decidable, Recognizable, Any];
 const REV: [Class; 8] = [Finite, Regular, Cf, Cf, Cs, Decidable, Recognizable, Any];
+// manual:end closure-table
 
 /// The class of `op` applied to operands of these classes (`classes/closure`, SEMANTICS §7.5).
 pub fn op_class(op: LangOp, a: Class, b: Option<Class>) -> Class {
@@ -237,6 +239,7 @@ pub enum Decidability {
 }
 
 /// `classes/decision`: whether a question is decidable for a class.
+// manual:begin decidable
 pub fn decidable(q: Question, c: Class) -> Decidability {
     use Decidability as D;
     match (q, c) {
@@ -247,6 +250,7 @@ pub fn decidable(q: Question, c: Class) -> Decidability {
         _ => D::No,
     }
 }
+// manual:end decidable
 
 /// The name of a class in prose (`context-free languages`).
 pub fn class_prose(c: Class) -> &'static str {

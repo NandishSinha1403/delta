@@ -52,6 +52,7 @@ pub fn execute<'s>(src: &'s str, opts: &RunOptions) -> Execution<'s> {
     let mut it = interp::Interp::new(src);
     let mut models: Vec<String> = it.models.keys().cloned().collect();
     models.sort();
+    // manual:begin pipeline
     let (program, mut diags) = parser::parse(src, &[]);
     diags.extend(check::check(&program, src, &models));
     let has_errors = diags.iter().any(Diagnostic::is_error);
@@ -72,6 +73,7 @@ pub fn execute<'s>(src: &'s str, opts: &RunOptions) -> Execution<'s> {
         steps = it.steps;
         interp = Some(it);
     }
+    // manual:end pipeline
     diags.sort_by_key(|d| d.span.from);
     let ok = !stopped && !diags.iter().any(Diagnostic::is_error);
     Execution {

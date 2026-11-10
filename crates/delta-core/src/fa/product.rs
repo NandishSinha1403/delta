@@ -6,6 +6,7 @@ use std::collections::HashMap;
 
 pub const ID: &str = "product/pairs";
 
+// manual:begin product
 pub fn product(
     a: &Fa,
     b: &Fa,
@@ -42,3 +43,4 @@ pub fn product(
     }
     Ok((f, pairs))
 }
+// manual:end product

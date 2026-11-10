@@ -35,6 +35,7 @@ fn gnfa(fa: &Fa) -> (Vec<Vec<Re>>, usize, usize) {
     (m, s, f)
 }
 
+// manual:begin rip
 fn rip(m: &mut [Vec<Re>], r: usize, alive: &[bool]) {
     let lp = Re::star(m[r][r].clone());
     let size = m.len();
@@ -56,6 +57,7 @@ fn rip(m: &mut [Vec<Re>], r: usize, alive: &[bool]) {
         m[r][i] = Re::Empty;
     }
 }
+// manual:end rip
 
 /// State elimination in `order` (default: 0, 1, 2, …).
 pub fn state_elimination(fa: &Fa, order: Option<&[usize]>, steps: &mut Vec<Step>) -> Re {

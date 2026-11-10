@@ -27,11 +27,13 @@ function OtherTests() {
             )}
             {t.assumed && <span className="shrink-0 rounded bg-surface-2 px-1.5 text-[11px] text-warn">assumed</span>}
           </button>
+          {/* manual:begin tests-counterexample */}
           {!t.pass && (t.message || t.witness !== undefined) && (
             <p className="ml-5 font-mono text-xs text-muted">
               {t.witness !== undefined ? `counterexample: ${showString(t.witness)}` : t.message}
             </p>
           )}
+          {/* manual:end tests-counterexample */}
         </li>
       ))}
     </ul>

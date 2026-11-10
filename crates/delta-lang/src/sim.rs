@@ -376,6 +376,7 @@ impl Machine {
                     continue;
                 }
                 let mut any = false;
+                // manual:begin sim-expand
                 for &ei in self.out_edges(c.q) {
                     let Some(e) = self.edges.get(ei) else {
                         continue;
@@ -398,6 +399,7 @@ impl Machine {
                         }
                     }
                 }
+                // manual:end sim-expand
                 if !any {
                     // A finished transducer run: the whole input was read.
                     if self.eff.output != crate::model::OutputMode::None && c.h == w.len() {
@@ -413,12 +415,14 @@ impl Machine {
             }
             frontier = next;
         }
+        // manual:begin sim-verdict
         // Everything reachable was explored without accepting.
         let verdict = if self.eff.accept == AcceptMode::Halting && has_cycle(&graph) {
             Verdict::Loops
         } else {
             Verdict::Reject
         };
+        // manual:end sim-verdict
         Ok(RunResult {
             verdict,
             steps,

@@ -151,6 +151,7 @@ pub fn hopcroft(dfa: &Fa) -> Minimal {
         "Partition",
         "start with accepting and non-accepting states",
     )];
+    // manual:begin hopcroft-loop
     while let Some((splitter, a)) = work.pop_front() {
         let pre: BTreeSet<usize> = splitter
             .iter()
@@ -181,6 +182,7 @@ pub fn hopcroft(dfa: &Fa) -> Minimal {
         }
         partition = next_partition;
     }
+    // manual:end hopcroft-loop
     let mut class = vec![0; n];
     for (i, b) in partition.iter().enumerate() {
         for q in b {
