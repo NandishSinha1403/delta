@@ -8,13 +8,12 @@ Readers: **owner**, **operator**.
 ## Running cost: ₹0
 
 - Cloudflare Pages (Free): static hosting, no build minutes used (direct upload).
-- Cloudflare Zero Trust (Free) for Access on the manual: one user.
+- Pages Functions (Free): the manual's password gate, one small request per page view.
 - Domain `nandish.dev`: already owned; the subdomain costs nothing extra.
 - GitHub: free repository; Actions is currently off.
 
-How it stays at ₹0: no server, no database, no paid plan enabled. The Zero Trust Free checkout
-asks for consent to overage charges (reported by users in NOV 2026); with one user (limit 50) no
-overage applies. Re-check the billing page after enrolling.
+How it stays at ₹0: no server, no database, no paid plan enabled. Zero Trust / Access was
+considered for the manual and dropped (10 NOV 2026) in favour of a password gate.
 
 ## Platform limits
 
@@ -22,7 +21,7 @@ overage applies. Re-check the billing page after enrolling.
 |---|---|---|
 | Pages files per site (Free) | 20,000 | [Pages limits](https://developers.cloudflare.com/pages/platform/limits/), verified 10 NOV 2026 |
 | Pages file size | 25 MiB | same page, verified 10 NOV 2026 |
-| Zero Trust Free users | 50 | [Zero Trust pricing](https://www.cloudflare.com/teams-pricing/), verified 10 NOV 2026 |
+| Workers/Functions requests (Free) | 100,000 per day | [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/), not re-verified |
 
 The site has 143 pages; the largest file is the export WASM (2.2 MB raw).
 

@@ -1,6 +1,6 @@
 # Delta 2 — Progress
 
-_Last updated: 2026-11-10 (5b deployed; 5c manual written and built, waiting for Access before its first deploy)_
+_Last updated: 2026-11-11 (5c manual deployed behind a password gate; next: Phase 6)_
 
 ## Current state
 
@@ -8,7 +8,7 @@ _Last updated: 2026-11-10 (5b deployed; 5c manual written and built, waiting for
 |---|---|
 | Branch | `v2` (long-lived; **never merge into `main`** until the v2 beta) |
 | v1 | Tag `v1.0-final` = `50bf153` (= `origin/main` at the time, incl. both CNAME commits). v1 stays live from `main` |
-| Phase | **1–5, 5b and 5c built** (5c: manual written, not deployed until Access is on). Next: **6** (beyond finite automata) |
+| Phase | **1–5, 5b and 5c done** (language, engine, Pad, site, terminal, private manual). Next: **6** (beyond finite automata) |
 | Hosting | Cloudflare Pages, project `delta` (`delta-17m.pages.dev`), direct upload from a Mac with wrangler 4.42.0 until GitHub Actions is unlocked; then `deploy.yml` deploys on push to `main`. `delta.nandish.dev` moves from GitHub Pages (v1) to it |
 | Conformance | 54 cases, `xfail.txt` empty: all pass |
 | Tests | 145 Rust (incl. conformance); 26 Vitest; 90 Playwright (phone, tablet, desktop) |
@@ -150,24 +150,23 @@ The full check list (wasm build, size check, web lint/typecheck/test/build/e2e) 
 4. **Phase 5b — done.** Needs the owner: crates.io token for `cargo install delta-cli` (publish
    delta-core, delta-render, delta-lang, delta-dsl, delta-export first); a
    `NandishSinha1403/homebrew-tap` repo and `HOMEBREW_TAP_TOKEN`; Actions for `release.yml`.
-5. **Phase 5c — written and built, not deployed.** `manual/` (Starlight; `chapters/` → prepare
-   script fills excerpts from `// manual:begin NAME` markers in the source, `deltac --help` and the
-   error list; fails on a missing marker or a secret-shaped string; `check-dist.mjs` checks
-   noindex and no outside requests). Build: `./scripts/build-manual.sh`. 29 pages: the 13 template
-   chapters, 0b Pitches, Life of one program (`check EndsAB ≡ L`, three paths), 9 theory deep
-   dives, Language design, Architecture, War stories, Appendices; each chapter ends with
-   "Questions they'll ask" and a 5-question self-test. Pages project `delta-manual` exists
-   (`delta-manual.pages.dev`, **no deployment yet**). **Blocked on the owner:** the wrangler OAuth
-   login has no Access scope (`/access/organizations` → authentication error), so Access can't be
-   created through it. The owner must (a) enroll in Zero Trust Free (dashboard; the checkout asks
-   for overage consent, one user of 50 is ₹0), choosing a team name, and (b) create an API token
-   with Account → Access: Apps and Policies → Edit (and Access: Organizations, Identity Providers,
-   and Groups → Edit), then paste it for this session only. Then: create the Access app for
-   `delta-manual.pages.dev` + `*.delta-manual.pages.dev`, policy include = owner's email,
-   one-time PIN, session 720h; verify an unauthenticated request redirects to
-   `<team>.cloudflareaccess.com`; only then `npx wrangler@4.42.0 pages deploy manual/dist
-   --project-name=delta-manual --branch=main`; test in a private window; give the owner the URL.
-   From now on every phase's done-definition includes updating its manual chapters.
+5. **Phase 5c — done and deployed 2026-11-11** at `https://delta-manual.pages.dev/`. `manual/`
+   (Starlight; `chapters/` → `scripts/prepare.mjs` fills excerpts from `// manual:begin NAME`
+   markers, `deltac --help` and the error list; fails on a missing marker or a secret-shaped
+   string; `check-dist.mjs` checks noindex and no outside requests). 29 pages: the 13 template
+   chapters, 0b Pitches, Life of one program, 9 theory deep dives, Language design,
+   Architecture, War stories, Appendices; each ends with questions and a self-test.
+   **Privacy (owner, 2026-11-11): Zero Trust/Access dropped; one password instead.**
+   `manual/functions/_middleware.js` gates every request (production and `<hash>.` deployment
+   URLs): password page (401) → POST the right password → 303 + `delta_manual` cookie (30 days,
+   Secure, HttpOnly, SameSite=Lax) holding HMAC-SHA256(MANUAL_PASS, "delta-manual/v1"); both
+   checks constant-time on SHA-256 digests; fails closed (500) without the secret; `/fonts/`,
+   `/favicon.svg`, `/robots.txt` public. Secret `MANUAL_PASS` is set on the project (value from
+   the owner, never in the repo). `scripts/test-middleware.mjs` runs in the manual build. Deploy
+   **from `manual/`** (`cd manual && npx wrangler@4.42.0 pages deploy dist
+   --project-name=delta-manual --branch=main`) or the gate isn't uploaded. Known limit: no rate
+   limit on password guesses. From now on every phase's done-definition includes updating its
+   manual chapters.
 6. PR #6 (`v2` → `main`) carries the Cloudflare `deploy.yml`; merge only when the owner says so,
    after Actions is unlocked and `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` are set. The owner
    still needs the step-by-step for a Pages-only API token.

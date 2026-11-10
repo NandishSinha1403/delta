@@ -18,7 +18,7 @@ URL, or is static content.
 | REPL history | `~/.deltac_history` | one entry per line | Until deleted | The local user |
 | Files from `save` | The folder `deltac` runs in | svg/png/pdf/tex/txt/json | User's choice | The local user |
 | Site and Pad | Cloudflare Pages project `delta` | static files | Every deployment is kept by Cloudflare | Public |
-| This manual | Pages project `delta-manual` | static files | Every deployment | The owner (Access) |
+| This manual | Pages project `delta-manual` | static files | Every deployment | Whoever has the password |
 
 **Backups.** The source of truth for everything published is the git repository (GitHub,
 branch `v2`). Any deployment can be rebuilt from a commit. Cloudflare keeps previous deployments,

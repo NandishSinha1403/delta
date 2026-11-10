@@ -30,8 +30,8 @@ trade-off, and what would change the decision.
 
 - **Choice:** static hosting on Cloudflare Pages, direct upload with a pinned wrangler.
 - **Why:** GitHub Actions was locked on the account, so the GitHub Pages workflow couldn't run;
-  Pages accepts uploads from a laptop, has preview URLs, rollbacks, and Access for the private
-  manual on the same account.
+  Pages accepts uploads from a laptop, has preview URLs, rollbacks, and Pages Functions (the private
+  manual's password gate) on the same account.
 - **Cost:** deploys depend on one machine until Actions returns (`deploy.yml` is ready on PR #6).
 
 ## The crate-cycle fix (Q-43)
@@ -83,7 +83,7 @@ and every dependency needs the owner's approval anyway.
 ## Self-test
 
 <details class="selftest"><summary>1. Two reasons for Rust/WASM?</summary>Speed on exponential constructions; typed ids and enforced no-panic; one engine for Pad, CLI, API.</details>
-<details class="selftest"><summary>2. Why Cloudflare Pages?</summary>GitHub Actions was locked; direct upload, previews, rollback, Access.</details>
+<details class="selftest"><summary>2. Why Cloudflare Pages?</summary>GitHub Actions was locked; direct upload, previews, rollback, Functions (the manual's password gate).</details>
 <details class="selftest"><summary>3. How was the crate cycle avoided in practice?</summary>Index-based automata in core; values mapped to indexes in delta-lang; classes in delta-lang.</details>
 <details class="selftest"><summary>4. What answers the halting problem in Delta?</summary>Nothing does — budgets bound work; loops only when a configuration repeats; otherwise unknown.</details>
 <details class="selftest"><summary>5. Why not Flutter?</summary>A second UI codebase in Dart; Capacitor reuses the React Pad and WASM engine.</details>

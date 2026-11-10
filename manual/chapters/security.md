@@ -14,13 +14,13 @@ Readers: **operator**, **owner**.
 | `save` writing outside the folder | `deltac` | The engine rejects absolute paths, drive letters and `..` (E515); the CLI checks again after resolving symlinks and refuses to write through a link |
 | A crafted SVG reaching the exporter | export | Only SVG that Delta's renderer produced is exported; resvg reads no system fonts or external images (features off) |
 | Leaked Cloudflare credentials | Operator's Mac | wrangler OAuth stays on the Mac; CI tokens will be GitHub secrets scoped to Pages; no tokens in the repo or this manual |
-| The manual becoming public | Pages | Access on both hostnames, noindex headers and meta, robots `Disallow: /`, no links, a build check for secret-shaped strings |
+| The manual becoming public | Pages | A password gate on every hostname (Pages Function; HMAC cookie, constant-time checks, fails closed without the secret), noindex headers and meta, robots `Disallow: /`, no links, a build check for secret-shaped strings |
 | Copyright | Repo | The textbook PDF is gitignored; quotations live only in explain profiles and this private manual |
 | Supply chain | Dependencies | Few, pinned dependencies, each approved; `pnpm` blocks unknown install scripts (`@ibm/plex-mono`'s telemetry script is denied) |
 
 ## Never published
 
-Secrets or parts of them, account ids, the owner's email (it's only in the Access policy),
+Secrets or parts of them, account ids, the owner's email, the manual's password (a Pages secret),
 personal data of any kind, the textbook, and details of any unfixed security problem.
 
 ## Reporting a problem
@@ -36,8 +36,10 @@ owner. Don't open a public issue for a vulnerability.
 2. **"How do you prevent path traversal in `save`?"** — Validation twice: the engine's
    `save_path` (relative, no empty, `.` or `..` parts, no drive letter) and the CLI's
    `write_inside`, which canonicalizes the deepest existing folder and refuses symlinked targets.
-3. **"Why not just a password on the manual?"** — Access gives per-person identity (email PIN),
-   session expiry and audit logs without me writing auth code.
+3. **"Is one password enough for the manual?"** — For one reader and non-secret content, yes,
+   and it costs nothing to run. Trade-offs: no per-person identity, no audit log, and no rate
+   limit on guesses (a long password matters). Cloudflare Access would add those; it was
+   dropped because it needs a Zero Trust enrolment with billing consent.
 4. **"What about XSS through program output?"** — React escapes text; outputs are strings or
    structured JSON; the diagram is SVG built from data, not from user HTML.
 5. **"What's your biggest residual risk?"** — Operator credentials on one laptop, and no
@@ -47,6 +49,6 @@ owner. Don't open a public issue for a vulnerability.
 
 <details class="selftest"><summary>1. Which two layers validate save paths?</summary>The engine (E515 via save_path) and the CLI (write_inside: canonical parent inside cwd, no symlink target).</details>
 <details class="selftest"><summary>2. What stops an infinite loop in the browser?</summary>Budgets inside the engine; the 10-second worker watchdog outside it.</details>
-<details class="selftest"><summary>3. Which hostnames must Access cover for the manual?</summary><code>delta-manual.pages.dev</code> and <code>*.delta-manual.pages.dev</code>.</details>
-<details class="selftest"><summary>4. Where is the owner's email allowed to appear?</summary>Only in the Access policy — never in the repo or the manual.</details>
+<details class="selftest"><summary>3. What does the manual's cookie contain?</summary>HMAC-SHA256 of a fixed string keyed by MANUAL_PASS — never the password; changing the secret invalidates it.</details>
+<details class="selftest"><summary>4. Where is the owner's email allowed to appear?</summary>Nowhere in the repo or the manual (git commit metadata aside).</details>
 <details class="selftest"><summary>5. How should a vulnerability be reported?</summary>A private GitHub security advisory or email to the owner — never a public issue.</details>

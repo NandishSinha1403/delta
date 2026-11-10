@@ -9,7 +9,7 @@
   },
   "scripts": {
     "prepare-content": "node scripts/prepare.mjs",
-    "build": "node scripts/prepare.mjs && astro build && node scripts/check-dist.mjs",
+    "build": "node scripts/test-middleware.mjs && node scripts/prepare.mjs && astro build && node scripts/check-dist.mjs",
     "dev": "node scripts/prepare.mjs && astro dev"
   },
   "dependencies": {

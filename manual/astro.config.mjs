@@ -1,6 +1,6 @@
 // The private Delta manual (04-ROADMAP.md, Phase 5c). Its own Starlight site, built from
 // chapters/ by scripts/prepare.mjs, deployed to the Pages project `delta-manual` behind
-// Cloudflare Access. Never linked from the public site, never indexed, no analytics.
+// a password gate (functions/_middleware.js). Never linked from the public site, never indexed, no analytics.
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 

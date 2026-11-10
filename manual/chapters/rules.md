@@ -23,7 +23,7 @@ Readers: **owner**, **contributor**.
   `git status` is checked before every commit.
 - **Engine calls go through the Web Worker.** The UI must never block.
 - **No new dependency without the owner.** Each one is approved by name and version.
-- **The manual is private.** Access-protected, noindex, never linked, never a custom domain.
+- **The manual is private.** Behind the password gate, noindex, never linked, never a custom domain.
 
 ## Where decisions live
 
