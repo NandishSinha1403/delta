@@ -386,7 +386,7 @@ impl<'a> Lexer<'a> {
     fn operator(&mut self, start: usize) -> Tok {
         let rest = self.rest();
         // Longest match first.
-        let table: [(&str, Op); 49] = [
+        let table: [(&str, Op); 50] = [
             ("..=", Op::DotDotEq),
             ("..", Op::DotDot),
             ("->", Op::Arrow),
@@ -433,6 +433,7 @@ impl<'a> Lexer<'a> {
             ("→", Op::Arrow),
             ("∅", Op::EmptySet),
             ("⊔", Op::Blank),
+            ("□", Op::Blank),
             ("⁺", Op::SupPlus),
             ("·", Op::Concat),
             ("∘", Op::Concat),
@@ -657,6 +658,7 @@ impl<'a> Lexer<'a> {
                     ('|', Op::Bar),
                     ('→', Op::Arrow),
                     ('⊔', Op::Blank),
+                    ('□', Op::Blank),
                     ('∅', Op::EmptySet),
                     ('∈', Op::In),
                 ];

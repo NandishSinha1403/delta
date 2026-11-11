@@ -19,6 +19,7 @@ pub mod lang;
 pub mod lexer;
 pub mod machine;
 pub mod model;
+pub mod notation;
 pub mod pad;
 pub mod parse_tree;
 pub mod parser;
@@ -56,6 +57,8 @@ pub struct Execution<'s> {
 
 /// Parses, checks and runs `src`.
 pub fn execute<'s>(src: &'s str, opts: &RunOptions) -> Execution<'s> {
+    // Every run starts with the default spellings; `use notation` changes them (01 §10).
+    notation::reset();
     let mut it = interp::Interp::new(src);
     let mut models: Vec<String> = it.models.keys().cloned().collect();
     models.sort();

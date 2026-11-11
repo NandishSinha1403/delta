@@ -1,0 +1,21 @@
+// 01-LANGUAGE.md §10: under `hmu`, + is union and B is the blank. B means the blank only in the
+// labels of a machine with a tape; in a DFA's alphabet it stays an ordinary symbol.
+use notation "hmu"
+print ""
+print re"a+b"
+print ⊔
+tm T {
+  alphabet 0
+  start q0
+  accept qa
+  reject qr
+  q0 -0 → R-> q0
+  q0 -B → R-> qa
+}
+assert "00" ∈ T.lang
+dfa D {
+  alphabet A, B
+  start p; accept p
+  p -A,B-> p
+}
+assert "AB" ∈ D.lang

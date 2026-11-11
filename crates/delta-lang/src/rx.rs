@@ -115,7 +115,7 @@ impl Rx {
         fn go(r: &Rx, prec: u8) -> String {
             match r {
                 Rx::Empty => "∅".to_string(),
-                Rx::Eps => "ε".to_string(),
+                Rx::Eps => crate::notation::eps(),
                 Rx::Sym(s) => sym_text(s),
                 Rx::Any => "Σ".to_string(),
                 Rx::Class(ss) => {
@@ -130,7 +130,11 @@ impl Rx {
                     if prec > 2 { format!("({s})") } else { s }
                 }
                 Rx::Alt(xs) => {
-                    let s = xs.iter().map(|x| go(x, 1)).collect::<Vec<_>>().join(" ∪ ");
+                    let s = xs
+                        .iter()
+                        .map(|x| go(x, 1))
+                        .collect::<Vec<_>>()
+                        .join(&format!(" {} ", crate::notation::union()));
                     if prec > 1 { format!("({s})") } else { s }
                 }
             }

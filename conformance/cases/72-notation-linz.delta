@@ -1,0 +1,24 @@
+// 01-LANGUAGE.md §10 and SEMANTICS.md §10.6: under `linz`, + is union, λ is the empty word and □
+// the blank, when reading and when printing. Values don't change.
+use notation "linz"
+lang L = re"a+λ"
+assert "" ∈ L
+assert "a" ∈ L
+assert "b" ∉ L
+print ""
+print re"a+b"
+print ⊔
+tm T {
+  alphabet 0
+  start q0
+  accept qa
+  reject qr
+  q0 -0 → R-> q0
+  q0 -□ → R-> qa
+}
+assert "00" ∈ T.lang
+nfa N {
+  start p; accept q
+  p -λ-> q
+}
+assert "" ∈ N.lang

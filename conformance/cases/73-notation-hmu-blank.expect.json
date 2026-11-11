@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "diagnostics": [],
+  "outputs": [
+    { "kind": "print", "text": "ε" },
+    { "kind": "print", "text": "re\"a + b\"" },
+    { "kind": "print", "text": "B" },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true }
+  ]
+}

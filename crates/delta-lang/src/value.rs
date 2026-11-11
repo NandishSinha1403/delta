@@ -217,7 +217,7 @@ impl Value {
     /// The text `print` writes: words and symbols bare, everything else as in a set.
     pub fn print_text(&self) -> String {
         match self {
-            Value::Word(w) if w.is_empty() => "ε".to_string(),
+            Value::Word(w) if w.is_empty() => crate::notation::eps(),
             Value::Word(w) => w.iter().map(|s| sym_text(s)).collect(),
             Value::Sym(s) => sym_text(s),
             other => other.display(),
@@ -232,7 +232,7 @@ impl Value {
             Value::Int(n) => n.to_string(),
             Value::Sym(s) => format!("'{}'", sym_text(s)),
             Value::Atom(a) => format!(":{a}"),
-            Value::Word(w) if w.is_empty() => "ε".to_string(),
+            Value::Word(w) if w.is_empty() => crate::notation::eps(),
             Value::Word(w) => format!("\"{}\"", w.iter().map(|s| sym_text(s)).collect::<String>()),
             Value::Tuple(items) => format!("({})", join(items.iter())),
             Value::List(items) => format!("[{}]", join(items.iter())),
@@ -261,6 +261,10 @@ impl Value {
 
 /// A symbol as written in a word: multi-character names in angle brackets.
 pub fn sym_text(s: &str) -> String {
+    // The blank is printed in the profile's spelling (⊔, B or □).
+    if s == "⊔" {
+        return crate::notation::blank();
+    }
     if s.chars().count() > 1 {
         format!("<{s}>")
     } else {

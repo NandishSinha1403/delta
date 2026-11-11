@@ -70,7 +70,7 @@ impl Grammar {
                 .filter(|(l, _)| *l == v)
                 .map(|(_, rhs)| {
                     if rhs.is_empty() {
-                        "ε".to_string()
+                        crate::notation::eps()
                     } else {
                         rhs.iter()
                             .map(|s| match s {

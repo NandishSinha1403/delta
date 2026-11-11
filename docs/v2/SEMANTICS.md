@@ -447,7 +447,10 @@ edges […] }` (01 §5.6); for `μ(n₁, …) M { … }`, μ is the model instan
 machine and model bodies; `}` ends the last statement of a block (01 §2).
 
 **10.6 Notation profiles** act only in the lexer and printer (01 §10): they map spellings to the
-same core tokens (`+`→union under `hmu`, `λ`→ε, `B`/`□`→⊔), so no core value depends on the profile.
+same core tokens (`+`→union under `hmu` and `linz`, `λ`→ε, `□`→⊔ always, `B`→⊔ under `hmu` in a
+tape machine's labels only), so no core value depends on the profile. A run starts with the
+default spellings; `use notation p` sets the printer's spellings for the rest of the run
+(`notation/print`): ε/λ for the empty word, ⊔/B/□ for the blank, ∪/+ for regex union.
 
 ## 11. Grammar, transducer, regular and machine built-ins (01 §12)
 

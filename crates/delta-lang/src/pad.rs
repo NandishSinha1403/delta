@@ -50,7 +50,7 @@ pub fn machine_view(m: &Machine) -> Json {
     let (columns, rows) = if m.is_fa() {
         let mut cols: Vec<String> = sigma.clone();
         if has_eps {
-            cols.push("ε".to_string());
+            cols.push(crate::notation::eps());
         }
         let rows: Vec<Json> = (0..m.states.len())
             .map(|q| {
@@ -63,7 +63,7 @@ pub fn machine_view(m: &Machine) -> Json {
                             .filter_map(|i| m.edges.get(*i))
                             .filter(|e| match e.label.read() {
                                 Some(s) => sym_text(s) == *c,
-                                None => c == "ε",
+                                None => *c == crate::notation::eps(),
                             })
                             .map(|e| names.get(e.to).cloned().unwrap_or_default())
                             .collect();

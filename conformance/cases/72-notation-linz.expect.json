@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "diagnostics": [],
+  "outputs": [
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true },
+    { "kind": "print", "text": "λ" },
+    { "kind": "print", "text": "re\"a + b\"" },
+    { "kind": "print", "text": "□" },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true }
+  ]
+}

@@ -301,7 +301,7 @@ impl Machine {
                 "  λ({}) = {}",
                 Self::display_state(&self.state(*q)),
                 if out.is_empty() {
-                    "ε".to_string()
+                    crate::notation::eps()
                 } else {
                     format!("\"{out}\"")
                 }

@@ -48,7 +48,7 @@ impl Tree {
 
     fn name(&self) -> String {
         if self.label.is_empty() {
-            "ε".to_string()
+            crate::notation::eps()
         } else if self.var && self.label.chars().count() > 1 {
             format!("<{}>", self.label)
         } else {

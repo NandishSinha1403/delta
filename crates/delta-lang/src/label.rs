@@ -100,7 +100,7 @@ impl Label {
     pub fn display(&self, m: &Model) -> String {
         let word = |w: &[Sym]| -> String {
             if w.is_empty() {
-                "ε".to_string()
+                crate::notation::eps()
             } else {
                 w.iter().map(|s| sym_text(s)).collect()
             }
@@ -112,7 +112,7 @@ impl Label {
             return self
                 .read()
                 .map(|s| sym_text(s))
-                .unwrap_or_else(|| "ε".to_string());
+                .unwrap_or_else(crate::notation::eps);
         }
         if m.input == InputMode::OneWay
             && m.storage.len() == 1
@@ -134,9 +134,11 @@ impl Label {
             if !other {
                 let r = read
                     .map(|s| sym_text(&s))
-                    .unwrap_or_else(|| "ε".to_string());
-                let p = pop.map(|s| sym_text(&s)).unwrap_or_else(|| "ε".to_string());
-                let w = push.map(|w| word(&w)).unwrap_or_else(|| "ε".to_string());
+                    .unwrap_or_else(crate::notation::eps);
+                let p = pop
+                    .map(|s| sym_text(&s))
+                    .unwrap_or_else(crate::notation::eps);
+                let w = push.map(|w| word(&w)).unwrap_or_else(crate::notation::eps);
                 return format!("{r}, {p} → {w}");
             }
         }
@@ -160,7 +162,7 @@ impl Label {
             }
         }
         if self.ops.is_empty() {
-            return "ε".to_string();
+            return crate::notation::eps();
         }
         let parts: Vec<String> = self
             .ops
@@ -257,7 +259,7 @@ fn tokenize(text: &str) -> Result<Vec<T>, String> {
                 out.push(T::Eps);
                 i += 1;
             }
-            '⊔' | '_' => {
+            '⊔' | '_' | '□' => {
                 out.push(T::Blank);
                 i += 1;
             }
@@ -700,7 +702,17 @@ pub fn parse_labels(text: &str, model: &Model, blank: &Sym) -> Result<Vec<Label>
     if model.labels_regex {
         return Ok(vec![Label::new(vec![LOp::Regex(text.trim().to_string())])]);
     }
-    let toks = tokenize(text)?;
+    let mut toks = tokenize(text)?;
+    // Under `hmu`, B is the blank in the labels of a machine with a tape (01 §10).
+    if let Some(alias) = crate::notation::blank_alias()
+        && model.storage.contains(&crate::model::StorageKind::Tape)
+    {
+        for t in &mut toks {
+            if matches!(t, T::Sym(s) | T::Word(s) if *s == alias) {
+                *t = T::Blank;
+            }
+        }
+    }
     if toks.is_empty() {
         return Err("an edge needs a label (use ε for a move that reads nothing)".to_string());
     }

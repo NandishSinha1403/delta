@@ -29,4 +29,8 @@ describe('regexToTex', () => {
     // KaTeX puts superscripts in a .msupsub box; one per star (five here).
     expect(html.match(/class="msupsub"/g)?.length).toBe(5);
   });
+  it('reads a notation profile: spaced + is union, λ the empty word', () => {
+    expect(regexToTex('a + λ')).toBe('\\text{a} + \\lambda');
+    expect(regexToTex('a⁺')).toBe('{\\text{a}}^{+}');
+  });
 });

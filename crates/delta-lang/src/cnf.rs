@@ -26,7 +26,7 @@ fn show(vars: &[String], rules: &[Rule]) -> String {
         .iter()
         .map(|(l, r)| {
             let rhs = if r.is_empty() {
-                "ε".to_string()
+                crate::notation::eps()
             } else {
                 r.iter()
                     .map(|s| match s {

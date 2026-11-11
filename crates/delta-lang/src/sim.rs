@@ -313,7 +313,7 @@ impl Machine {
             parts.push(format!(
                 "stack {}",
                 if s.is_empty() {
-                    "ε".to_string()
+                    crate::notation::eps()
                 } else {
                     word(&top_first)
                 }
@@ -323,7 +323,7 @@ impl Machine {
             parts.push(format!(
                 "queue {}",
                 if c.queue.is_empty() {
-                    "ε".to_string()
+                    crate::notation::eps()
                 } else {
                     word(&c.queue)
                 }

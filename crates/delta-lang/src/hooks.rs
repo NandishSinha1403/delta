@@ -1647,7 +1647,7 @@ impl Interp<'_> {
                     Some(wit) => {
                         let mut text: String = wit.word.iter().map(|s| sym_text(s)).collect();
                         if text.is_empty() {
-                            text = "ε".to_string();
+                            text = crate::notation::eps();
                         }
                         let tree = |t: crate::parse_tree::Tree| {
                             obj(crate::parse_tree::ParseTree {
@@ -2671,7 +2671,7 @@ impl Interp<'_> {
                                 );
                             };
                             let text = match &lv {
-                                Value::Word(w) if w.is_empty() => "ε".to_string(),
+                                Value::Word(w) if w.is_empty() => crate::notation::eps(),
                                 Value::Word(w) => word_text(w),
                                 Value::Sym(s) => sym_text(s),
                                 other => other.print_text(),

@@ -525,9 +525,13 @@ use notation "hmu"      // + is union, ε as usual
 | `default` | one-or-more | ε | ⊔ |
 | `hmu` (Hopcroft–Motwani–Ullman) | union | ε | B |
 | `linz` | union | λ | □ |
-| custom | `notation { union: "+", epsilon: "λ", empty: "φ" }` | | |
+| custom | `notation { union: "+", epsilon: "λ", blank: "□", empty: "φ" }` | | |
 
-Profiles change **reading and printing only**. Ambiguous input (for example `a+b` under the default profile) is a warning with quick fixes, never a silent guess.
+Profiles change **reading and printing only**. Printing follows the profile: the empty word, the
+blank and regex union (`a + b` where `+` is union) come out in its spellings, in `print`, the
+tuple, the δ-table and the diagram. Every spelling is always read (`ε` `λ` `eps`, `⊔` `_` `□`),
+except `B`: it is the blank only under `hmu`, and only in the labels of a machine with a tape
+(`q0 -B → R-> q1`); in an alphabet such as `alphabet A, B` it stays an ordinary symbol. Ambiguous input (for example `a+b` under the default profile) is a warning with quick fixes, never a silent guess.
 
 ## 11. Grammars
 

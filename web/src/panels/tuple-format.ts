@@ -22,9 +22,11 @@ export function texName(name: string): string {
   return texText(name);
 }
 
-/** An alphabet symbol: ε gets the book's ε, everything else is set upright. */
+/** An alphabet symbol: ε (or a profile's λ) and the blank □ as maths symbols, the rest upright. */
 export function texSymbol(s: string): string {
   if (s === 'ε') return '\\varepsilon';
+  if (s === 'λ') return '\\lambda';
+  if (s === '□') return '\\Box';
   return texText(s);
 }
 
@@ -109,6 +111,10 @@ export function regexToTex(r: string): string {
     } else if (c === ')') {
       out.push(')');
       atom = groups.pop() ?? 0;
+    } else if (c === '+' && chars[i - 1] === ' ') {
+      // Under a notation profile where + is union (hmu, linz), the engine prints it spaced: a + b.
+      out.push(' + ');
+      atom = -1;
     } else if (c === '*' || c === '+' || c === '⁺') {
       if (atom < 0) {
         out.push(texText(c));
@@ -128,6 +134,7 @@ export function regexToTex(r: string): string {
     } else {
       atom = out.length;
       if (c === 'ε') out.push('\\varepsilon');
+      else if (c === 'λ') out.push('\\lambda');
       else if (c === '∅') out.push('\\emptyset');
       else if (c === '<') {
         const end = chars.indexOf('>', i);

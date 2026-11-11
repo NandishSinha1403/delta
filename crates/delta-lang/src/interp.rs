@@ -560,6 +560,7 @@ impl<'s> Interp<'s> {
                 Ok(())
             }
             StmtKind::UseNotation(p) => {
+                crate::notation::set(crate::notation::Notation::from_directive(p));
                 self.plus_is_union =
                     matches!(p.as_str(), "hmu" | "linz") || p.contains("union: \"+\"");
                 // A custom profile: `{ union: "+", epsilon: "λ", empty: "φ" }`.
