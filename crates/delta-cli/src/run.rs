@@ -141,7 +141,7 @@ pub fn file_bytes(
         "png" | "pdf" => {
             let svg = delta_lang::render::text_file("svg", value, text, dark)?;
             if format == "png" {
-                delta_export::png(&svg, 2.0)
+                delta_export::png_file(&svg, 2.0)
             } else {
                 delta_export::pdf(&svg)
             }

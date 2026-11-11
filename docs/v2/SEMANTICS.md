@@ -438,7 +438,9 @@ edges […] }` (01 §5.6); for `μ(n₁, …) M { … }`, μ is the model instan
   with t ∈ {light, dark} adds `theme: t` to the output; any other option or value is E101. Without
   it the output has no `theme` and the host draws in its own theme (the Pad's Downloads setting,
   `deltac --theme`). The theme changes only colors, never the layout.
-  Nothing is written by the engine: the host writes `path` relative to its working folder. Two
+  Nothing is written by the engine: the host writes `path` relative to its working folder. A
+  `png` file carries the line "Delta by Nandish" in a strip under the drawing (the drawing is not
+  moved or scaled); `svg`, `pdf`, `tex`, `txt` and `json` files carry no mark. Two
   `save`s to the same path both appear, in order; the host keeps the last.
 
 **10.5 Statement separators.** A newline or `;` ends a statement in every context, including

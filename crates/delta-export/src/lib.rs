@@ -64,6 +64,60 @@ pub fn png(svg: &str, scale: f32) -> Result<Vec<u8>, String> {
         .map_err(|e| format!("PNG encoding failed: {e}"))
 }
 
+/// The line every PNG file carries under its drawing.
+pub const WATERMARK: &str = "Delta by Nandish";
+
+/// Height of the strip that holds the watermark, and its font size (SVG px).
+const MARK_STRIP: f64 = 18.0;
+const MARK_SIZE: f64 = 10.0;
+
+/// A numeric attribute of the SVG's root element (`width="189.8"` → 189.8).
+fn root_attr(svg: &str, name: &str) -> Option<f64> {
+    let root = &svg[..svg.find('>')?];
+    let start = root.find(&format!(" {name}=\""))? + name.len() + 3;
+    let len = root[start..].find('"')?;
+    root[start..start + len].parse().ok()
+}
+
+/// The drawing with a strip added below it holding [`WATERMARK`], right-aligned in a muted
+/// colour on the drawing's own background (its first full-size `rect`, else white). The
+/// original SVG is nested unchanged, so the drawing itself is not moved or scaled.
+pub fn watermark(svg: &str) -> String {
+    let (Some(w), Some(h)) = (root_attr(svg, "width"), root_attr(svg, "height")) else {
+        return svg.to_string();
+    };
+    const BG: &str = r#"<rect width="100%" height="100%" fill=""#;
+    let bg = svg
+        .find(BG)
+        .and_then(|i| {
+            let rest = &svg[i + BG.len()..];
+            rest.find('"').map(|n| rest[..n].to_string())
+        })
+        .unwrap_or_else(|| "#ffffff".to_string());
+    // A dark background gets a light mark; anything else a mid grey.
+    let dark = bg.len() == 7
+        && u8::from_str_radix(&bg[1..3], 16).is_ok_and(|r| r < 0x60)
+        && u8::from_str_radix(&bg[3..5], 16).is_ok_and(|g| g < 0x60);
+    let ink = if dark { "#8c9199" } else { "#6b7884" };
+    // The mark must fit: Plex Mono glyphs are 0.6 em wide, plus 8 px on each side.
+    let mark_w = WATERMARK.chars().count() as f64 * MARK_SIZE * 0.6 + 16.0;
+    let total_w = w.max(mark_w);
+    let x = (total_w - w) / 2.0;
+    let total_h = h + MARK_STRIP;
+    format!(
+        r##"<svg xmlns="http://www.w3.org/2000/svg" width="{total_w}" height="{total_h}" viewBox="0 0 {total_w} {total_h}" font-family="{FONT_FAMILY}"><rect width="100%" height="100%" fill="{bg}"/><svg x="{x}" y="0" width="{w}" height="{h}">{inner}</svg><text x="{tx}" y="{ty}" font-size="{MARK_SIZE}" text-anchor="end" fill="{ink}">{WATERMARK}</text></svg>"##,
+        inner = svg,
+        tx = total_w - 8.0,
+        ty = h + MARK_STRIP - 6.0,
+    )
+}
+
+/// A PNG file for the user: the drawing at `scale` with the [`WATERMARK`] strip under it.
+/// (`png` alone, without the mark, is for terminal previews and the site's social cards.)
+pub fn png_file(svg: &str, scale: f32) -> Result<Vec<u8>, String> {
+    png(&watermark(svg), scale)
+}
+
 /// Draws the SVG as raw pixels: (width, height, RGBA bytes). Colours are premultiplied by
 /// alpha, which is exact for Delta's drawings because their background is opaque.
 pub fn rgba(svg: &str, scale: f32) -> Result<(u32, u32, Vec<u8>), String> {
@@ -99,6 +153,28 @@ mod tests {
                 .map_or(0, |b| u32::from_be_bytes([b[0], b[1], b[2], b[3]]))
         };
         assert_eq!((be(16), be(20)), (120, 60));
+    }
+
+    #[test]
+    fn png_files_carry_the_watermark_below_the_drawing() {
+        let marked = watermark(SVG);
+        assert!(marked.contains(">Delta by Nandish</text>"));
+        // The drawing is nested unchanged; a narrow one is widened to fit the mark.
+        assert!(marked.contains(SVG));
+        assert_eq!(root_attr(&marked, "height"), Some(30.0 + MARK_STRIP));
+        assert!(root_attr(&marked, "width").is_some_and(|w| w > 60.0));
+        // The strip takes the drawing's background.
+        assert!(marked.contains(r##"fill="#fff"/><svg x="##));
+        // The PNG file is taller than the bare drawing by the strip, at the same scale.
+        let bytes = png_file(SVG, 2.0).unwrap_or_default();
+        let h = bytes
+            .get(20..24)
+            .map_or(0, |b| u32::from_be_bytes([b[0], b[1], b[2], b[3]]));
+        assert_eq!(h, ((30.0 + MARK_STRIP) * 2.0) as u32);
+        // A dark drawing gets a light mark; something that isn't an SVG root is left alone.
+        let dark = watermark(&SVG.replace("#fff", "#0d0e10"));
+        assert!(dark.contains("fill=\"#8c9199\">Delta by Nandish"));
+        assert_eq!(watermark("<g/>"), "<g/>");
     }
 
     #[test]
