@@ -58,9 +58,9 @@ export function createEngine(): EngineApi {
   return {
     evaluate: (src) => call((r) => r.evaluate(src)),
     run: (src, name, input) => call((r) => r.run(src, name, input)),
-    layout: (dot) => call((r) => r.layout(dot)),
     exportFile: (value, format, text, dark) =>
       call((r) => r.exportFile(value, format, text, dark) as Promise<string | Uint8Array>),
+    diagramLayout: (view) => call((r) => r.diagramLayout(view)),
     version: () => call((r) => r.version()),
     restart: () => {
       conn.worker.terminate();

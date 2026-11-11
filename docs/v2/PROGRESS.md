@@ -8,10 +8,10 @@ _Last updated: 2026-11-11 (main = v2 via PR #6; IBM Plex Mono code font; the fiv
 |---|---|
 | Branch | `v2`; **merged into `main` on 2026-11-11** (PR #6, owner's call), `main` = `v2` = `ed1fb45` then. Work continues on `v2`; nothing goes to `main` without the owner |
 | v1 | Tag `v1.0-final` = `50bf153`. GitHub Pages (v1) has no workflow any more; the domain points at Cloudflare |
-| Phase | **1–6 done**, Phase 6 leftovers done. Next: **7** (polish), waiting for the owner's OK on the plan |
+| Phase | **1–6 done**. **7** (polish) in progress: themes, renderer switch and STIX state names done |
 | Hosting | Cloudflare Pages: `delta` (`delta.nandish.dev`) and `delta-manual`. `deploy.yml` deploys both on push to `main` with wrangler-action, but **skips (grey) until `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` are set**; until then deploy from the Mac (runbook at the end) |
 | Conformance | 71 cases, `xfail.txt` empty: all pass |
-| Tests | 164 Rust (incl. conformance); 26 Vitest; 97 Playwright (phone, tablet, desktop; incl. the glyph test) + 10 site |
+| Tests | 166 Rust (incl. conformance); 23 Vitest; 99 Playwright (phone, tablet, desktop; incl. the glyph test) + 10 site |
 
 ## What Phase 0 produced
 
@@ -84,7 +84,8 @@ Q-43, Q-45–Q-48, Q-93.
 - (C) Renderer `render/layered`: DFS cycle breaking, longest-path columns, label boxes as layout
   items in odd columns (labels never overlap), barycentre ordering, isotonic (PAV) placement,
   Catmull-Rom curves; long state names become ellipses; fixed-size self-loops with labels above.
-  The Pad's on-screen diagram still uses Graphviz; exports, `deltac` and social cards use this.
+  Since Phase 7 the Pad's on-screen diagram uses it too (Graphviz removed); so do exports,
+  `deltac` and social cards.
 - (C) Fonts: Commit Mono 1.143 and a Noto Sans Math 3.000 subset (⊔ ⊢ ▸ … that Commit Mono lacks),
   both OFL, subsets with licences in `crates/delta-export/fonts/` (77 KB together).
 - (C) Terminal images: kitty (also Ghostty), iTerm2 (also WezTerm), sixel (foot, mlterm,
@@ -154,6 +155,10 @@ Q-43, Q-45–Q-48, Q-93.
 - Renderer (owner): switch the Pad to `delta-render`, keeping finger, highlight, zoom, legend and
   colors; drop Graphviz only after all diagram tests pass. State names in STIX Two Text italic
   everywhere delta-render draws; edge labels and code stay IBM Plex Mono.
+- Done 2026-11-11: the Pad lays out with `delta-render` (WASM `diagram_layout`); Graphviz and its
+  DOT/JSON code are gone (Q-34 confirmed). Pad `dist` 6.6 MB → 5.8 MB: the lazy 818 KB (635 KB
+  gzipped) Graphviz chunk is removed; the startup bundle is unchanged (312 KB gzipped). Export
+  module 967 KB gzipped with the STIX subset (budget 1000). Social cards regenerated (11).
 
 ## Key findings of the audit
 
@@ -191,6 +196,13 @@ cargo clippy --workspace --all-targets -- -D warnings
 The full check list (wasm build, size check, web lint/typecheck/test/build/e2e) is in `CLAUDE.md`.
 
 ## Next session: start here
+
+**Phase 7 in progress (2026-11-11).** Done and deployed: themes, `delta-render` in the Pad
+(Graphviz removed), STIX Two Text italic state names (DESIGN.md, manual credits, social cards).
+**Next:** the presentation-mode mockup is with the owner; wait for the OK before building it.
+Then: notation profiles, JFLAP (roxmltree approved), performance, accessibility
+(@axe-core/playwright approved), TikZ in CI, exit check. Light-theme palette differences were
+reported to the owner; no colors changed yet.
 
 1. Read `CLAUDE.md`, then this file.
 2. **Domain — done 2026-11-09.** The CNAME `delta` → `delta-17m.pages.dev` is live; the Pages

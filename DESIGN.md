@@ -49,6 +49,16 @@ Math, Noto Sans Mono` in SVG. All files are self-hosted and cut by `scripts/subs
 `crates/delta-export/fonts/symbols.txt` lists every symbol Delta code uses; a Rust test (exports)
 and a Playwright test (the Pad) fail if any of them is drawn by another font.
 
+### State names
+
+State names in diagrams are set in **STIX Two Text italic** (OFL), as a maths text sets them:
+`q₀` is an italic *q* with a smaller upright-baseline subscript. Everywhere `delta-render` draws
+(the Pad's diagrams, SVG/PNG/PDF/TikZ exports, `deltac` images, social cards): 18px names,
+subscripts at 0.65 of that, circles of radius 20–24px, an ellipse beyond that. Edge labels stay
+IBM Plex Mono. The subset (ASCII, primes, subscript digits) and the width table delta-render
+measures names with (`crates/delta-render/src/stix_widths.rs`) are both cut by
+`scripts/subset-fonts.py`; the Pad loads it as `--font-state`.
+
 Everything that isn't code keeps its font: Schibsted Grotesk on the site and manual, IBM Plex
 Sans for the Pad's UI, DotGothic16 for the logo, the maths serif for formulas.
 

@@ -65,12 +65,12 @@ export interface EngineApi {
   evaluate(src: string): Promise<Document>;
   /** Runs machine `name` of the program on `input`, step by step. */
   run(src: string, name: string, input: string): Promise<RunResult>;
-  /** Lays out a Graphviz DOT graph; returns Graphviz's `json` output. */
-  layout(dot: string): Promise<string>;
   /** The file a `save` output names: text (svg, tex, txt, json) or bytes (png, pdf). The same
    * renderer as `deltac`, so the Pad's file and the terminal's are identical. `dark` picks the
    * drawing's theme. */
   exportFile(value: unknown, format: string, text: string, dark: boolean): Promise<string | Uint8Array>;
+  /** delta-render's layout of a machine as JSON (see `diagram/layout.ts`, `RenderLayout`). */
+  diagramLayout(view: unknown): Promise<string>;
   /** The engine's version, for the status bar and bug reports. */
   version(): Promise<string>;
   /** Stop: terminates the worker (WASM cannot be interrupted) and starts a fresh one. Calls in

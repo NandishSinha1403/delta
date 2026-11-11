@@ -1,26 +1,10 @@
-// Machine → Graphviz DOT, and Graphviz's `json` output → plain geometry we draw ourselves.
-// Graphviz only places things; the drawing follows the book's conventions (docs/plan/05 §7).
+// delta-render's layout (the engine's `diagram_layout`, the same one every download uses) →
+// geometry the Pad draws itself, plus the regex → NFA group boxes and the screen-reader text.
 import type { MachineView } from '../engine/api';
 
 export interface Point {
   x: number;
   y: number;
-}
-
-export interface NodeBox {
-  x: number;
-  y: number;
-  /** Outer radius in px. */
-  r: number;
-}
-
-export interface EdgeShape {
-  /** SVG path data for the curve (without the arrowhead). */
-  path: string;
-  /** Arrowhead tip and the point it points away from. */
-  tip: Point;
-  base: Point;
-  label: Point | null;
 }
 
 /** A sub-expression's box (regex → NFA): its rectangle and label position. */
@@ -33,183 +17,70 @@ export interface ClusterBox {
   labelAt: Point;
 }
 
-export interface Layout {
+/** A placed state: a circle (rx = ry) or an ellipse for a long name. */
+export interface RenderNode {
+  x: number;
+  y: number;
+  rx: number;
+  ry: number;
+}
+
+/** A placed arrow: its curve (ending where the head starts), the head's tip and the point it
+ * points away from, and the label's box (centre, width, height). */
+export interface RenderEdge {
+  path: string;
+  tip: Point;
+  base: Point;
+  label?: { x: number; y: number; w: number; h: number };
+}
+
+export interface RenderLayout {
   width: number;
   height: number;
-  clusters: ClusterBox[];
-  nodes: NodeBox[];
+  nodes: RenderNode[];
   /** Same order as `machine.edges`. */
-  edges: (EdgeShape | null)[];
-  /** The start arrow, from the invisible start point to the start state. */
-  start: EdgeShape | null;
+  edges: RenderEdge[];
+  start: RenderEdge | null;
+  clusters: ClusterBox[];
+  /** The top-left corner of the frame (negative when a group box reaches past the drawing). */
+  origin: Point;
 }
 
-/** Escapes a string for a double-quoted DOT label. */
-function quote(s: string): string {
-  return `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
-}
+/** Room around a group's states, plus more for each group nested inside it. */
+const GROUP_PAD = 10;
+const GROUP_STEP = 8;
+const GROUP_LABEL = 16;
 
-/** Left-to-right, as the book draws machines. Courier gives Graphviz realistic label widths. */
-export function toDot(m: MachineView): string {
-  const lines = [
-    'digraph {',
-    '  rankdir=LR; nodesep=0.35; ranksep=0.45;',
-    '  node [shape=circle fontname="Courier" fontsize=14 margin=0.04 width=0.5 height=0.5];',
-    '  edge [fontname="Courier" fontsize=13 arrowsize=0.8];',
-    '  __start [shape=point style=invis width=0 height=0 label=""];',
-  ];
-  const node = (i: number) => {
-    const s = m.states[i];
-    return s ? `s${i} [label=${quote(s.name)}${s.accept ? ' shape=doublecircle' : ''}];` : '';
-  };
-  // Sub-expression groups become nested clusters; each state goes in its innermost group.
+/** The sub-expression boxes (regex → NFA): each group's states' bounding box, padded so nested
+ * groups sit inside their parents, with room for the label on top. */
+export function groupBoxes(m: MachineView, nodes: RenderNode[]): ClusterBox[] {
   const groups = m.groups ?? [];
-  const innermost = new Map<number, number>();
-  groups.forEach((g, gi) => {
-    for (const q of g.states) {
-      const prev = innermost.get(q);
-      if (prev === undefined || (groups[prev]?.states.length ?? 0) > g.states.length) innermost.set(q, gi);
-    }
-  });
-  const emit = (gi: number, indent: string) => {
-    const g = groups[gi];
-    if (!g) return;
-    lines.push(`${indent}subgraph cluster_${gi} {`);
-    lines.push(`${indent}  label=${quote(g.label)}; labeljust=l; fontname="Courier"; fontsize=11; margin=10;`);
-    m.states.forEach((_, i) => {
-      if (innermost.get(i) === gi) lines.push(`${indent}  ${node(i)}`);
-    });
-    groups.forEach((child, ci) => {
-      if (child.parent === gi) emit(ci, `${indent}  `);
-    });
-    lines.push(`${indent}}`);
+  const depth = (gi: number): number => {
+    const kids = groups.flatMap((g, ci) => (g.parent === gi ? [ci] : []));
+    return kids.length === 0 ? 0 : 1 + Math.max(...kids.map(depth));
   };
-  groups.forEach((g, gi) => {
-    if (g.parent === null) emit(gi, '  ');
+  return groups.flatMap((g, gi) => {
+    const boxes = g.states.flatMap((q) => (nodes[q] ? [nodes[q]] : []));
+    if (boxes.length === 0) return [];
+    const pad = GROUP_PAD + GROUP_STEP * depth(gi);
+    const x1 = Math.min(...boxes.map((n) => n.x - n.rx)) - pad;
+    const x2 = Math.max(...boxes.map((n) => n.x + n.rx)) + pad;
+    const y1 = Math.min(...boxes.map((n) => n.y - n.ry)) - pad - GROUP_LABEL;
+    const y2 = Math.max(...boxes.map((n) => n.y + n.ry)) + pad;
+    return [{ x: x1, y: y1, width: x2 - x1, height: y2 - y1, label: g.label, labelAt: { x: x1 + 10, y: y1 + 10 } }];
   });
-  m.states.forEach((_, i) => {
-    if (!innermost.has(i)) lines.push(`  ${node(i)}`);
-  });
-  const start = m.states.findIndex((s) => s.start);
-  if (start >= 0) lines.push(`  __start -> s${start};`);
-  for (const e of m.edges) lines.push(`  s${e.from} -> s${e.to} [label=${quote(e.label)}];`);
-  lines.push('}');
-  return lines.join('\n');
 }
 
-interface GvObject {
-  _gvid: number;
-  name: string;
-  bb?: string;
-  lp?: string;
-  label?: string;
-  pos?: string;
-  width?: string;
-  height?: string;
-}
-
-interface GvEdge {
-  tail: number;
-  head: number;
-  pos?: string;
-  lp?: string;
-}
-
-interface GvJson {
-  bb: string;
-  objects?: GvObject[];
-  edges?: GvEdge[];
-}
-
-const PT_PER_INCH = 72;
-const PAD = 12;
-
-function nums(s: string): number[] {
-  return s.split(',').map(Number);
-}
-
-/** Parses a Graphviz spline ("e,x,y x1,y1 …") into a path plus arrowhead, flipping y. */
-export function parseSpline(pos: string, flip: (p: Point) => Point): EdgeShape | null {
-  const parts = pos.trim().split(/\s+/);
-  let end: Point | null = null;
-  const pts: Point[] = [];
-  for (const part of parts) {
-    if (part.startsWith('e,')) {
-      const [x = 0, y = 0] = nums(part.slice(2));
-      end = flip({ x, y });
-    } else if (part.startsWith('s,')) {
-      continue;
-    } else {
-      const [x = 0, y = 0] = nums(part);
-      pts.push(flip({ x, y }));
-    }
-  }
-  const first = pts[0];
-  const last = pts[pts.length - 1];
-  if (!first || !last) return null;
-  let d = `M${first.x},${first.y}`;
-  for (let i = 1; i + 2 < pts.length; i += 3) {
-    const [a, b, c] = [pts[i], pts[i + 1], pts[i + 2]];
-    if (a && b && c) d += ` C${a.x},${a.y} ${b.x},${b.y} ${c.x},${c.y}`;
-  }
-  return { path: d, tip: end ?? last, base: end ? last : (pts[pts.length - 2] ?? first), label: null };
-}
-
-/** Turns Graphviz `json` output into our geometry. */
-export function parseLayout(json: string, m: MachineView): Layout {
-  const g = JSON.parse(json) as GvJson;
-  const [, , w = 0, h = 0] = nums(g.bb);
-  const flip = (p: Point): Point => ({ x: p.x + PAD, y: h - p.y + PAD });
-
-  const nodes: NodeBox[] = m.states.map(() => ({ x: 0, y: 0, r: 18 }));
-  const clusters: ClusterBox[] = [];
-  // Graphviz numbers objects by _gvid; our node names are s0, s1, … (and __start).
-  const idOf = new Map<number, number | 'start'>();
-  for (const o of g.objects ?? []) {
-    if (o.name.startsWith('cluster_')) {
-      const [x1 = 0, y1 = 0, x2 = 0, y2 = 0] = nums(o.bb ?? '0,0,0,0');
-      const [lx = 0, ly = 0] = nums(o.lp ?? '0,0');
-      const top = flip({ x: x1, y: y2 });
-      clusters.push({ x: top.x, y: top.y, width: x2 - x1, height: y2 - y1, label: o.label ?? '', labelAt: flip({ x: lx, y: ly }) });
-      continue;
-    }
-    if (o.name === '__start') {
-      idOf.set(o._gvid, 'start');
-      continue;
-    }
-    const i = Number(o.name.slice(1));
-    idOf.set(o._gvid, i);
-    if (!o.pos || !nodes[i]) continue;
-    const [x = 0, y = 0] = nums(o.pos);
-    nodes[i] = { ...flip({ x, y }), r: (Number(o.width ?? 0.5) * PT_PER_INCH) / 2 };
-  }
-
-  const edges: (EdgeShape | null)[] = m.edges.map(() => null);
-  let start: EdgeShape | null = null;
-  // DOT lists the start arrow first, then the machine's edges in order; match by endpoints
-  // in order so parallel lookups stay stable.
-  const used = new Set<number>();
-  for (const e of g.edges ?? []) {
-    if (!e.pos) continue;
-    const shape = parseSpline(e.pos, flip);
-    if (!shape) continue;
-    if (e.lp) {
-      const [x = 0, y = 0] = nums(e.lp);
-      shape.label = flip({ x, y });
-    }
-    if (idOf.get(e.tail) === 'start') {
-      start = shape;
-      continue;
-    }
-    const from = idOf.get(e.tail);
-    const to = idOf.get(e.head);
-    const k = m.edges.findIndex((me, j) => !used.has(j) && me.from === from && me.to === to);
-    if (k >= 0) {
-      used.add(k);
-      edges[k] = shape;
-    }
-  }
-  return { width: w + 2 * PAD, height: h + 2 * PAD, clusters, nodes, edges, start };
+/** The engine's layout JSON with the group boxes added, framed so everything is inside. */
+export function parseRenderLayout(json: string, m: MachineView): RenderLayout {
+  const raw = JSON.parse(json) as Omit<RenderLayout, 'clusters' | 'origin'>;
+  const clusters = groupBoxes(m, raw.nodes);
+  // Group boxes can reach past the drawing's edge; grow the frame to include them.
+  const minX = Math.min(0, ...clusters.map((c) => c.x));
+  const minY = Math.min(0, ...clusters.map((c) => c.y));
+  const maxX = Math.max(raw.width, ...clusters.map((c) => c.x + c.width));
+  const maxY = Math.max(raw.height, ...clusters.map((c) => c.y + c.height));
+  return { ...raw, clusters, width: maxX - minX + 8, height: maxY - minY + 8, origin: { x: minX - 4, y: minY - 4 } };
 }
 
 /** A sentence a screen reader can use in place of the picture (docs/plan/05 §8). */

@@ -112,8 +112,8 @@ Numbers measured 10 NOV 2026 at commit `{{commit}}`; re-measure before using the
    what you did (the spec, the decisions, the reviews, the phase plan) and what AI coding tools
    did, and show that you understand every part. This manual exists so you can.
 6. **"What would you do differently?"** — Start with the formal semantics (Phase 0 came only in
-   v2), and choose one renderer from the start (the Pad still uses Graphviz on screen while
-   exports use Delta's own layout).
+   v2), and choose one renderer from the start (until Phase 7 the Pad used Graphviz on screen while
+   exports used Delta's own layout).
 7. **"Does anyone use it?"** — Be honest: it's live, but analytics aren't on yet, so you don't
    have numbers. Say what you'd measure (programs run, share links opened, docs searches).
 

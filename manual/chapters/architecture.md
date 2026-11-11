@@ -76,7 +76,8 @@ and every dependency needs the owner's approval anyway.
 4. **"Why JSON instead of a binary protocol?"** — Debuggable, versioned, shared with the CLI and
    conformance tests; payloads are small.
 5. **"What's one decision you'd revisit?"** — Two renderers (Graphviz on screen, `delta-render`
-   for files); Phase 7 unifies them if the layout holds up.
+   for files) until Phase 7, which moved the Pad onto `delta-render`: one layout, and 818 KB of
+   lazy Graphviz JS gone.
 6. **"How do you keep the WASM small?"** — `opt-level = "z"`, LTO, one codegen unit, `wasm-opt`,
    a CI size check, and heavy features (PNG/PDF) in a separate lazy module.
 

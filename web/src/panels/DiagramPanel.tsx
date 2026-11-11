@@ -9,7 +9,7 @@ import { EngineStatus } from './Status';
 import { Math } from './TuplePanel';
 import { regexLine } from './tuple-format';
 
-/** Graphviz needs seconds for thousands of states, and nobody can read such a picture. */
+/** Layout gets slow for thousands of states, and nobody can read such a picture. */
 const MAX_DRAWN_STATES = 300;
 
 /** The program's objects as a segmented control: N NFA · D DFA · R regex. */

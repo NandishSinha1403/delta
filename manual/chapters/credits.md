@@ -19,7 +19,6 @@ Readers: **all**.
 | proptest | Property tests | MIT / Apache-2.0 |
 | React 19, Zustand, Comlink | The Pad | MIT / MIT / Apache-2.0 |
 | CodeMirror 6, Lezer | The editor | MIT |
-| @hpcc-js/wasm-graphviz | On-screen diagram layout | Apache-2.0 |
 | KaTeX | Math in the Pad | MIT |
 | Astro, Starlight | Site and this manual | MIT |
 | cargo-dist (tool) | Release packages | MIT / Apache-2.0 |
@@ -30,6 +29,8 @@ Readers: **all**.
   `deltac` images and social cards (subsets cut by `scripts/subset-fonts.py`).
 - **Noto Sans Math** 3.000 (the Noto Project Authors): Greek and the maths symbols Plex lacks.
 - **Noto Sans Mono** (the Noto Project Authors): the superscripts Plex lacks (⁺ ⁿ ᵏ).
+- **STIX Two Text** italic (the STIX Fonts Project Authors): state names in every diagram, on
+  screen and in exports (`q₀` as maths sets it).
 - **Schibsted Grotesk**: the site's headlines and prose.
 - **IBM Plex Sans, DotGothic16**: the Pad's UI and logo.
 
@@ -55,7 +56,7 @@ Cocke–Younger–Kasami).
 ## Self-test
 
 <details class="selftest"><summary>1. Delta's licence?</summary>MIT.</details>
-<details class="selftest"><summary>2. Which fonts are embedded in exports, and why three?</summary>IBM Plex Mono, plus Noto Sans Math and Noto Sans Mono subsets for the characters Plex lacks (Greek, ⊔ ⊢ ▸, and superscripts like ⁿ).</details>
-<details class="selftest"><summary>3. Which library lays out on-screen diagrams?</summary>Graphviz, via @hpcc-js/wasm-graphviz.</details>
+<details class="selftest"><summary>2. Which fonts are embedded in exports, and why four?</summary>IBM Plex Mono for labels, Noto Sans Math and Noto Sans Mono subsets for the characters Plex lacks (Greek, ⊔ ⊢ ▸, and superscripts like ⁿ), and STIX Two Text italic for state names.</details>
+<details class="selftest"><summary>3. What lays out on-screen diagrams?</summary>Delta's own <code>delta-render</code>, through the WASM <code>diagram_layout</code>: the same layout as every export. (Graphviz did until Phase 7.)</details>
 <details class="selftest"><summary>4. Where may Sipser be quoted?</summary>Only in explain profiles and this private manual.</details>
 <details class="selftest"><summary>5. What does the REPL use for line editing?</summary>rustyline 19.</details>

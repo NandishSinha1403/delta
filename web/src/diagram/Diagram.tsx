@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { MachineView } from '../engine/api';
 import { StoppedError } from '../engine/api';
 import { engine } from '../engine/client';
-import { describeMachine, parseLayout, toDot, type Layout, type Point } from './layout';
+import { describeMachine, parseRenderLayout, type Point, type RenderLayout, type RenderNode } from './layout';
 
 /** What to emphasize on top of the plain machine (a run position or a trace step). */
 export interface Overlay {
@@ -22,13 +22,17 @@ export interface Overlay {
   verdict?: 'accept' | 'reject' | null;
 }
 
-// Layouts are pure functions of the DOT text, so they are cached across renders and objects.
+// Layouts are pure functions of the states and arrows, so they are cached across renders and
+// objects. The engine's delta-render places everything, as it does for every download.
 const cache = new Map<string, Promise<string>>();
 
-function useLayout(machine: MachineView): { layout: Layout | null; error: string | null } {
-  const dot = useMemo(() => toDot(machine), [machine]);
-  const [state, setState] = useState<{ dot: string; layout: Layout | null; error: string | null }>({
-    dot: '',
+function useLayout(machine: MachineView): { layout: RenderLayout | null; error: string | null } {
+  const key = useMemo(
+    () => JSON.stringify({ kind: machine.kind, states: machine.states, edges: machine.edges }),
+    [machine],
+  );
+  const [state, setState] = useState<{ key: string; layout: RenderLayout | null; error: string | null }>({
+    key: '',
     layout: null,
     error: null,
   });
@@ -36,26 +40,26 @@ function useLayout(machine: MachineView): { layout: Layout | null; error: string
   const [retry, setRetry] = useState(0);
   useEffect(() => {
     let live = true;
-    let pending = cache.get(dot);
+    let pending = cache.get(key);
     if (!pending) {
-      pending = engine.layout(dot);
-      cache.set(dot, pending);
-      pending.catch(() => cache.delete(dot));
+      pending = engine.diagramLayout(JSON.parse(key));
+      cache.set(key, pending);
+      pending.catch(() => cache.delete(key));
     }
     pending.then(
-      (json) => live && setState({ dot, layout: parseLayout(json, machine), error: null }),
+      (json) => live && setState({ key, layout: parseRenderLayout(json, machine), error: null }),
       (err: unknown) => {
         if (!live) return;
         if (err instanceof StoppedError) setRetry((r) => r + 1);
-        else setState({ dot, layout: null, error: err instanceof Error ? err.message : String(err) });
+        else setState({ key, layout: null, error: err instanceof Error ? err.message : String(err) });
       },
     );
     return () => {
       live = false;
     };
-  }, [dot, machine, retry]);
+  }, [key, machine, retry]);
   // Until the new layout arrives, keep showing the previous one (no flicker while typing).
-  return { layout: state.layout, error: state.dot === dot ? state.error : null };
+  return { layout: state.layout, error: state.key === key ? state.error : null };
 }
 
 interface View {
@@ -64,7 +68,7 @@ interface View {
   k: number;
 }
 
-function fit(layout: Layout, box: { w: number; h: number }): View {
+function fit(layout: RenderLayout, box: { w: number; h: number }): View {
   const k = Math.min(box.w / layout.width, box.h / layout.height, 1.75) * 0.9;
   return { k, x: (box.w - layout.width * k) / 2, y: (box.h - layout.height * k) / 2 };
 }
@@ -81,31 +85,43 @@ function arrowHead(tip: Point, base: Point): string {
   return `${tip.x},${tip.y} ${bx - uy * half},${by + ux * half} ${bx + uy * half},${by - ux * half}`;
 }
 
-/** A state name as the book sets it: q1 → italic q with subscript 1; anything else in mono. */
+// delta-render's text sizes (crates/delta-render/src/lib.rs), so names and labels fit their
+// shapes exactly as in a download.
+const NAME_SIZE = 18;
+const SUB_SCALE = 0.65;
+const LABEL_SIZE = 13;
+const LABEL_LINE = 16;
+
+/** A state name as maths sets it, in STIX Two Text italic: q1 → q with a subscript 1. */
 function StateLabel({ name, x, y }: { name: string; x: number; y: number }) {
-  const sub = /^([A-Za-z])(\d+)$/.exec(name);
-  if (sub) {
-    return (
-      <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fill="var(--text)">
-        <tspan fontFamily="var(--font-serif)" fontStyle="italic" fontSize={19}>
-          {sub[1]}
-        </tspan>
-        <tspan fontFamily="var(--font-serif)" fontSize={12} dy={5}>
-          {sub[2]}
-        </tspan>
-      </text>
-    );
-  }
+  const sub = /^([A-Za-z])(\d{1,4})$/.exec(name);
   return (
-    <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize={13} fill="var(--text)">
-      {name}
+    <text
+      x={x}
+      y={y + NAME_SIZE * 0.3}
+      textAnchor="middle"
+      fontFamily="var(--font-state)"
+      fontStyle="italic"
+      fontSize={NAME_SIZE}
+      fill="var(--text)"
+    >
+      {sub ? (
+        <>
+          {sub[1]}
+          <tspan fontSize={NAME_SIZE * SUB_SCALE} dy={4}>
+            {sub[2]}
+          </tspan>
+        </>
+      ) : (
+        name
+      )}
     </text>
   );
 }
 
-/** Rough width of a mono label, for its pill (Graphviz already left room for the text). */
-function pillWidth(label: string): number {
-  return [...label].length * 7.6 + 12;
+/** A circle, or an ellipse when the radii differ (long names). */
+function Shape({ n, inset = 0, ...rest }: { n: RenderNode; inset?: number } & React.SVGProps<SVGEllipseElement>) {
+  return <ellipse cx={n.x} cy={n.y} rx={n.rx - inset} ry={n.ry - inset} {...rest} />;
 }
 
 interface Props {
@@ -228,7 +244,7 @@ export function Diagram({ name, machine, overlay = {}, legend = true }: Props) {
                 </feMerge>
               </filter>
             </defs>
-            <g transform={`translate(${shown.x},${shown.y}) scale(${shown.k})`}>
+            <g transform={`translate(${shown.x},${shown.y}) scale(${shown.k}) translate(${-layout.origin.x},${-layout.origin.y})`}>
               {layout.clusters.map((c, i) => (
                 // One box per sub-expression of a regex → NFA construction (Lemma 1.55).
                 <g key={`c${i}`} data-cluster={c.label}>
@@ -250,7 +266,7 @@ export function Diagram({ name, machine, overlay = {}, legend = true }: Props) {
               ))}
               {layout.start && start === machineStart && (
                 <g>
-                  <path d={layout.start.path} fill="none" stroke="var(--edge)" strokeWidth={1.4} />
+                  <path d={layout.start.path} fill="none" stroke="var(--edge)" strokeWidth={1.4} data-start />
                   <polygon points={arrowHead(layout.start.tip, layout.start.base)} fill="var(--edge)" />
                 </g>
               )}
@@ -261,7 +277,6 @@ export function Diagram({ name, machine, overlay = {}, legend = true }: Props) {
                 const faint = overlay.hiddenEdges?.has(i) ?? false;
                 const hot = taken.has(i);
                 const stroke = hot ? 'var(--accent)' : 'var(--edge)';
-                const w = pillWidth(e.label);
                 // ε-arrows are dashed, so the construction's glue is easy to tell from real input.
                 const epsilon = e.label === 'ε';
                 return (
@@ -275,29 +290,40 @@ export function Diagram({ name, machine, overlay = {}, legend = true }: Props) {
                       data-epsilon={epsilon || undefined}
                     />
                     <polygon points={arrowHead(shape.tip, shape.base)} fill={stroke} />
-                    {shape.label && (
-                      <g>
-                        <rect
-                          x={shape.label.x - w / 2}
-                          y={shape.label.y - 10}
-                          width={w}
-                          height={20}
-                          rx={5}
-                          fill={hot ? 'var(--navy)' : 'var(--surface-3)'}
-                          stroke={hot ? 'var(--accent)' : 'none'}
-                        />
-                        <text
-                          x={shape.label.x}
-                          y={shape.label.y}
-                          textAnchor="middle"
-                          dominantBaseline="central"
-                          fontSize={12}
-                          fill={hot ? 'var(--accent)' : 'var(--text-2)'}
-                        >
-                          {e.label}
-                        </text>
-                      </g>
-                    )}
+                  </g>
+                );
+              })}
+              {/* Labels after all arrows, so no arrow crosses a label (as in delta-render). */}
+              {machine.edges.map((e, i) => {
+                const box = layout.edges[i]?.label;
+                if (!box) return null;
+                const faint = overlay.hiddenEdges?.has(i) ?? false;
+                const hot = taken.has(i);
+                const lines = e.label.split('\n');
+                const first = box.y - ((lines.length - 1) * LABEL_LINE) / 2;
+                return (
+                  <g key={`l${i}`} opacity={faint ? 0.12 : 1} data-edge-label={i}>
+                    <rect
+                      x={box.x - box.w / 2}
+                      y={box.y - box.h / 2}
+                      width={box.w}
+                      height={box.h}
+                      rx={5}
+                      fill={hot ? 'var(--navy)' : 'var(--surface-3)'}
+                      stroke={hot ? 'var(--accent)' : 'none'}
+                    />
+                    {lines.map((line, j) => (
+                      <text
+                        key={j}
+                        x={box.x}
+                        y={first + j * LABEL_LINE + LABEL_SIZE * 0.35}
+                        textAnchor="middle"
+                        fontSize={LABEL_SIZE}
+                        fill={hot ? 'var(--accent)' : 'var(--text-2)'}
+                      >
+                        {line}
+                      </text>
+                    ))}
                   </g>
                 );
               })}
@@ -318,23 +344,21 @@ export function Diagram({ name, machine, overlay = {}, legend = true }: Props) {
                     data-focus={isFocus || undefined}
                   >
                     {s.origin && <title>{`${s.name}: ${s.origin}`}</title>}
-                    <circle
-                      cx={n.x}
-                      cy={n.y}
-                      r={n.r}
+                    <Shape
+                      n={n}
                       fill={isActive ? 'var(--navy)' : 'var(--node-fill)'}
                       stroke={stroke}
                       strokeWidth={isActive || isFocus ? 2.6 : 1.6}
                       strokeDasharray={s.trap ? '4 3' : undefined}
                       filter={isActive ? `url(#${glowId})` : undefined}
                     />
-                    {isAccept && <circle cx={n.x} cy={n.y} r={n.r - 4.5} fill="none" stroke={stroke} strokeWidth={1.4} />}
+                    {isAccept && <Shape n={n} inset={4.5} fill="none" stroke={stroke} strokeWidth={1.4} />}
                     <StateLabel name={s.name} x={n.x} y={n.y} />
                     {isActive && (
                       // The finger on this state.
                       <circle
-                        cx={n.x + n.r * 0.72}
-                        cy={n.y - n.r * 0.72}
+                        cx={n.x + n.rx * 0.72}
+                        cy={n.y - n.ry * 0.72}
                         r={6}
                         fill={ring}
                         stroke="var(--canvas)"
@@ -394,8 +418,8 @@ export function Diagram({ name, machine, overlay = {}, legend = true }: Props) {
 }
 
 /** A start arrow for a state that is only the start state part-way through a construction. */
-function ManualStart({ node }: { node: { x: number; y: number; r: number } }) {
-  const tip = { x: node.x - node.r, y: node.y };
+function ManualStart({ node }: { node: RenderNode }) {
+  const tip = { x: node.x - node.rx, y: node.y };
   const base = { x: tip.x - 26, y: tip.y };
   return (
     <g>

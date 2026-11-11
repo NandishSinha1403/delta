@@ -2,7 +2,7 @@
 //! arrow, labels on rounded pills, dashed ε-arrows.
 
 use crate::{
-    CHAR_EM, Curve, Graph, LABEL_LINE, LABEL_SIZE, Layout, NAME_SIZE, Point, dist, num,
+    Curve, Graph, LABEL_LINE, LABEL_SIZE, Layout, NAME_SIZE, Point, SUB_SCALE, dist, num,
     split_subscript,
 };
 // `std::fmt::Write` lets `write!` append formatted text to a String.
@@ -54,6 +54,9 @@ impl Theme {
 /// The font stack: IBM Plex Mono, then the fallbacks for what it lacks. `delta-export` embeds all
 /// three; elsewhere `monospace` is the last resort.
 pub const FONT: &str = "IBM Plex Mono, Noto Sans Math, Noto Sans Mono, monospace";
+
+/// State names: STIX Two Text italic, as maths is set; the code fonts cover anything it lacks.
+pub const NAME_FONT: &str = "STIX Two Text, IBM Plex Mono, Noto Sans Math, Noto Sans Mono, serif";
 
 const ARROW: f64 = 9.0;
 const ARROW_HALF: f64 = 4.2;
@@ -112,6 +115,12 @@ fn path_data(c: &Curve, trim: f64) -> String {
         );
     }
     d
+}
+
+/// SVG path data for an arrow's curve, stopping where its arrowhead begins (the Pad draws the
+/// head itself from [`Curve::end`] and [`Curve::before_end`]).
+pub fn arrow_path(c: &Curve) -> String {
+    path_data(c, ARROW * 0.8)
 }
 
 fn arrowhead(c: &Curve) -> String {
@@ -241,37 +250,29 @@ pub fn svg(g: &Graph, l: &Layout, t: &Theme) -> String {
                 )
             );
         }
-        let base_y = pn.at.y + NAME_SIZE * 0.35;
+        let base_y = pn.at.y + NAME_SIZE * 0.3;
+        // Centred as one chunk (name and subscript together) by `text-anchor`.
+        let _ = write!(
+            s,
+            r#"<text x="{}" y="{}" font-family="{NAME_FONT}" font-style="italic" font-size="{}" text-anchor="middle" fill="{}">"#,
+            num(pn.at.x),
+            num(base_y),
+            num(NAME_SIZE),
+            t.text
+        );
         match split_subscript(&node.name) {
             Some((base, sub)) => {
-                // Centre the name and subscript together.
-                let em = NAME_SIZE * CHAR_EM;
-                let w = em * base.chars().count() as f64 + em * 0.7 * sub.len() as f64;
-                let x0 = pn.at.x - w / 2.0;
                 let _ = write!(
                     s,
-                    r#"<text x="{}" y="{}" font-size="{}" fill="{}">{}<tspan font-size="{}" dy="4">{}</tspan></text>"#,
-                    num(x0),
-                    num(base_y),
-                    num(NAME_SIZE),
-                    t.text,
+                    r#"{}<tspan font-size="{}" dy="4">{}</tspan>"#,
                     esc(base),
-                    num(NAME_SIZE * 0.7),
+                    num(NAME_SIZE * SUB_SCALE),
                     esc(sub)
                 );
             }
-            None => {
-                let _ = write!(
-                    s,
-                    r#"<text x="{}" y="{}" font-size="{}" text-anchor="middle" fill="{}">{}</text>"#,
-                    num(pn.at.x),
-                    num(base_y),
-                    num(NAME_SIZE),
-                    t.text,
-                    esc(&node.name)
-                );
-            }
+            None => s.push_str(&esc(&node.name)),
         }
+        s.push_str("</text>");
     }
     s.push_str("</svg>\n");
     s
@@ -350,7 +351,8 @@ mod tests {
         );
         assert!(out.contains("&lt;a&amp;b&gt;"));
         assert!(out.contains("stroke-dasharray"));
-        assert!(out.contains(r#"<tspan font-size="10.5" dy="4">0</tspan>"#));
+        assert!(out.contains(r#"<tspan font-size="11.7" dy="4">0</tspan>"#));
+        assert!(out.contains(r#"font-style="italic""#));
         assert!(!out.contains("NaN"));
     }
 }

@@ -1,20 +1,12 @@
 // Runs inside a Web Worker: loads the Rust engine (WASM) and exposes it to the main thread via
 // Comlink. All engine work happens here so the UI never blocks.
 import * as Comlink from 'comlink';
-import type { Graphviz } from '@hpcc-js/wasm-graphviz';
 import type { Document } from './api';
 import type { RunResult } from './generated/RunResult';
-import init, { evaluate, render_file, run, version } from './pkg/delta_wasm';
+import init, { diagram_layout, evaluate, render_file, run, version } from './pkg/delta_wasm';
 
 // Fetches and instantiates delta_wasm_bg.wasm (Vite resolves its URL at build time).
 const ready = init();
-
-// Graphviz is ~800 KB, so it is loaded the first time a diagram is drawn, not at startup.
-let graphviz: Promise<Graphviz> | undefined;
-function loadGraphviz(): Promise<Graphviz> {
-  graphviz ??= import('@hpcc-js/wasm-graphviz').then((m) => m.Graphviz.load());
-  return graphviz;
-}
 
 // The image export module (resvg + svg2pdf, ~900 KB) is loaded the first PNG or PDF download.
 type Exporter = typeof import('./export-pkg/delta_export_wasm');
@@ -38,9 +30,6 @@ const api = {
     await ready;
     return JSON.parse(run(src, name, input)) as RunResult;
   },
-  async layout(dot: string): Promise<string> {
-    return (await loadGraphviz()).layout(dot, 'json', 'dot');
-  },
   /** A `save` output's file: text for svg, tex, txt and json; bytes for png and pdf. */
   async exportFile(value: unknown, format: string, text: string, dark: boolean): Promise<string | Uint8Array> {
     await ready;
@@ -51,6 +40,11 @@ const api = {
       return format === 'png' ? m.png(svg, 2) : m.pdf(svg);
     }
     return render_file(json, format, text, dark);
+  },
+  /** delta-render's geometry for a machine (the same layout as every download). */
+  async diagramLayout(view: unknown): Promise<string> {
+    await ready;
+    return diagram_layout(JSON.stringify(view));
   },
   async version(): Promise<string> {
     await ready;

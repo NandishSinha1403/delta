@@ -193,9 +193,6 @@ importers:
       '@fontsource/ibm-plex-sans':
         specifier: ^5.3.0
         version: 5.3.0
-      '@hpcc-js/wasm-graphviz':
-        specifier: ^1.30.0
-        version: 1.30.0
       '@ibm/plex-mono':
         specifier: 2.5.0
         version: 2.5.0
@@ -413,9 +410,6 @@ packages:
 
   '@fontsource/ibm-plex-sans@5.3.0':
     resolution: {integrity: sha512-CbE4CbbEEZJX860XyUiRpsksXIQR8Rp2XDva2VO53NJox9tVNtusrysd2x5YkUEY3ErQ66W1IiiQL8/wihhw5w==}
-
-  '@hpcc-js/wasm-graphviz@1.30.0':
-    resolution: {integrity: sha512-T20IKosOZuex2qV049fQokVJy2MWv8w9Md5V/4mRKCXDf49fBCR50VD1yBlPYHaQlHPsFGRdqXN//r59vZliWQ==}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -1752,8 +1746,6 @@ snapshots:
   '@fontsource/dotgothic16@5.3.1': {}
 
   '@fontsource/ibm-plex-sans@5.3.0': {}
-
-  '@hpcc-js/wasm-graphviz@1.30.0': {}
 
   '@humanfs/core@0.19.2':
     dependencies:

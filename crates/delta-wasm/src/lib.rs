@@ -44,6 +44,17 @@ pub fn render_file(value: &str, format: &str, text: &str, dark: bool) -> Result<
     delta_lang::render::text_file(format, &v, text, dark).map_err(|e| JsError::new(&e))
 }
 
+/// The Pad's diagram geometry for a `MachineView` (JSON), from `delta-render`: the same layout as
+/// every download.
+#[wasm_bindgen]
+pub fn diagram_layout(view: &str) -> Result<String, JsError> {
+    let v: serde_json::Value =
+        serde_json::from_str(view).map_err(|e| JsError::new(&e.to_string()))?;
+    let l =
+        delta_lang::render::layout_json(&v).ok_or_else(|| JsError::new("not a machine view"))?;
+    serde_json::to_string(&l).map_err(|e| JsError::new(&e.to_string()))
+}
+
 /// The engine version, shown in bug reports.
 #[wasm_bindgen]
 pub fn version() -> String {

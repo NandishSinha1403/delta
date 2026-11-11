@@ -59,6 +59,49 @@ pub fn graph_of(value: &Json) -> Option<Graph> {
     })
 }
 
+/// The Pad's diagram geometry for a `MachineView` (states with `name`/`start`/`accept`, edges
+/// already merged with `from`/`to`/`label`): `delta-render`'s layout as plain JSON, so the Pad
+/// draws exactly the picture a download has, with its own highlighting on top.
+pub fn layout_json(view: &Json) -> Option<Json> {
+    let states = view["states"].as_array()?;
+    let nodes = states
+        .iter()
+        .map(|s| Node {
+            name: s["name"].as_str().unwrap_or("").to_string(),
+            start: s["start"] == true,
+            accept: s["accept"] == true,
+        })
+        .collect();
+    let edges = view["edges"]
+        .as_array()?
+        .iter()
+        .map(|e| Edge {
+            from: e["from"].as_u64().unwrap_or(0) as usize,
+            to: e["to"].as_u64().unwrap_or(0) as usize,
+            label: e["label"].as_str().unwrap_or("").to_string(),
+        })
+        .collect();
+    let g = Graph {
+        title: view["kind"].as_str().unwrap_or("machine").to_string(),
+        nodes,
+        edges,
+    };
+    let l = delta_render::layout(&g);
+    let pt = |p: delta_render::Point| serde_json::json!({ "x": p.x, "y": p.y });
+    let curve = |c: &delta_render::Curve| serde_json::json!({ "path": delta_render::arrow_path(c), "tip": pt(c.end()), "base": pt(c.before_end()) });
+    Some(serde_json::json!({
+        "width": l.width,
+        "height": l.height,
+        "nodes": l.nodes.iter().map(|n| serde_json::json!({ "x": n.at.x, "y": n.at.y, "rx": n.rx, "ry": n.ry })).collect::<Vec<_>>(),
+        "edges": l.edges.iter().map(|e| {
+            let mut c = curve(&e.curve);
+            c["label"] = serde_json::json!({ "x": e.label_at.x, "y": e.label_at.y, "w": e.label_w, "h": e.label_h });
+            c
+        }).collect::<Vec<_>>(),
+        "start": l.start.as_ref().map(curve),
+    }))
+}
+
 /// The machine as an SVG document in the light theme, or None if the value isn't a machine.
 pub fn svg_of(value: &Json, dark: bool) -> Option<String> {
     let g = graph_of(value)?;
@@ -130,5 +173,25 @@ mod tests {
         assert_eq!(labels, ["0", "1", "0,1"]);
         assert!(svg_of(&out["outputs"][0]["value"], false).is_some_and(|s| s.contains("<circle")));
         assert!(graph_of(&serde_json::json!({ "type": "set" })).is_none());
+    }
+
+    #[test]
+    fn the_pad_layout_has_one_shape_per_state_and_arrow() {
+        let view = serde_json::json!({
+            "kind": "dfa",
+            "states": [{ "name": "q0", "start": true, "accept": false }, { "name": "q1", "start": false, "accept": true }],
+            "edges": [{ "from": 0, "to": 1, "label": "a" }, { "from": 1, "to": 1, "label": "0 → R\ny → R" }],
+        });
+        let l = layout_json(&view).unwrap_or_default();
+        assert_eq!(l["nodes"].as_array().map(Vec::len), Some(2));
+        assert_eq!(l["edges"].as_array().map(Vec::len), Some(2));
+        assert!(
+            l["start"]["path"]
+                .as_str()
+                .is_some_and(|p| p.starts_with('M'))
+        );
+        // The two-line label gets a taller box than the one-line one.
+        assert!(l["edges"][1]["label"]["h"].as_f64() > l["edges"][0]["label"]["h"].as_f64());
+        assert!(layout_json(&serde_json::json!({})).is_none());
     }
 }

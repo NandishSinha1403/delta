@@ -6,16 +6,18 @@
 //! - [`tikz`]: the same geometry as a TikZ picture.
 //! - [`text`]: a plain-text listing for terminals that can't show images.
 //!
-//! Text is measured as IBM Plex Mono (every character 0.6 em wide), the font `delta-export`
-//! embeds, so the boxes fit the labels exactly when the SVG is rasterized.
+//! Labels are measured as IBM Plex Mono (every character 0.6 em wide) and state names as STIX Two
+//! Text italic (from its width table), the fonts `delta-export` embeds, so shapes fit their text
+//! exactly when the SVG is rasterized.
 
 mod layered;
+mod stix_widths;
 mod svg;
 mod text;
 mod tikz;
 
 pub use layered::layout;
-pub use svg::{FONT, Theme, describe, svg};
+pub use svg::{FONT, NAME_FONT, Theme, arrow_path, describe, svg};
 pub use text::text;
 pub use tikz::tikz;
 
@@ -104,7 +106,7 @@ impl PlacedNode {
 /// The radii of a state with this name: a circle up to `MAX_ROUND` px tall, then an ellipse.
 pub fn node_radii(name: &str) -> (f64, f64) {
     let w = name_width(name);
-    let r = (w / 2.0 + 8.0).max(NAME_SIZE * 1.25);
+    let r = (w / 2.0 + 8.0).max(MIN_ROUND);
     if r <= MAX_ROUND {
         (r, r)
     } else {
@@ -113,8 +115,9 @@ pub fn node_radii(name: &str) -> (f64, f64) {
     }
 }
 
-/// The largest circle radius before a state becomes an ellipse.
-pub const MAX_ROUND: f64 = 22.0;
+/// The smallest circle radius, and the largest before a state becomes an ellipse.
+pub const MIN_ROUND: f64 = 20.0;
+pub const MAX_ROUND: f64 = 24.0;
 
 /// How far a self-loop rises above its state's centre (its highest point).
 pub fn loop_height(ry: f64) -> f64 {
@@ -145,8 +148,10 @@ pub struct Layout {
     pub start: Option<Curve>,
 }
 
-/// Font sizes and the width of one character (IBM Plex Mono advances are 600/1000 em).
-pub const NAME_SIZE: f64 = 15.0;
+/// Font sizes, and the width of one label character (IBM Plex Mono advances are 600/1000 em).
+/// State names are STIX Two Text italic at `NAME_SIZE`, subscripts at `SUB_SCALE` of it.
+pub const NAME_SIZE: f64 = 18.0;
+pub const SUB_SCALE: f64 = 0.65;
 pub const LABEL_SIZE: f64 = 13.0;
 pub const LABEL_LINE: f64 = 16.0;
 pub const CHAR_EM: f64 = 0.6;
@@ -165,12 +170,26 @@ pub fn split_subscript(name: &str) -> Option<(&str, &str)> {
     }
 }
 
+/// Width of text in STIX Two Text italic at `size` px (characters outside the subset count as
+/// 0.55 em, about a fallback font's average).
+fn stix_width(text: &str, size: f64) -> f64 {
+    text.chars()
+        .map(|c| {
+            let em = stix_widths::STIX_ITALIC
+                .binary_search_by_key(&(c as u32), |(cp, _)| *cp)
+                .ok()
+                .and_then(|i| stix_widths::STIX_ITALIC.get(i))
+                .map_or(550.0, |(_, w)| f64::from(*w));
+            em / 1000.0 * size
+        })
+        .sum()
+}
+
 /// Width of a state name as drawn.
 pub fn name_width(name: &str) -> f64 {
-    let em = NAME_SIZE * CHAR_EM;
     match split_subscript(name) {
-        Some((base, sub)) => em * base.chars().count() as f64 + em * 0.7 * sub.len() as f64,
-        None => em * name.chars().count() as f64,
+        Some((base, sub)) => stix_width(base, NAME_SIZE) + stix_width(sub, NAME_SIZE * SUB_SCALE),
+        None => stix_width(name, NAME_SIZE),
     }
 }
 

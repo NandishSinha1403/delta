@@ -11,7 +11,7 @@ export default defineConfig({
   // The samples gallery imports ../samples/*.delta from the repo root.
   server: { fs: { allow: ['..'] } },
   // The real budget is gzipped first load ≤ 350 KB (docs/plan/05-PLAYGROUND-UX.md §9);
-  // React + CodeMirror + KaTeX are ~950 KB minified (and lazy Graphviz ~820 KB), so the default
+  // React + CodeMirror + KaTeX are ~950 KB minified, so the default
   // 500 KB warning is noise.
   build: { chunkSizeWarningLimit: 1000 },
   test: { include: ['src/**/*.test.ts'] },

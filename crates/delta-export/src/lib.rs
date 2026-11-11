@@ -1,5 +1,6 @@
 //! SVG → PNG and PDF, with the code font built in: IBM Plex Mono, plus Noto Sans Math (Greek,
-//! ∪ ∩ ∈ ⊔ ⊢ ▸ …) and Noto Sans Mono (⁺ ⁿ ᵏ …) subsets for exactly the characters Plex lacks.
+//! ∪ ∩ ∈ ⊔ ⊢ ▸ …) and Noto Sans Mono (⁺ ⁿ ᵏ …) subsets for exactly the characters Plex lacks, and
+//! a STIX Two Text italic subset for state names.
 //!
 //! `deltac` and the Pad's export module (`delta-export-wasm`) both call these two functions on
 //! the SVG from `delta-render`, so a file saved in the terminal and one downloaded from the Pad
@@ -12,6 +13,7 @@ use std::sync::Arc;
 const PLEX_MONO: &[u8] = include_bytes!("../fonts/IBMPlexMono-Regular.subset.ttf");
 const NOTO_MATH: &[u8] = include_bytes!("../fonts/NotoSansMath-Regular.subset.ttf");
 const NOTO_MONO: &[u8] = include_bytes!("../fonts/NotoSansMono-Regular.subset.ttf");
+const STIX_ITALIC: &[u8] = include_bytes!("../fonts/STIXTwoText-Italic.subset.ttf");
 
 /// The font stack for SVG text: the code font first, then its two fallbacks.
 pub const FONT_FAMILY: &str = "IBM Plex Mono, Noto Sans Math, Noto Sans Mono, monospace";
@@ -24,6 +26,7 @@ fn options() -> resvg::usvg::Options<'static> {
     db.load_font_data(PLEX_MONO.to_vec());
     db.load_font_data(NOTO_MATH.to_vec());
     db.load_font_data(NOTO_MONO.to_vec());
+    db.load_font_data(STIX_ITALIC.to_vec());
     db.set_monospace_family("IBM Plex Mono");
     db.set_sans_serif_family("IBM Plex Mono");
     resvg::usvg::Options {
@@ -115,8 +118,12 @@ mod tests {
     /// The glyph ids each character of `line` is drawn with, with the font's family name;
     /// glyph 0 is the "missing glyph" box.
     fn glyphs(line: &str) -> Vec<(String, u16, String)> {
+        glyphs_in(line, FONT_FAMILY, "normal")
+    }
+
+    fn glyphs_in(line: &str, family: &str, style: &str) -> Vec<(String, u16, String)> {
         let svg = format!(
-            r##"<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="30" font-family="{FONT_FAMILY}"><text x="4" y="20" font-size="14">{line}</text></svg>"##
+            r##"<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="30" font-family="{family}" font-style="{style}"><text x="4" y="20" font-size="14">{line}</text></svg>"##
         );
         let Ok(tree) = tree(&svg) else {
             return Vec::new();
@@ -161,6 +168,24 @@ mod tests {
         assert!(missing.is_empty(), "no glyph for: {}", missing.join(", "));
         // Plain code is set in Plex itself, not a fallback.
         assert!(glyphs("q0").iter().all(|(_, _, f)| f == "IBM Plex Mono"));
+    }
+
+    #[test]
+    fn state_names_are_drawn_in_stix_italic() {
+        let drawn = glyphs_in("q0 qa {:q1}", delta_names(), "italic");
+        assert!(!drawn.is_empty());
+        for (t, id, family) in &drawn {
+            if t.trim().is_empty() {
+                continue;
+            }
+            assert!(*id != 0, "no glyph for {t}");
+            assert_eq!(family, "STIX Two Text", "{t}");
+        }
+    }
+
+    /// The name font stack `delta-render` writes (kept in step with `NAME_FONT` there).
+    fn delta_names() -> &'static str {
+        "STIX Two Text, IBM Plex Mono, Noto Sans Math, Noto Sans Mono, serif"
     }
 
     #[test]

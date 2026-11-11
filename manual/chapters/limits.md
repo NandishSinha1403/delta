@@ -43,7 +43,6 @@ The site has 143 pages; the largest file is the export WASM (2.2 MB raw).
 
 - The TM loop detector stores every configuration with its tape: memory grows quadratically on
   long runs.
-- On-screen diagrams (Graphviz) and exported ones (`delta-render`) are laid out differently.
 - TikZ output hasn't been compiled with LaTeX yet (no LaTeX on the build Mac).
 - DCF equivalence is not built yet (E702).
 - `is_ambiguous(G, upto: n)` only searches words up to length n; it can never say a grammar is
@@ -74,5 +73,5 @@ The site has 143 pages; the largest file is the export WASM (2.2 MB raw).
 <details class="selftest"><summary>1. What does Delta cost to run per month?</summary>₹0 (Cloudflare Free plans, existing domain).</details>
 <details class="selftest"><summary>2. Default state budget?</summary>100,000.</details>
 <details class="selftest"><summary>3. Pages Free file limit?</summary>20,000 files per site; 25 MiB per file.</details>
-<details class="selftest"><summary>4. Name two known issues.</summary>TM loop detector memory; Graphviz vs delta-render layouts; TikZ untested; CNF/CYK/PDA↔CFG missing.</details>
+<details class="selftest"><summary>4. Name two known issues.</summary>TM loop detector memory; TikZ untested; CNF/CYK/PDA↔CFG missing.</details>
 <details class="selftest"><summary>5. What verdict does a run get when the step budget runs out?</summary><code>unknown</code>.</details>

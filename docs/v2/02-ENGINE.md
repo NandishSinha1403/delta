@@ -198,7 +198,7 @@ interface DeltaEngine {
   complete(src: string, offset: number): Promise<Completion[]>;
   hover(src: string, offset: number): Promise<Hover | null>;
   format(src: string, style?: "unicode" | "ascii"): Promise<string>;
-  layout(machine: MachineJson): Promise<Layout>;         // Graphviz in the worker
+  layout(machine: MachineJson): Promise<Layout>;         // delta-render, as for exports
   export(machine: MachineJson, fmt: "svg" | "dot" | "tikz" | "jff" | "json"): Promise<string>;
   importJflap(xml: string): Promise<string>;
 }
@@ -216,4 +216,4 @@ The same WASM runs in the browser, inside the Android and iOS apps' WebViews, an
 | User code loop | ≥ 5 M steps/s (WASM) |
 | TM simulation | ≥ 20 M steps/s (WASM) |
 | Diagram drawing | ≤ 300 states; above that, table view plus a message |
-| WASM size | ≤ 900 KB gzipped (lazy-load Graphviz separately) |
+| WASM size | ≤ 700 KB gzipped engine; PNG/PDF export a separate lazy module (≤ 1000 KB) |

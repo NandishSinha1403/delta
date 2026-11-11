@@ -35,6 +35,16 @@
   unicode-range: U+1D2C-1D6A, U+2070-209F;
 }
 
+/* State names in diagrams: STIX Two Text italic, as maths is set (DESIGN.md). A subset with
+   Latin letters, digits and punctuation; anything else falls back to the code fonts. */
+@font-face {
+  font-family: 'STIX Two Text';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/stix-two-text-italic.woff2') format('woff2');
+}
+
 /* Theme tokens (docs/plan/05-PLAYGROUND-UX.md §7). The UI palette: powder blue for anything
    active, navy tints behind it, steel blue as the secondary, near-white text. Brand red is only
    for the δ logo tile. Errors use a softer coral so the brand red stays unique; warnings are
@@ -157,6 +167,7 @@
   --color-canvas: var(--canvas);
   --color-status: var(--status-bg);
   --font-serif: 'KaTeX_Main', 'Times New Roman', serif;
+  --font-state: 'STIX Two Text', 'IBM Plex Mono', 'Delta Math', 'Delta Sup', serif;
   --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', 'Delta Math', 'Delta Sup', ui-monospace, 'SF Mono', Menlo, monospace;
   --font-logo: 'DotGothic16', var(--font-mono);

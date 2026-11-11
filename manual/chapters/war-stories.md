@@ -47,7 +47,8 @@ what you did, result, lesson.
 ## The 300-state diagram cap
 
 - **Situation:** users can determinize any NFA, and results can have thousands of states.
-- **Problem:** Graphviz takes seconds on thousands of nodes, and nobody can read such a picture.
+- **Problem:** layout takes seconds on thousands of nodes (Graphviz did then), and nobody can read
+  such a picture.
 - **Action:** `MAX_DRAWN_STATES = 300` in `DiagramPanel.tsx`: above it, the panel says how many
   states there are and points to the δ-table and tuple, which still show everything.
 - **Lesson:** the right answer to "can't draw it fast" was "don't draw it" — with a clear

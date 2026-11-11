@@ -88,11 +88,11 @@ reshaped for v2) · **Drop** (replaced; at most the approach is reused).
 
 | Part | Verdict | Notes |
 |---|---|---|
-| `engine/api.ts`, `client.ts`, `worker.ts` | **Keep** | Comlink worker, 10 s timeout respawn, `restart()` = Stop, lazy Graphviz in the worker. Swap the method set for v2 |
+| `engine/api.ts`, `client.ts`, `worker.ts` | **Keep** | Comlink worker, 10 s timeout respawn, `restart()` = Stop. Swap the method set for v2 |
 | `engine/generated/*` (20 ts-rs files) | **Change** | Regenerate from the v2 output schema (`/schema/output-v2.json`). ts-rs or the JSON Schema: decide one source of truth (Q-41) |
 | `state/engine.ts`, `execute.ts`, `ui.ts` | **Keep** | Ticketing (only the newest answer shows), `SLOW_MS = 300` (matches 03 §3.1), Auto off by default, stale banner |
 | `editor/CodeEditor.tsx`, `delta-lang.ts`, `codelens.ts`, `symbols.ts`, `SymbolBar.tsx` | **Change** | CodeMirror setup and Dark+/Light+ colours stay. `delta-lang.ts` holds **hand-written hover docs that cite the book** (59 citation hits) and its own keyword list. v2 generates both from signature records via `complete`/`hover` |
-| `diagram/Diagram.tsx`, `layout.ts` | **Keep** | Graphviz DOT → JSON → own SVG, nested group boxes, pan/zoom. Add ε dashed, label pills, storage views |
+| `diagram/Diagram.tsx`, `layout.ts` | **Keep** | Own SVG, nested group boxes, pan/zoom; layout from `delta-render` (Graphviz dropped in Phase 7, Q-34). Add ε dashed, label pills, storage views |
 | `panels/DiagramPanel`, `TuplePanel`, `tuple-format.ts`, `RunPanel`, `StepsPanel`, `TestsPanel`, `overlay.ts`, `current.ts` | **Change** | Tuple + δ-table → **Table** panel. Steps stays. Tests stays. Run → storage views + trace (Q-30). New: **Lang**, **Console**. `tuple-format.ts` hard-codes `'Definition 1.5'`/`'1.37'`/`'1.64'` labels |
 | `conversions.ts` | **Drop** | Hand-kept copy of the engine's function list with `book:` citations. v2 reads signature records |
 | `examples.ts` | **Change** | Gallery titles parsed from `// Example 1.41 — …` comments. v2 samples (~20) are not book-ordered |
