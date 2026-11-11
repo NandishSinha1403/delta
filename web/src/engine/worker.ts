@@ -21,14 +21,14 @@ function loadExporter(): Promise<Exporter> {
 
 const api = {
   // manual:begin worker-evaluate
-  async evaluate(src: string): Promise<Document> {
+  async evaluate(src: string, files: Record<string, string> = {}): Promise<Document> {
     await ready;
-    return JSON.parse(evaluate(src)) as Document;
+    return JSON.parse(evaluate(src, JSON.stringify(files))) as Document;
   },
   // manual:end worker-evaluate
-  async run(src: string, name: string, input: string): Promise<RunResult> {
+  async run(src: string, name: string, input: string, files: Record<string, string> = {}): Promise<RunResult> {
     await ready;
-    return JSON.parse(run(src, name, input)) as RunResult;
+    return JSON.parse(run(src, name, input, JSON.stringify(files))) as RunResult;
   },
   /** A `save` output's file: text for svg, tex, txt and json; bytes for png and pdf. */
   async exportFile(value: unknown, format: string, text: string, dark: boolean): Promise<string | Uint8Array> {

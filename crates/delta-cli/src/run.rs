@@ -32,12 +32,39 @@ pub const FORMATS: &[(&str, &str)] = &[
 /// depth budget instead of overflowing the main thread's stack.
 pub fn evaluate(src: &str) -> Option<Json> {
     let src = src.to_string();
+    let opts = delta_lang::RunOptions {
+        files: read_imports(&src),
+        ..Default::default()
+    };
     std::thread::Builder::new()
         .stack_size(256 * 1024 * 1024)
-        .spawn(move || delta_lang::run(&src))
+        .spawn(move || delta_lang::run_with(&src, &opts))
         .ok()?
         .join()
         .ok()
+}
+
+/// The files a program imports (`import "m.jff"`), read from the current folder with the same
+/// rules as `save`: relative, inside the folder after resolving links. A file that can't be read
+/// is left out, and the engine reports it (E518).
+fn read_imports(src: &str) -> std::collections::HashMap<String, String> {
+    let mut files = std::collections::HashMap::new();
+    let Ok(cwd) = std::env::current_dir().and_then(|d| d.canonicalize()) else {
+        return files;
+    };
+    for path in delta_lang::imports(src) {
+        let Some(rel) = delta_lang::interp::save_path(&path) else {
+            continue;
+        };
+        let inside = cwd
+            .join(&rel)
+            .canonicalize()
+            .is_ok_and(|p| p.starts_with(&cwd));
+        if let (true, Ok(text)) = (inside, std::fs::read_to_string(cwd.join(&rel))) {
+            files.insert(rel, text);
+        }
+    }
+    files
 }
 
 /// Runs a program. Exits nonzero on errors or failed tests (Q-48).

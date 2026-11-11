@@ -14,6 +14,7 @@ pub mod gnf;
 pub mod grammar;
 pub mod hooks;
 pub mod interp;
+pub mod jflap;
 pub mod label;
 pub mod lang;
 pub mod lexer;
@@ -42,6 +43,22 @@ pub const VERSION: &str = "2.0.0-dev";
 pub struct RunOptions {
     /// Overrides the default budget (a `budget { … }` directive still applies on top).
     pub budget: Option<interp::Budget>,
+    /// Files an `import` may read, by path as written (the host reads them; the engine does no
+    /// input or output). See `imports` for the paths a program asks for.
+    pub files: std::collections::HashMap<String, String>,
+}
+
+/// The paths a program imports, so a host can read them before the run (`import "m.jff"`).
+pub fn imports(src: &str) -> Vec<String> {
+    let (program, _) = parser::parse(src, &[]);
+    program
+        .stmts
+        .iter()
+        .filter_map(|s| match &s.kind {
+            ast::StmtKind::Import { path, .. } => Some(path.clone()),
+            _ => None,
+        })
+        .collect()
 }
 
 /// Everything one evaluation produced.
@@ -74,6 +91,7 @@ pub fn execute<'s>(src: &'s str, opts: &RunOptions) -> Execution<'s> {
         if let Some(b) = opts.budget {
             it.budget = b;
         }
+        it.files = opts.files.clone();
         if let Some(d) = it.run_program(&program) {
             stopped = true;
             diags.push(d);

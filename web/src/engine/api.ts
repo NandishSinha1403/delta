@@ -62,9 +62,9 @@ export type Document = Omit<DocumentV1, 'objects'> & {
 
 export interface EngineApi {
   /** Lexes, parses, checks and evaluates a whole program. */
-  evaluate(src: string): Promise<Document>;
+  evaluate(src: string, files?: Record<string, string>): Promise<Document>;
   /** Runs machine `name` of the program on `input`, step by step. */
-  run(src: string, name: string, input: string): Promise<RunResult>;
+  run(src: string, name: string, input: string, files?: Record<string, string>): Promise<RunResult>;
   /** The file a `save` output names: text (svg, tex, txt, json) or bytes (png, pdf). The same
    * renderer as `deltac`, so the Pad's file and the terminal's are identical. `dark` picks the
    * drawing's theme. */

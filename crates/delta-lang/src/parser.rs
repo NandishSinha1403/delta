@@ -223,6 +223,66 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// `import "path.jff" [as Name]`. Without `as`, the name is the file's stem (`m.jff` → `m`).
+    fn import_stmt(&mut self) -> PResult<StmtKind> {
+        let kw = self.peek().span;
+        self.bump();
+        let t = self.peek();
+        let Tok::Word(syms) = t.tok else {
+            return Err(self.error(
+                "E101",
+                t.span,
+                "expected a file name in quotes: `import \"m.jff\"`",
+            ));
+        };
+        self.bump();
+        let path: String = syms.concat();
+        let is_jff = path
+            .rsplit_once('.')
+            .is_some_and(|(_, e)| e.eq_ignore_ascii_case("jff"));
+        if !is_jff {
+            return Err(self.error(
+                "E517",
+                t.span,
+                format!("can't import \"{path}\": v2.0 imports JFLAP files (.jff); modules across files come in v2.1"),
+            ));
+        }
+        let (name, name_span) = if self.at_ident("as") {
+            self.bump();
+            self.ident("a name after `as`")?
+        } else {
+            let file = path.rsplit(['/', '\\']).next().unwrap_or(&path);
+            let stem = file
+                .rsplit_once('.')
+                .map(|(s, _)| s)
+                .unwrap_or(file)
+                .to_string();
+            let mut cs = stem.chars();
+            let ok = cs.next().is_some_and(|c| c.is_alphabetic() || c == '_')
+                && cs.all(|c| c.is_alphanumeric() || c == '_');
+            if !ok {
+                return Err(self.error(
+                    "E517",
+                    t.span,
+                    format!("\"{stem}\" isn't a name; write `import \"{path}\" as M`"),
+                ));
+            }
+            (
+                stem,
+                Span {
+                    from: kw.from,
+                    to: t.span.to,
+                },
+            )
+        };
+        Ok(StmtKind::Import {
+            path,
+            path_span: t.span,
+            name,
+            name_span,
+        })
+    }
+
     fn reserved(&mut self, span: Span) -> Fail {
         let word = self.lx_text(span);
         self.error(
@@ -468,6 +528,7 @@ impl<'a> Parser<'a> {
                 };
                 Ok(StmtKind::Save(v, path, theme))
             }
+            Tok::Kw(Kw::Import) => self.import_stmt(),
             Tok::Kw(Kw::Assert) => {
                 self.bump();
                 Ok(StmtKind::Assert(self.expr()?))

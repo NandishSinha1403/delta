@@ -36,7 +36,9 @@ pub enum Kw {
     Or,
     Not,
     Cfg,
-    /// Reserved for later versions (01 §16): `choose`, `import`, `reduce`.
+    /// `import "m.jff" [as M]`: a JFLAP file (01 §8). Modules across files come in v2.1.
+    Import,
+    /// Reserved for later versions (01 §16): `choose`, `reduce`.
     Reserved,
 }
 
@@ -187,7 +189,8 @@ fn keyword(s: &str) -> Option<Tok> {
         "or" => Kw::Or,
         "not" => Kw::Not,
         "cfg" => Kw::Cfg,
-        "choose" | "import" | "reduce" => Kw::Reserved,
+        "import" => Kw::Import,
+        "choose" | "reduce" => Kw::Reserved,
         "in" => return Some(Tok::Op(Op::In)),
         "union" => return Some(Tok::Op(Op::Union)),
         "inter" => return Some(Tok::Op(Op::Inter)),

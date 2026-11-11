@@ -242,6 +242,13 @@ pub enum StmtKind {
     Show(Expr),
     /// `save value to path [(theme: light | dark)]`: the theme, if written, with its span.
     Save(Expr, Expr, Option<(String, Span)>),
+    /// `import "path.jff" [as Name]`: the path (with its span) and the name it binds.
+    Import {
+        path: String,
+        path_span: Span,
+        name: String,
+        name_span: Span,
+    },
     Assert(Expr),
     Check(Expr, CheckKind),
     Run(Expr, Expr),

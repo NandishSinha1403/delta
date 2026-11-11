@@ -75,6 +75,8 @@ pub struct Interp<'s> {
     pub plus_is_union: bool,
     /// Extra regex spellings of a custom notation profile (`φ` → `∅`).
     pub notation_tokens: Vec<(String, String)>,
+    /// Files `import` may read, by path (from the host, `RunOptions::files`).
+    pub files: HashMap<String, String>,
 }
 
 /// Names of the built-in functions (01 §12). One not implemented yet (`range`) reports E509.
@@ -165,6 +167,7 @@ impl<'s> Interp<'s> {
             pending: Vec::new(),
             plus_is_union: false,
             notation_tokens: Vec::new(),
+            files: HashMap::new(),
         }
     }
 
@@ -493,7 +496,7 @@ impl<'s> Interp<'s> {
                         "E514",
                         p.span,
                         format!(
-                            "can't save to \"{path}\": use .svg, .png, .pdf, .tex, .txt or .json"
+                            "can't save to \"{path}\": use .svg, .png, .pdf, .tex, .txt, .json or .jff"
                         ),
                     ))
                 })?;
@@ -517,6 +520,21 @@ impl<'s> Interp<'s> {
                         ),
                     );
                 }
+                // JFLAP files hold machines and grammars (`export/jflap`).
+                if format == "jff"
+                    && v.downcast::<crate::machine::Machine>().is_none()
+                    && v.downcast::<crate::grammar::Grammar>().is_none()
+                {
+                    return err(
+                        "E516",
+                        e.span,
+                        format!(
+                            "only machines and grammars can be saved as .jff, not {} {}",
+                            v.type_name(),
+                            v.display()
+                        ),
+                    );
+                }
                 let line = self.line(s.span);
                 let value = self.value_json(&v);
                 let mut out = json!({ "kind": "save", "line": line, "path": path, "format": format, "value": value, "text": v.print_text() });
@@ -525,6 +543,16 @@ impl<'s> Interp<'s> {
                     out["theme"] = json!(t);
                 }
                 self.emit(s.span, out)
+            }
+            StmtKind::Import {
+                path,
+                path_span,
+                name,
+                ..
+            } => {
+                let v = self.import_jflap(path, *path_span, name)?;
+                self.bind(name, v, false);
+                Ok(())
             }
             StmtKind::Check(subject, kind) => self.check(s, subject, kind),
             StmtKind::Run(m, w) => self.run_stmt(s, m, w),
@@ -1331,6 +1359,50 @@ impl<'s> Interp<'s> {
         }
     }
 
+    /// `import "m.jff"` (`import/jflap`): the file as Delta source, run on its own, and its one
+    /// declaration's value. The program's notation profile is kept around the inner run.
+    fn import_jflap(&mut self, path: &str, span: Span, name: &str) -> R<Value> {
+        let key = path.replace('\\', "/");
+        let Some(xml) = self
+            .files
+            .get(&key)
+            .or_else(|| self.files.get(path))
+            .cloned()
+        else {
+            return err(
+                "E518",
+                span,
+                format!(
+                    "can't find \"{path}\": in the terminal it is read from the folder the program runs in; in the Pad, open it as a file first"
+                ),
+            );
+        };
+        let source = crate::jflap::to_delta(&xml, name).map_err(|m| {
+            Flow::Error(Diagnostic::error(
+                "E519",
+                span,
+                format!("can't import \"{path}\": {m}"),
+            ))
+        })?;
+        let profile = crate::notation::current();
+        let ex = crate::execute(&source, &crate::RunOptions::default());
+        crate::notation::set(profile);
+        if let Some(d) = ex.diags.iter().find(|d| d.is_error()) {
+            return err(
+                "E519",
+                span,
+                format!("can't import \"{path}\": {}", d.message),
+            );
+        }
+        ex.interp.and_then(|it| it.lookup(name)).ok_or_else(|| {
+            Flow::Error(Diagnostic::error(
+                "E519",
+                span,
+                format!("can't import \"{path}\""),
+            ))
+        })
+    }
+
     pub fn value_json(&self, v: &Value) -> serde_json::Value {
         match v {
             Value::Int(n) => json!({ "type": "int", "value": n }),
@@ -1414,6 +1486,7 @@ fn free_in_stmt(s: &Stmt, out: &mut BTreeSet<String>) {
         StmtKind::Budget(pairs) => pairs.iter().for_each(|(_, _, e)| free_in_expr(e, out)),
         StmtKind::Model(_)
         | StmtKind::UseStrict
+        | StmtKind::Import { .. }
         | StmtKind::UseNotation(_)
         | StmtKind::UseExplain(_) => {}
     }
@@ -1619,7 +1692,7 @@ fn walk_mitems(items: &[MItem], f: &mut dyn FnMut(&Expr)) {
 pub fn save_format(path: &str) -> Option<&'static str> {
     // `rsplit_once` splits at the last `.`; `?` returns None early if there is none.
     let (_, ext) = path.rsplit_once('.')?;
-    ["svg", "png", "pdf", "tex", "txt", "json"]
+    ["svg", "png", "pdf", "tex", "txt", "json", "jff"]
         .into_iter()
         .find(|f| f.eq_ignore_ascii_case(ext))
 }

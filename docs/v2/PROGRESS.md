@@ -207,15 +207,17 @@ The full check list (wasm build, size check, web lint/typecheck/test/build/e2e) 
 
 ## Next session: start here
 
-**Phase 7 in progress (2026-11-11).** Done: themes, `delta-render` in the Pad, STIX names, file
-watermark (SVG/PNG/PDF), presentation mode. **Next (owner's order):** C (notation profiles hmu
-and linz, JFLAP import/export, accessibility with axe on six viewports, performance: TM loop
-hashes + Hopcroft + Pad profiling, TikZ via tectonic in CI, papercuts), then D (exit check).
-**Also asked (owner, 2026-11-11): deltac releases** with cargo-dist (musl Linux x86-64/ARM64,
-macOS both, Windows; shell, PowerShell, MSI, Homebrew `delta-lang` in
-`NandishSinha1403/homebrew-tap`, .deb via cargo-deb; crates.io; /download page; Terminal page).
-Blocked on the owner: the tap repo and the secrets `HOMEBREW_TAP_TOKEN`, `CARGO_REGISTRY_TOKEN`
-(instructions were given). Test with v2.0.0-rc.1 (brew + shell script on the Mac) before v2.0.0.
+**Phase 7 in progress (2026-11-12).** Done: themes, delta-render in the Pad, STIX names, file
+watermark, presentation mode (deployed); notation hmu/linz for ε, union and blank (committed, not
+deployed); release setup (2.0.0-rc.1, cargo-dist musl/deb/brew/crates, /download page; NOT
+deployed: links need a release). **In progress: JFLAP.** Engine done and unit-tested
+(`jflap.rs`, `import "x.jff" [as M]` E517/E518/E519, `save M to "x.jff"`, deltac reads imports);
+Pad wiring half-done: `state/program.ts`, worker/WASM pass open .jff tabs as files. **Still to
+do for JFLAP:** Files drawer "Open file…" (.delta/.jff), e2e test, 01-LANGUAGE §8 + SEMANTICS
+§10.4 (import, jff), error docs E517–E519 in docs.rs, conformance cases, manual. Then C:
+a11y (axe), performance, TikZ/tectonic CI, papercuts (tm `text` drops `reject`), then D.
+**Waiting on the owner:** release secrets + tap repo; ⌘⌥P check in Chrome on a Mac; what
+"states" means for notation profiles (names vs TM tuple with F).
 
 1. Read `CLAUDE.md`, then this file.
 2. **Domain — done 2026-11-09.** The CNAME `delta` → `delta-17m.pages.dev` is live; the Pages

@@ -153,6 +153,7 @@ pub fn text_file(
                 .or_else(|| text_of(value))
                 .unwrap_or_else(|| value_text(value))
         )),
+        "jff" => crate::jflap::from_view(value),
         "json" => serde_json::to_string_pretty(value)
             .map(|s| s + "\n")
             .map_err(|e| e.to_string()),

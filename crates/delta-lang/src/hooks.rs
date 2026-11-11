@@ -2816,6 +2816,25 @@ impl Interp<'_> {
                 "text": l.describe()
             });
         }
+        if let Some(g) = v.downcast::<crate::grammar::Grammar>() {
+            use crate::grammar::GSym;
+            let var = |x: usize| g.vars.get(x).cloned().unwrap_or_default();
+            let rules: Vec<serde_json::Value> = g
+                .rules
+                .iter()
+                .map(|(l, rhs)| {
+                    let right: Vec<String> = rhs
+                        .iter()
+                        .map(|s| match s {
+                            GSym::V(x) => var(*x),
+                            GSym::T(t) => t.to_string(),
+                        })
+                        .collect();
+                    json!([var(*l), right])
+                })
+                .collect();
+            return json!({ "type": "grammar", "start": var(g.start), "variables": g.vars, "rules": rules, "text": v.display() });
+        }
         json!({ "type": v.type_name(), "text": v.display() })
     }
 }

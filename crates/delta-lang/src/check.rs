@@ -356,6 +356,8 @@ impl Checker<'_> {
                 self.bind_class(name, false, ty, class);
             }
             StmtKind::Budget(pairs) => pairs.iter().for_each(|(_, _, e)| self.expr(e)),
+            // A machine or a grammar, known once the file is read.
+            StmtKind::Import { name, .. } => self.bind_class(name, false, Ty::Unknown, None),
             StmtKind::Block(b) => self.block(b),
             StmtKind::Model(_)
             | StmtKind::UseStrict

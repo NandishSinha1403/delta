@@ -13,19 +13,31 @@ pub fn start() {
     console_error_panic_hook::set_once();
 }
 
-/// Parses, checks and runs a Delta 2 program; returns the Pad's document as JSON.
+/// The files `import` may read, from `{ "name.jff": "<xml>", … }` (empty if it isn't that shape).
+fn files(json: &str) -> std::collections::HashMap<String, String> {
+    serde_json::from_str(json).unwrap_or_default()
+}
+
+/// Parses, checks and runs a Delta 2 program; returns the Pad's document as JSON. `files` is a
+/// JSON object of the open .jff files by name, for `import "x.jff"`.
 // `#[wasm_bindgen]` exports this function to JavaScript; an `Err` becomes a thrown JS `Error`.
 #[wasm_bindgen]
-pub fn evaluate(src: &str) -> Result<String, JsError> {
+pub fn evaluate(src: &str, files_json: &str) -> Result<String, JsError> {
     // `.map_err(...)` converts the error type inside a Result and leaves an `Ok` value untouched.
-    serde_json::to_string(&delta_lang::pad::document(src)).map_err(|e| JsError::new(&e.to_string()))
+    serde_json::to_string(&delta_lang::pad::document_with(src, &files(files_json)))
+        .map_err(|e| JsError::new(&e.to_string()))
 }
 
 /// Runs machine `name` of the program on `input`, step by step; returns a `RunResult` as JSON.
 #[wasm_bindgen]
-pub fn run(src: &str, name: &str, input: &str) -> Result<String, JsError> {
-    serde_json::to_string(&delta_lang::pad::run(src, name, input))
-        .map_err(|e| JsError::new(&e.to_string()))
+pub fn run(src: &str, name: &str, input: &str, files_json: &str) -> Result<String, JsError> {
+    serde_json::to_string(&delta_lang::pad::run_with(
+        src,
+        name,
+        input,
+        &files(files_json),
+    ))
+    .map_err(|e| JsError::new(&e.to_string()))
 }
 
 /// The output document of 02-ENGINE.md §7 (what `deltac run --json` prints).

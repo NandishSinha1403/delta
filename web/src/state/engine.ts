@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { StoppedError, type Document, type ObjectView, type RunView } from '../engine/api';
 import { engine } from '../engine/client';
+import { programOf } from './program';
 
 export type EngineStatus = 'loading' | 'ready' | 'error';
 
@@ -64,8 +65,11 @@ export const useEngineStore = create<EngineStore>()((set, get) => ({
       if (ticket === latest && get().evaluating) set({ slow: true });
     }, SLOW_MS);
     try {
-      const doc = await engine.evaluate(source);
+      const program = programOf(source);
+      const doc = await engine.evaluate(program.src, program.files);
       if (ticket !== latest) return;
+      // A .jff tab runs a generated program: its diagnostics have no place in the XML.
+      if (program.generated) doc.diagnostics = doc.diagnostics.map((d) => ({ ...d, from: 0, to: 0, line: 1, col: 1 }));
       const lastMs = Math.round(performance.now() - started);
       set({ status: 'ready', error: null, doc, docSource: source, evaluating: false, slow: false, lastMs });
       if (get().version === null) set({ version: await engine.version() });
@@ -102,7 +106,8 @@ export const useEngineStore = create<EngineStore>()((set, get) => ({
     const ticket = ++latestRun;
     set({ runObject: object, runInput: input, runPending: true });
     try {
-      const result = await engine.run(source, object, input);
+      const program = programOf(source);
+      const result = await engine.run(program.src, object, input, program.files);
       if (ticket !== latestRun) return;
       set({ run: result.run, runError: result.error, runPos: 0, runPending: false });
     } catch (err) {

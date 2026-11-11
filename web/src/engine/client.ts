@@ -56,8 +56,8 @@ export function createEngine(): EngineApi {
   }
 
   return {
-    evaluate: (src) => call((r) => r.evaluate(src)),
-    run: (src, name, input) => call((r) => r.run(src, name, input)),
+    evaluate: (src, files) => call((r) => r.evaluate(src, files)),
+    run: (src, name, input, files) => call((r) => r.run(src, name, input, files)),
     exportFile: (value, format, text, dark) =>
       call((r) => r.exportFile(value, format, text, dark) as Promise<string | Uint8Array>),
     diagramLayout: (view) => call((r) => r.diagramLayout(view)),

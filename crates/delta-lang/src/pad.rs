@@ -11,7 +11,7 @@ use crate::machine::Machine;
 use crate::rx::RegexVal;
 use crate::value::{Sym, Value, sym_text};
 use serde_json::{Value as Json, json};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::rc::Rc;
 
 fn u16(src: &str, byte: usize) -> usize {
@@ -269,6 +269,7 @@ fn declared(s: &Stmt) -> Option<(String, &'static str)> {
         StmtKind::Lang { name, .. } => Some((name.clone(), "lang")),
         StmtKind::Fn(def) => def.name.clone().map(|n| (n, "fn")),
         StmtKind::Model(m) => Some((m.name.clone(), "model")),
+        StmtKind::Import { name, .. } => Some((name.clone(), "import")),
         _ => None,
     }
 }
@@ -323,7 +324,16 @@ fn literal_names(e: &Expr) -> (Vec<String>, Vec<String>) {
 
 /// The Pad's document for `src`.
 pub fn document(src: &str) -> Json {
-    let mut ex = crate::execute(src, &crate::RunOptions::default());
+    document_with(src, &HashMap::new())
+}
+
+/// `document`, with the files `import` may read (the Pad's open .jff files, by name).
+pub fn document_with(src: &str, files: &HashMap<String, String>) -> Json {
+    let opts = crate::RunOptions {
+        files: files.clone(),
+        ..Default::default()
+    };
+    let mut ex = crate::execute(src, &opts);
     let lines = LineMap::new(src);
     let diagnostics: Vec<Json> = ex
         .diags
@@ -569,7 +579,16 @@ fn run_view(it: &Interp, name: &str, m: &Rc<Machine>, w: &[Sym]) -> Option<Json>
 
 /// An interactive run from the Run panel: machine `name` of the program on `input`.
 pub fn run(src: &str, name: &str, input: &str) -> Json {
-    let ex = crate::execute(src, &crate::RunOptions::default());
+    run_with(src, name, input, &HashMap::new())
+}
+
+/// `run`, with the files `import` may read.
+pub fn run_with(src: &str, name: &str, input: &str, files: &HashMap<String, String>) -> Json {
+    let opts = crate::RunOptions {
+        files: files.clone(),
+        ..Default::default()
+    };
+    let ex = crate::execute(src, &opts);
     let Some(it) = &ex.interp else {
         return json!({ "run": Json::Null, "error": "The program has errors; fix them first." });
     };
