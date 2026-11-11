@@ -1,0 +1,5 @@
+{
+  "ok": false,
+  "diagnostics": [{ "code": "E514", "severity": "error", "line": 6 }],
+  "outputs": []
+}

@@ -24,13 +24,13 @@ const M1: MachineView = {
 };
 
 describe('tuple formatting', () => {
-  it('writes the tuple like Example 1.7', () => {
+  it('writes the formal tuple', () => {
     const t = tupleOf('M1', M1);
     expect(t.header.text).toBe('M1 = (Q, Σ, δ, q1, F)');
     expect(t.header.tex).toBe('M_{1} = (Q, \\Sigma, \\delta, q_{1}, F)');
     expect(t.states.text).toBe('Q = {q1, q2, q3}');
     expect(t.accept.text).toBe('F = {q2}');
-    expect(t.definition).toBe('Definition 1.5');
+    expect(t.definition).toBe('the dfa model');
   });
 
   it('typesets names the way the book does', () => {

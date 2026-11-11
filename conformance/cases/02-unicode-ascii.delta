@@ -1,0 +1,18 @@
+// 01-LANGUAGE.md §2, table "Unicode and ASCII (always both)": each pair means the same.
+let A = {1, 2}
+let B = {2, 3}
+assert (A ∪ B) == (A union B)
+assert (A ∩ B) == (A inter B)
+assert (A ∖ B) == (A minus B)
+assert (2 ∈ A) == (2 in A)
+assert (3 ∉ A) == (3 not in A)
+assert ({2} ⊆ A) == ({2} subset A)
+assert (1 ≠ 2) == (1 != 2)
+assert (1 ≤ 2) == (1 <= 2)
+assert (2 ≥ 1) == (2 >= 1)
+assert ∅ == empty
+assert ε == eps
+assert λ == ε
+assert ε == ""
+assert ⋃ { A, B } == union_all { A, B }
+assert 1_000_000 == 1000000

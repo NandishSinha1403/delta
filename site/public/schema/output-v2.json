@@ -1,0 +1,167 @@
+{
+  "$id": "https://delta.nandish.dev/schema/output-v2.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "delta_version": {
+      "type": "string"
+    },
+    "diagnostics": {
+      "items": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "col": {
+            "description": "1-based, UTF-16",
+            "type": "integer"
+          },
+          "fixes": {
+            "items": {
+              "properties": {
+                "edits": {
+                  "items": {
+                    "properties": {
+                      "from": {
+                        "type": "integer"
+                      },
+                      "insert": {
+                        "type": "string"
+                      },
+                      "to": {
+                        "type": "integer"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "title": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "from": {
+            "type": "integer"
+          },
+          "line": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "error",
+              "warning",
+              "info"
+            ]
+          },
+          "to": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "code",
+          "severity",
+          "line",
+          "col",
+          "from",
+          "to",
+          "message",
+          "fixes"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "ok": {
+      "description": "No error diagnostics and no budget stop.",
+      "type": "boolean"
+    },
+    "outputs": {
+      "items": {
+        "properties": {
+          "bounded": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "format": {
+            "enum": [
+              "svg",
+              "png",
+              "pdf",
+              "tex",
+              "txt",
+              "json"
+            ]
+          },
+          "kind": {
+            "enum": [
+              "print",
+              "show",
+              "test",
+              "trace",
+              "save"
+            ]
+          },
+          "line": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "pass": {
+            "type": "boolean"
+          },
+          "path": {
+            "description": "save: relative, `/`-separated, never leaves the working folder",
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "value": {
+            "type": "object"
+          },
+          "verdict": {
+            "enum": [
+              "accept",
+              "reject",
+              "loops",
+              "unknown"
+            ]
+          },
+          "witness": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "stats": {
+      "properties": {
+        "steps": {
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "required": [
+    "delta_version",
+    "ok",
+    "diagnostics",
+    "outputs"
+  ],
+  "title": "Delta 2 run output",
+  "type": "object"
+}

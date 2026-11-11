@@ -1,0 +1,16 @@
+// Your own models — a two-stack machine for aⁿbⁿcⁿ, built from the same blocks
+model pda2 { input one-way; epsilon; storage stack, stack; accept by final }
+pda2 P {
+  start s
+  accept r
+  s -push Z; push2 Z-> p          // a bottom marker on each stack
+  p -read a; push A-> p
+  p -ε-> q
+  q -read b; pop A; push2 B-> q
+  q -pop Z-> c                    // every a matched a b
+  c -read c; pop2 B-> c
+  c -pop2 Z-> r                   // every b matched a c
+}
+check P accepts "", "abc", "aabbcc"
+check P rejects "aabbc", "abcc", "acb"
+assert P.class == Recognizable

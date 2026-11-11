@@ -1,0 +1,7 @@
+{
+  "diagnostics": [],
+  "outputs": [
+    { "kind": "test", "pass": false, "witness": "" },
+    { "kind": "test", "pass": false }
+  ]
+}

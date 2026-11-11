@@ -13,24 +13,39 @@ pub fn start() {
     console_error_panic_hook::set_once();
 }
 
-/// Lexes, parses, checks and evaluates a program; returns the `Document` as JSON.
+/// Parses, checks and runs a Delta 2 program; returns the Pad's document as JSON.
 // `#[wasm_bindgen]` exports this function to JavaScript; an `Err` becomes a thrown JS `Error`.
 #[wasm_bindgen]
 pub fn evaluate(src: &str) -> Result<String, JsError> {
     // `.map_err(...)` converts the error type inside a Result and leaves an `Ok` value untouched.
-    serde_json::to_string(&delta_dsl::evaluate(src)).map_err(|e| JsError::new(&e.to_string()))
+    serde_json::to_string(&delta_lang::pad::document(src)).map_err(|e| JsError::new(&e.to_string()))
 }
 
-/// Runs machine `name` of the program on `input`; returns a `RunResult` as JSON.
+/// Runs machine `name` of the program on `input`, step by step; returns a `RunResult` as JSON.
 #[wasm_bindgen]
 pub fn run(src: &str, name: &str, input: &str) -> Result<String, JsError> {
-    serde_json::to_string(&delta_dsl::run_input(src, name, input))
+    serde_json::to_string(&delta_lang::pad::run(src, name, input))
         .map_err(|e| JsError::new(&e.to_string()))
+}
+
+/// The output document of 02-ENGINE.md §7 (what `deltac run --json` prints).
+#[wasm_bindgen]
+pub fn run_json(src: &str) -> Result<String, JsError> {
+    serde_json::to_string(&delta_lang::run(src)).map_err(|e| JsError::new(&e.to_string()))
+}
+
+/// A `save` output's file as text: `svg`, `tex`, `txt` or `json` (PNG and PDF are made from
+/// the SVG by the separate export module, `delta-export-wasm`).
+#[wasm_bindgen]
+pub fn render_file(value: &str, format: &str, text: &str, dark: bool) -> Result<String, JsError> {
+    let v: serde_json::Value =
+        serde_json::from_str(value).map_err(|e| JsError::new(&e.to_string()))?;
+    let text = if text.is_empty() { None } else { Some(text) };
+    delta_lang::render::text_file(format, &v, text, dark).map_err(|e| JsError::new(&e))
 }
 
 /// The engine version, shown in bug reports.
 #[wasm_bindgen]
 pub fn version() -> String {
-    // `env!("X")` reads a value baked in at compile time; Cargo sets CARGO_PKG_VERSION.
-    env!("CARGO_PKG_VERSION").to_string()
+    delta_lang::VERSION.to_string()
 }

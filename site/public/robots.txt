@@ -1,0 +1,5 @@
+# delta.nandish.dev: everything may be crawled.
+User-agent: *
+Allow: /
+
+Sitemap: https://delta.nandish.dev/sitemap-index.xml

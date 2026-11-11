@@ -1,3 +1,8 @@
 # ts-rs writes the TypeScript types generated from Rust structs here during `cargo test`.
 [env]
 TS_RS_EXPORT_DIR = { value = "web/src/engine/generated", relative = true }
+
+# The tree-walking interpreter recurses; give the WASM engine a 16 MB stack (the depth budget
+# stops user recursion long before that).
+[target.wasm32-unknown-unknown]
+rustflags = ["-C", "link-arg=-zstack-size=16777216"]

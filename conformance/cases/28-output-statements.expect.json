@@ -1,0 +1,18 @@
+{
+  "ok": true,
+  "diagnostics": [],
+  "outputs": [
+    { "kind": "print", "text": "1 a" },
+    { "kind": "show", "value": { "type": "machine", "model": "dfa", "states": ["q0", "q1"], "start": "q0", "accept": ["q1"] } },
+    { "kind": "trace", "machine": "M", "input": "aa", "verdict": "reject", "steps": { "$len": 3 } },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true, "bounded": null },
+    { "kind": "test", "pass": true, "bounded": 5 },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true }
+  ]
+}

@@ -1,0 +1,12 @@
+# Citations for Sipser, Introduction to the Theory of Computation, 3rd edition.
+# One `algorithm-or-rule-id = citation` per line. Only explain-profile data may name a book.
+determinize/subset = Sipser 3e, Theorem 1.39 (subset construction)
+to_nfa/textbook = Sipser 3e, Lemma 1.55 (regular expression to NFA)
+to_regex/state-elimination = Sipser 3e, Lemma 1.60 (GNFA state elimination)
+to_gnfa/special-form = Sipser 3e, Definition 1.64 (generalized NFA)
+product/pairs = Sipser 3e, Theorem 1.25 (product construction)
+union/epsilon = Sipser 3e, Theorem 1.45
+concat/epsilon = Sipser 3e, Theorem 1.47
+star/epsilon = Sipser 3e, Theorem 1.49
+model/total = Sipser 3e, Definition 1.5 (DFA transition function)
+classes/decision = Sipser 3e, Chapter 4 (decidable problems) and Theorem 5.4

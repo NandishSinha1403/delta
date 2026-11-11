@@ -1,0 +1,28 @@
+// 01-LANGUAGE.md §5.1: fields use readable names or textbook letters, written
+// `start q0`, `start: q0` or `q0 = q0`. All three machines are the same.
+dfa A {
+  states q0, q1
+  alphabet a
+  start q0
+  accept q1
+  q0 -a-> q1
+  q1 -a-> q0
+}
+dfa B {
+  Q = {q0, q1}
+  Σ = {a}
+  q0 = q0
+  F = {q1}
+  q0 -a-> q1
+  q1 -a-> q0
+}
+dfa C {
+  states: q0, q1
+  input: a
+  s = q0
+  final q1
+  q0 -a-> q1
+  q1 -a-> q0
+}
+assert A == B
+assert A == C

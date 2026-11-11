@@ -15,8 +15,8 @@ export function StatusBar() {
   const count = (sev: string) => doc?.diagnostics.filter((d) => d.severity === sev).length ?? 0;
   const errors = count('error');
   const warnings = count('warning');
-  const cases = doc?.results.flatMap((r) => r.cases) ?? [];
-  const passed = cases.filter((c) => c.expected === c.actual).length;
+  const cases = doc?.tests ?? [];
+  const passed = cases.filter((c) => c.pass).length;
   return (
     <footer className="flex h-[26px] shrink-0 items-center gap-4 overflow-hidden border-t border-border bg-status px-3.5 font-mono text-[11px] whitespace-nowrap text-muted">
       <button type="button" onClick={() => open('problems')} className="flex gap-4 hover:text-text">

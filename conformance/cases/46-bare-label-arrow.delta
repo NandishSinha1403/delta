@@ -1,0 +1,7 @@
+// 01-LANGUAGE.md §2 (Q-03): a bare label can't contain an ASCII "->". The error has one quick
+// fix, which adds brackets: q0 -[a, X -> YZ]-> q1.
+pda P {
+  start q0
+  accept q1
+  q0 -a, X -> YZ-> q1
+}

@@ -1,0 +1,6 @@
+// 01-LANGUAGE.md §4: "Users can define new models with the same building blocks: a 2-stack PDA
+// (storage stack, stack), a queue automaton (storage queue), a counter machine."
+model pda2 { input one-way; epsilon; storage stack, stack; accept by final }
+model qa { input one-way; storage queue; accept by final }
+model cm(k) { input one-way; storage counters(k); accept by final }
+print pda2, qa, cm(3)

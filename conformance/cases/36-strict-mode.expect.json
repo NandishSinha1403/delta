@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "diagnostics": [
+    { "severity": "error", "code": "E3*" },
+    { "severity": "error", "code": "E3*" }
+  ],
+  "outputs": []
+}

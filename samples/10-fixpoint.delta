@@ -1,0 +1,24 @@
+// Fixed points — ε-closure, reachable states and nullable variables
+fn eclose(N, S) = fixpoint X from S { X ∪ { r | q ∈ X, r ∈ N.δ(q, ε) } }
+fn reachable(M) = fixpoint X from { M.start } { X ∪ { M.δ(q, a) | q ∈ X, a ∈ M.alphabet } }
+fn nullable(G)  = fixpoint X from ∅ { X ∪ { A | (A, rhs) ∈ G.rules, set(rhs) ⊆ X } }
+nfa N {
+  alphabet a
+  start [0]
+  accept [2]
+  [0] -ε-> [1];   [1] -ε-> [2];   [2] -a-> [0]
+}
+dfa M {
+  alphabet a
+  start [0]
+  accept [1]
+  [0] -a-> [1];   [1] -a-> [0];   [2] -a-> [0]
+}
+cfg G {
+  S -> A B | a
+  A -> ε
+  B -> A A | b
+}
+assert eclose(N, {0}) == {0, 1, 2}
+assert reachable(M) == {0, 1}
+assert nullable(G) == {'A', 'B', 'S'}

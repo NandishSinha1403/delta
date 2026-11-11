@@ -1,0 +1,2 @@
+// 01-LANGUAGE.md §3: int is 64-bit, and overflow is an error.
+let big = 9_223_372_036_854_775_807 + 1

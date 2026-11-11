@@ -1,0 +1,12 @@
+// 01-LANGUAGE.md §8, "Output and testing": save picks the format from the extension.
+dfa M {
+  start q0; accept q0
+  q0 -0-> q1; q0 -1-> q0
+  q1 -0-> q0; q1 -1-> q1
+}
+save M to "even-zeros.svg"
+save M to "out/min.PDF"
+save M to "m.png"
+save M to "m.tex"
+save M.states to "states.txt"
+save M to "sub\\m.json"

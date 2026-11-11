@@ -1,0 +1,7 @@
+// 01-LANGUAGE.md §12, "Conversions are verbs" (Q-06): a model name is never called. Each call
+// is an E2xx error with one quick fix (determinize, to_nfa, to_gnfa), and nothing runs.
+let N = to_nfa(re"a b")
+print "must not appear"
+let D = dfa(N)
+let N2 = nfa(re"a b")
+let G = gnfa(N)

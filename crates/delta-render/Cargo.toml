@@ -1,0 +1,12 @@
+[package]
+name = "delta-render"
+description = "Draws Delta machines: layered layout, SVG, TikZ and text. No dependencies."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+
+[lints]
+workspace = true

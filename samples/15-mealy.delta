@@ -1,0 +1,8 @@
+// Transducers — a Mealy machine that outputs the parity so far
+mealy Parity {
+  start even
+  even -0 / 0-> even;   even -1 / 1-> odd
+  odd -0 / 1-> odd;     odd -1 / 0-> even
+}
+assert Parity.output("1101") == "1001"
+assert Parity.output("") == ""

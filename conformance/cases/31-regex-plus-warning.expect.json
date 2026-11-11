@@ -1,0 +1,5 @@
+{
+  "ok": true,
+  "diagnostics": [{ "severity": "warning", "line": 3, "fixes": { "$len": 2 } }],
+  "outputs": { "$len": 3, "$each": { "kind": "test", "pass": true } }
+}

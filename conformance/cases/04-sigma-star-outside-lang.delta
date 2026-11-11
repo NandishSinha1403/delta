@@ -1,0 +1,3 @@
+// 01-LANGUAGE.md §3: "Σ* is infinite, so it's allowed only inside lang".
+let Σ = {'a', 'b'}
+let all = Σ*

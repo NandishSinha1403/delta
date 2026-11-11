@@ -1,0 +1,11 @@
+// Grammars — context-free grammars are languages too
+cfg Expr {
+  start <E>
+  <E> -> <E> + <T> | <T>
+  <T> -> <T> * <F> | <F>
+  <F> -> ( <E> ) | a
+}
+lang L = Expr
+assert L.class == CF
+check Expr accepts "a", "a+a", "a*a", "(a+a)*a"
+check Expr rejects "", "+", "a+", "(a"

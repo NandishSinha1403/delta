@@ -1,0 +1,10 @@
+// Values — sets, lists, tuples, records, maps, atoms and words
+let S = { x * x | x ∈ 0..6, x % 2 == 0 }
+assert S == {0, 4, 16}
+let names = { :q0: "even", :q1: "odd" }
+let r = { from: :q0, to: :q1 }
+assert names[r.to] == "odd"
+let w = "0110"
+assert rev(w) == w and w contains "11"
+assert {'a','b'}^2 == {"aa", "ab", "ba", "bb"}
+print S, names, w

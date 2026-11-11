@@ -1,0 +1,16 @@
+[package]
+name = "delta-export-wasm"
+description = "The Pad's image export: delta-export (resvg, svg2pdf) as a lazily loaded WASM module."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+# cdylib = a .wasm library other languages (here: JavaScript) can load.
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+delta-export = { version = "0.0.1", path = "../delta-export" }
+wasm-bindgen = "0.2.129"

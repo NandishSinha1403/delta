@@ -1,0 +1,12 @@
+// 01-LANGUAGE.md §5.4, verbatim: states are values; machines can be generated.
+fn divisible_by(n) = dfa {
+  alphabet 0, 1
+  start  [0]
+  accept [0]
+  for r ∈ 0..n {
+    [r] -0-> [(2*r) % n]
+    [r] -1-> [(2*r + 1) % n]
+  }
+}
+check divisible_by(3) accepts "0", "11", "110", "1001"
+check divisible_by(3) rejects "1", "10", "111"

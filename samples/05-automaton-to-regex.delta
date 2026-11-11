@@ -1,0 +1,14 @@
+// Automaton to regex — state elimination, Arden's equations, Brzozowski–McCluskey
+dfa M {
+  start q0
+  accept q0
+  q0 -a-> q1;   q0 -b-> q0
+  q1 -a-> q0;   q1 -b-> q1
+}
+let R1 = to_regex(M, method: "state-elimination")
+let R2 = to_regex(M, method: "arden")
+let R3 = to_regex(M, method: "brzozowski-mccluskey")
+check R1 ≡ M
+check R2 ≡ M
+check R3 ≡ M
+print R1

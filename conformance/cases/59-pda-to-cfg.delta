@@ -1,0 +1,28 @@
+// SEMANTICS §11.5–11.6: to_pda and to_cfg, by final state and by empty stack.
+pda P {
+  alphabet 0, 1
+  start q0
+  accept q2
+  q0 -0, ε → X-> q0
+  q0 -ε, ε → ε-> q1
+  q1 -1, X → ε-> q1
+  q1 -ε, ε → ε-> q2
+}
+let G = to_cfg(P)                       // accept by final state: 0ⁿ1ᵐ with m ≤ n
+check G accepts "", "0", "01", "001", "0011"
+check G rejects "1", "10", "011"
+check G ≡ P up to 6
+pda E (accept: by empty-stack, initial stack Z) {
+  alphabet a, b
+  start p
+  p -a, Z → AZ-> p
+  p -a, A → AA-> p
+  p -b, A → ε-> p
+  p -ε, Z → ε-> p
+}
+check to_cfg(E) ≡ E up to 6
+cfg H { S -> a S b | S S | ε }
+let Q = to_pda(H)
+assert Q.model == pda
+assert Q.states == {:start, :loop, :accept}
+check Q ≡ H up to 6

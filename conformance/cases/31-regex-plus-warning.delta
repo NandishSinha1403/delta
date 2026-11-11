@@ -1,0 +1,6 @@
+// 01-LANGUAGE.md §10: "Ambiguous input (for example a+b under the default profile) is a warning
+// with quick fixes, never a silent guess." Under the default profile + is one-or-more.
+lang L = re"a+b"
+assert "ab" ∈ L
+assert "aab" ∈ L
+assert "b" ∉ L

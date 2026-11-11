@@ -1,0 +1,6 @@
+// 01-LANGUAGE.md §10: `use notation "hmu"` makes + the union.
+use notation "hmu"      // + is union, ε as usual
+lang L = re"a+b"
+assert "a" ∈ L
+assert "b" ∈ L
+assert "ab" ∉ L

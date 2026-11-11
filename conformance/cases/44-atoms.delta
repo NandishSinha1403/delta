@@ -1,0 +1,23 @@
+// 01-LANGUAGE.md §2, §3, §5.4 (Q-26): bare state names inside a machine are atoms, written :q0
+// outside it. Maps can be keyed by atoms.
+dfa M {
+  start q0
+  accept q1
+  q0 -a-> q1
+  q1 -a-> q0
+}
+assert M.start == :q0
+assert M.accept == {:q1}
+assert M.states == {:q0, :q1}
+assert M.δ(:q0, 'a') == :q1
+assert :a != 'a'                              // an atom is not a symbol
+assert :q0 != "q0"                            // nor a word
+
+// Maps keyed by atoms
+let names = { :q0: "even", :q1: "odd" }
+assert names == { :q1: "odd", :q0: "even" }   // a map has no order
+assert {:q0:0} == { :q0: 0 }                  // no spaces needed
+let r = { from: :q0, to: :q1 }                // a record whose values are atoms
+assert r.from == M.start
+fn g(q:atom) = q                              // ":" right after a name is not an atom
+assert g(:q1) == :q1

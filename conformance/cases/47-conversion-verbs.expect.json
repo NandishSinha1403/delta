@@ -1,0 +1,9 @@
+{
+  "ok": false,
+  "diagnostics": [
+    { "severity": "error", "code": "E2*", "line": 5, "fixes": { "$len": 1 } },
+    { "severity": "error", "code": "E2*", "line": 6, "fixes": { "$len": 1 } },
+    { "severity": "error", "code": "E2*", "line": 7, "fixes": { "$len": 1 } }
+  ],
+  "outputs": []
+}

@@ -1,0 +1,15 @@
+// Pushdown automaton — aⁿbⁿ, with the stack shown at every step
+pda P {
+  start q0
+  accept q3
+  q0 -ε, ε → Z-> q1
+  q1 -a, ε → A-> q1
+  q1 -ε, Z → ε-> q3
+  q1 -b, A → ε-> q2
+  q2 -b, A → ε-> q2
+  q2 -ε, Z → ε-> q3
+}
+check P accepts "", "ab", "aabb"
+check P rejects "a", "aab", "ba"
+assert P.class == CF
+run P on "aabb"

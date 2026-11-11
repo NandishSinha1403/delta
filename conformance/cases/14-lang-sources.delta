@@ -1,0 +1,42 @@
+// 01-LANGUAGE.md §6.1: where languages come from, and the class each source gets.
+// Context: EndsAB (from §1) and a small TM (accepts words containing a 1).
+dfa EndsAB {
+  start q0
+  accept q2
+  q0 -a-> q1
+  q0 -b-> q0
+  q1 -a-> q1
+  q1 -b-> q2
+  q2 -a-> q1
+  q2 -b-> q0
+}
+tm SomeTuringMachine {
+  alphabet 0, 1
+  start q0
+  accept qa
+  q0 -0 → R-> q0
+  q0 -1 → R-> qa
+}
+
+// The spec's six declarations, verbatim
+lang F = { "", "01", "0011" }                       // Finite
+lang R = re"(0 ∪ 1)* 0 1"                           // Regular
+lang D = EndsAB                                      // a machine: class from its model (dfa → Regular)
+lang C = cfg { S -> 0 S 1 | ε }                     // CF
+lang P = { w ∈ {0,1}* | count(w,'0') == count(w,'1') }   // Decidable (predicate; runs under a budget)
+lang T = SomeTuringMachine                           // Recognizable
+
+assert F.class == Finite
+assert R.class == Regular
+assert D.class == Regular
+assert C.class == CF
+assert P.class == Decidable
+assert T.class == Recognizable
+assert "0011" ∈ F
+assert "10" ∉ F
+assert "1101" ∈ R
+assert "aab" ∈ D
+assert "000111" ∈ C
+assert "0101" ∈ P
+assert "011" ∉ P
+assert "001" ∈ T

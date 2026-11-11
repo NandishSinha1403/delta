@@ -1,3 +1,4 @@
+import { lastStep } from './run-steps';
 import { addLet, type Conversion } from '../conversions';
 import type { ObjectView, RunView } from '../engine/api';
 import { pickObject, useEngineStore, useObjects } from '../state/engine';
@@ -36,7 +37,7 @@ export function useActiveRun(object: ObjectView | null): { run: RunView | null; 
   const runPos = useEngineStore((s) => s.runPos);
   const results = useEngineStore((s) => s.doc?.results);
   if (!object) return { run: null, pos: 0 };
-  if (run && run.object === object.name) return { run, pos: Math.min(runPos, run.input.length) };
+  if (run && run.object === object.name) return { run, pos: Math.min(runPos, lastStep(run)) };
   const fromProgram = results?.find((r) => r.kind === 'run' && r.object === object.name)?.run ?? null;
   return { run: fromProgram, pos: 0 };
 }
@@ -52,4 +53,16 @@ export function applyConversion(c: Conversion, args: readonly string[]): void {
   const next = addLet(source, c, args, taken);
   setSource(next.source);
   useUiStore.setState({ selected: next.name, step: null });
+}
+
+/** The source range of a 1-based line. */
+export function lineRange(source: string, line: number): { from: number; to: number } {
+  let from = 0;
+  for (let i = 1; i < line; i++) {
+    const next = source.indexOf('\n', from);
+    if (next === -1) break;
+    from = next + 1;
+  }
+  const end = source.indexOf('\n', from);
+  return { from, to: end === -1 ? source.length : end };
 }

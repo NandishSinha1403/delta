@@ -1,0 +1,17 @@
+{
+  "diagnostics": [],
+  "outputs": [
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true, "bounded": null },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": false, "bounded": 8, "witness": "10" }
+  ]
+}

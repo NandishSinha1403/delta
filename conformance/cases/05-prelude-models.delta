@@ -1,0 +1,3 @@
+// 01-LANGUAGE.md §4, "The standard prelude": every prelude model exists and can be named.
+// (The prelude source itself is compared with the spec by a delta-std test in Phase 2.)
+print dfa, nfa, gnfa, pda, dpda, tm, ntm, lba, mtm(2), twdfa, mealy, moore, fst, ctr(2)

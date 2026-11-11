@@ -7,6 +7,8 @@ version = "0.0.1"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/NandishSinha1403/delta"
+homepage = "https://delta.nandish.dev"
+authors = ["Nandish Sinha"]
 
 # Lints shared by the engine crates (delta-core, delta-dsl opt in with `[lints] workspace = true`).
 # The engine must never panic (docs/plan/08-ERRORS.md §1.6), so these are hard errors.
@@ -23,3 +25,9 @@ panic = "deny"
 opt-level = "z"
 lto = true
 codegen-units = 1
+
+# The profile that 'dist' will build with: the CLI is optimised for speed, not size.
+[profile.dist]
+inherits = "release"
+opt-level = 3
+lto = "thin"

@@ -1,0 +1,26 @@
+// 01-LANGUAGE.md §5.5, machine members, on divisible_by(3) from §5.4.
+fn divisible_by(n) = dfa {
+  alphabet 0, 1
+  start  [0]
+  accept [0]
+  for r ∈ 0..n {
+    [r] -0-> [(2*r) % n]
+    [r] -1-> [(2*r + 1) % n]
+  }
+}
+let M = divisible_by(3)
+assert M.model == dfa
+assert M.states == {0, 1, 2}
+assert M.alphabet == {'0', '1'}
+assert M.start == 0
+assert M.accept == {0}
+assert M.edges[0] == { from: 0, label: '0', to: 0 }
+assert M.δ(1, '0') == 2
+assert M.eclose({0}) == {0}
+assert M.accepts("11")
+assert not M.accepts("10")
+assert M.size == 3
+assert M.rename(fn(q) = q + 10).states == {10, 11, 12}
+assert M.with(accept: {1}).accepts("1")
+assert M.lang.class == Regular
+assert "110" ∈ M.lang

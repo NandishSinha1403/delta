@@ -1,0 +1,28 @@
+// 01-LANGUAGE.md §6.3: questions that are decidable for their class run, and a bounded check
+// works for any class (and reports the shortest word that tells the languages apart).
+dpda Dd {
+  start q0
+  accept q0, q3
+  q0 -0, ε → AZ-> q1
+  q1 -0, A → AA-> q1
+  q1 -1, A → ε-> q2
+  q2 -1, A → ε-> q2
+  q2 -ε, Z → ε-> q3
+}
+lang R = re"(0 ∪ 1)* 0 1"
+lang Dl = Dd
+lang C = cfg { S -> 0 S 1 | ε }
+lang P = { w ∈ {0,1}* | count(w,'0') == count(w,'1') }
+
+assert "01" ∈ R
+assert "0011" ∈ C
+assert "0101" ∈ P
+assert not R.is_empty()
+assert not C.is_empty()
+assert not R.is_finite()
+assert not C.is_finite()
+assert not R.is_universal()
+assert not Dl.is_universal()
+check R ≡ re"(0 ∪ 1)* 0 1"
+check re"0 1" ⊆ R
+check C ≡ P up to 8              // fails: "10" has equal counts but is not 0ⁿ1ⁿ

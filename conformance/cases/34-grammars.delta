@@ -1,0 +1,16 @@
+// 01-LANGUAGE.md §11, both grammars verbatim. Grammars are languages too.
+cfg G {
+  S -> a S b | S S | ε
+}
+cfg Expr {
+  start <E>
+  <E> -> <E> + <T> | <T>
+  <T> -> <T> * <F> | <F>
+  <F> -> ( <E> ) | a
+}
+lang L = G
+assert L.class == CF
+check G accepts "", "ab", "aabb", "abab"
+check G rejects "a", "ba", "abb"
+check Expr accepts "a", "a+a", "a*a", "(a+a)*a"
+check Expr rejects "", "+", "a+", "(a"

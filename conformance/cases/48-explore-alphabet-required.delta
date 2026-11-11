@@ -1,0 +1,6 @@
+// 01-LANGUAGE.md §7.1 (Q-80): the alphabet clause of explore is required.
+let N = explore {
+  start  0
+  step   q on a -> q
+  accept q if true
+}

@@ -1,0 +1,8 @@
+// 01-LANGUAGE.md §10, the custom profile row, verbatim.
+use notation { union: "+", epsilon: "λ", empty: "φ" }
+lang L = re"a+λ"
+assert "" ∈ L
+assert "a" ∈ L
+assert "aa" ∉ L
+lang Z = re"φ"
+assert Z.is_empty()

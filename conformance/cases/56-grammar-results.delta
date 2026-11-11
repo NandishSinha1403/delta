@@ -1,0 +1,7 @@
+// 01-LANGUAGE.md §12, "What grammar and transducer results are", verbatim.
+cfg G { S -> a S b | ε }
+let T = parse(G, "aabb")
+assert T.yield == "aabb"
+assert derive(G, "ab") == ["S", "aSb", "ab"]
+check to_pda(G) accepts "", "aabb"
+check to_cfg(to_pda(G)) ≡ G up to 6

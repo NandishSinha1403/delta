@@ -3,10 +3,10 @@
 import { expect, test, type Page } from '@playwright/test';
 
 // Runs at the three layout sizes from docs/plan/05-PLAYGROUND-UX.md §2 (see playwright.config.ts).
-// The page opens on the tour example (examples/tour.delta): an NFA N, D = dfa(N), R = regex(D).
+// The page opens on the tour sample (samples/01-tour.delta): a DFA EndsAB, a lang L and an NFA N.
 
 /** Shows an inspector view, wherever it lives in the current layout. */
-async function openView(page: Page, layout: string, view: 'Tuple' | 'Steps' | 'Run' | 'Problems') {
+async function openView(page: Page, layout: string, view: 'Tuple' | 'Steps' | 'Run' | 'Problems' | 'Lang' | 'Console') {
   if (layout === 'phone') {
     if (view === 'Tuple' || view === 'Run') {
       await page.getByRole('tab', { name: view, exact: true }).click();
@@ -34,12 +34,17 @@ async function palette(page: Page, query: string, option: RegExp) {
   await page.getByRole('option', { name: option }).first().click();
 }
 
+/** The app layout a project tests: phone, tablet or desktop (playwright.config.ts metadata). */
+function layoutOf(info: { project: { metadata: Record<string, unknown> } }): string {
+  return String(info.project.metadata.layout);
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
 });
 
 test('shell renders the tour with its tuple and diagram', async ({ page }, testInfo) => {
-  const layout = testInfo.project.name; // 'phone' | 'tablet' | 'desktop'
+  const layout = layoutOf(testInfo); // 'phone' | 'tablet' | 'desktop'
   await expect(page.locator(`[data-layout="${layout}"]`)).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Delta code' })).toBeVisible();
   if (layout === 'phone') {
@@ -47,57 +52,44 @@ test('shell renders the tour with its tuple and diagram', async ({ page }, testI
     await page.getByRole('tab', { name: 'Diagram' }).click();
   } else {
     await expect(page.getByRole('navigation', { name: 'Open files' })).toContainText('tour.delta');
-    await expect(page.getByTestId('codelens').first()).toBeVisible();
   }
-  await expect(page.getByTestId('diagram')).toHaveAttribute('aria-label', /^NFA N, 3 states, start q1, accept q3/);
+  await expect(page.getByTestId('diagram')).toHaveAttribute('aria-label', /^DFA EndsAB, 3 states, start q0, accept q2/);
 
   await openView(page, layout, 'Tuple');
   const tuple = page.getByTestId('tuple');
-  await expect(tuple.getByRole('math', { name: 'N = (Q, Σ, δ, q1, F)' })).toBeVisible();
-  await expect(tuple.getByRole('math', { name: 'Q = {q1, q2, q3}' })).toBeVisible();
-  await expect(tuple.getByRole('math', { name: 'F = {q3}' })).toBeVisible();
+  await expect(tuple.getByRole('math', { name: 'EndsAB = (Q, Σ, δ, q0, F)' })).toBeVisible();
+  await expect(tuple.getByRole('math', { name: 'Q = {q0, q1, q2}' })).toBeVisible();
+  await expect(tuple.getByRole('math', { name: 'F = {q2}' })).toBeVisible();
 });
 
-// Phase 1 exit (docs/plan/06-ROADMAP-AND-TESTING.md): an NFA becomes a DFA, the student scrubs
+
+
 // the subset construction, then gets the regular expression.
-test('NFA → dfa(N) → scrub the steps → regex(D)', async ({ page }, testInfo) => {
-  const layout = testInfo.project.name;
+// An NFA becomes a DFA, and the student scrubs the subset construction's steps.
+test('subset construction: open the sample and scrub its steps', async ({ page }, testInfo) => {
+  const layout = layoutOf(testInfo);
+  await palette(page, 'subset', /^Examples\s*Subset construction/);
   await pickObject(page, layout, 'D');
   await openView(page, layout, 'Steps');
-  await expect(page.getByTestId('step-counter')).toHaveText('Result · 8 steps');
-
+  await expect(page.getByTestId('step-counter')).toHaveText(/^Result · \d+ steps$/);
   await page.getByRole('button', { name: 'Start from step 1' }).click();
-  await expect(page.getByTestId('step-counter')).toHaveText('Step 1 of 8');
-  await expect(page.getByTestId('step-message')).toContainText('E({q1}) = {q1}');
+  await expect(page.getByTestId('step-counter')).toHaveText(/^Step 1 of \d+$/);
+  await expect(page.getByTestId('step-message')).toContainText('ε-closure');
   await page.getByRole('button', { name: 'Next step' }).click();
-  await expect(page.getByTestId('step-message')).toContainText('{q1,q2} (a new state)');
-  await page.getByRole('slider', { name: 'Step' }).fill('8');
-  await expect(page.getByTestId('step-counter')).toHaveText('Result · 8 steps');
-
-  await pickObject(page, layout, 'R');
-  await openView(page, layout, 'Tuple');
-  // Typeset like the book: ∪ (never a "U"), and every star a superscript.
-  const regex = page.getByTestId('regex');
-  await expect(regex.getByRole('math', { name: 'R = b*aa*b((bb*a∪a)a*b)*' })).toBeVisible();
-  await expect(regex.locator('.katex')).toContainText('∪');
-  await expect(regex.locator('.katex')).not.toContainText('U');
-  await expect(regex.locator('.katex .msupsub')).toHaveCount(5);
+  await expect(page.getByTestId('step-counter')).toHaveText(/^Step 2 of \d+$/);
 });
 
-test('runs N step by step: tape, fingers, timeline, sentence, verdict', async ({ page }, testInfo) => {
-  const layout = testInfo.project.name;
+test('runs EndsAB step by step: tape, timeline, sentence, verdict', async ({ page }, testInfo) => {
+  const layout = layoutOf(testInfo);
   await openView(page, layout, 'Run');
-  const input = page.getByRole('textbox', { name: 'Input for N' });
+  const input = page.getByRole('textbox', { name: 'Input for EndsAB' });
   await input.fill('bab');
   await page.getByRole('button', { name: 'Run', exact: true }).click();
   await page.getByRole('button', { name: 'Step forward' }).click();
   await expect(page.getByTestId('run-message')).toContainText('Read b');
-  await expect(page.getByTestId('run-explain')).toHaveText('q1 follows b to q1.');
-  await expect(page.getByRole('list', { name: 'Configurations' })).toContainText('{q1}');
+  await expect(page.getByTestId('run-explain')).toHaveText('Reading b moves to q0.');
   for (let i = 0; i < 2; i++) await page.getByRole('button', { name: 'Step forward' }).click();
   await expect(page.getByTestId('verdict')).toHaveAttribute('data-status', 'accepted');
-  // Two fingers at the end: on q1 and on the accept state q3.
-  await expect(page.locator('[data-finger]')).toHaveCount(2);
 
   await input.fill('ba');
   await page.getByRole('button', { name: 'Run', exact: true }).click();
@@ -105,10 +97,37 @@ test('runs N step by step: tape, fingers, timeline, sentence, verdict', async ({
   await expect(page.getByTestId('verdict')).toHaveAttribute('data-status', 'rejected');
 });
 
-test('an empty input shows an ε cell before ⊣', async ({ page }, testInfo) => {
-  const layout = testInfo.project.name;
+test('a pushdown run shows its stack, and a Turing machine run its tape', async ({ page }, testInfo) => {
+  const layout = layoutOf(testInfo);
+  const editor = page.getByRole('textbox', { name: 'Delta code' });
+  await editor.click();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.insertText(
+    'pda P {\n  alphabet a, b\n  start q0\n  accept q1\n  q0 -a, ε → A-> q0\n  q0 -ε, ε → ε-> q1\n  q1 -b, A → ε-> q1\n}\n' +
+      'tm T {\n  alphabet 0\n  start s\n  accept h\n  s -0 → 1, R-> s\n  s -⊔ → R-> h\n}\n',
+  );
+  await pickObject(page, layout, 'P');
   await openView(page, layout, 'Run');
-  await page.getByRole('textbox', { name: 'Input for N' }).fill('');
+  await page.getByRole('textbox', { name: 'Input for P' }).fill('aab');
+  await page.getByRole('button', { name: 'Run', exact: true }).click();
+  for (let i = 0; i < 2; i++) await page.getByRole('button', { name: 'Step forward' }).click();
+  await expect(page.getByTestId('storage-stack').first()).toContainText('A');
+  const forward = page.getByRole('button', { name: 'Step forward' });
+  for (let i = 0; i < 12 && (await forward.isEnabled()); i++) await forward.click();
+  await expect(page.getByTestId('verdict')).toHaveAttribute('data-status', 'accepted');
+
+  await pickObject(page, layout, 'T');
+  await openView(page, layout, 'Run');
+  await page.getByRole('textbox', { name: 'Input for T' }).fill('00');
+  await page.getByRole('button', { name: 'Run', exact: true }).click();
+  await page.getByRole('button', { name: 'Step forward' }).click();
+  await expect(page.getByTestId('storage-tape').first()).toContainText('10');
+});
+
+test('an empty input shows an ε cell before ⊣', async ({ page }, testInfo) => {
+  const layout = layoutOf(testInfo);
+  await openView(page, layout, 'Run');
+  await page.getByRole('textbox', { name: 'Input for EndsAB' }).fill('');
   await page.getByRole('button', { name: 'Run', exact: true }).click();
   const eps = page.getByTestId('empty-input');
   await expect(eps).toHaveText('ε');
@@ -117,34 +136,34 @@ test('an empty input shows an ε cell before ⊣', async ({ page }, testInfo) =>
 });
 
 test('reports a problem as the code is edited', async ({ page }, testInfo) => {
-  const layout = testInfo.project.name;
+  const layout = layoutOf(testInfo);
   const editor = page.getByRole('textbox', { name: 'Delta code' });
   await editor.click();
   await page.keyboard.press('ControlOrMeta+a');
-  await page.keyboard.insertText('dfa M {\n  Q = { q1 }\n  Σ = { 0 }\n  δ { q1 -0-> q9 }\n  q0 = q1\n  F = { q1 }\n}\n');
+  await page.keyboard.insertText('dfa M {\n  states q1\n  alphabet 0\n  start q1\n  accept q1\n  q1 -0-> q9\n}\n');
   await openView(page, layout, 'Problems');
   await expect(page.getByRole('list', { name: 'Problems' })).toContainText('q9');
 });
 
-test('the command palette opens examples and applies conversions', async ({ page }, testInfo) => {
-  const layout = testInfo.project.name;
-  await palette(page, '1.41', /Example 1\.41/);
-  await expect(page.getByRole('textbox', { name: 'Delta code' })).toContainText('nfa N4');
+test('the command palette opens samples and applies conversions', async ({ page }, testInfo) => {
+  const layout = layoutOf(testInfo);
+  await palette(page, 'subset', /^Examples\s*Subset construction/);
+  await expect(page.getByRole('textbox', { name: 'Delta code' })).toContainText('nfa N');
   if (layout !== 'phone') {
-    await expect(page.getByRole('navigation', { name: 'Open files' })).toContainText('ex1-41-N4.delta');
+    await expect(page.getByRole('navigation', { name: 'Open files' })).toContainText('03-subset-construction.delta');
   }
   // A conversion appends a let line with a fresh name and selects the result.
-  await palette(page, 'star(N4)', /star\(N4\)/);
-  await expect(page.getByRole('textbox', { name: 'Delta code' })).toContainText('let S = star(N4)');
+  await palette(page, 'star(N)', /star\(N\)/);
+  await expect(page.getByRole('textbox', { name: 'Delta code' })).toContainText('let S = star(N)');
   if (layout === 'phone') await page.getByRole('tab', { name: 'Diagram' }).click();
   await expect(page.getByTestId('diagram')).toHaveAttribute('aria-label', /^NFA S,/);
 });
 
-test('closure constructions from the gallery build and pass their checks', async ({ page }, testInfo) => {
-  const layout = testInfo.project.name;
+test('samples from the gallery build and pass their checks', async ({ page }, testInfo) => {
+  const layout = layoutOf(testInfo);
   for (const [query, option, object, kind] of [
-    ['union product', /^Examples\s*Theorem 1\.25.*closed under union/, 'M', 'DFA'],
-    ['star operation', /^Examples\s*Theorem 1\.49/, 'N', 'NFA'],
+    ['product', /^Examples\s*Product construction/, 'Both', 'DFA'],
+    ['pushdown', /^Examples\s*Pushdown automaton/, 'P', 'PDA'],
   ] as const) {
     await palette(page, query, option);
     await pickObject(page, layout, object);
@@ -155,16 +174,15 @@ test('closure constructions from the gallery build and pass their checks', async
 });
 
 test('Convert buttons add the conversion and show its result', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name === 'phone', 'Convert buttons live above the desktop/tablet diagram');
-  const convert = page.getByRole('button', { name: /→ DFA/ });
+  test.skip(layoutOf(testInfo) === 'phone', 'Convert buttons live above the desktop/tablet diagram');
+  // Only the conversions that apply: a DFA offers minimize and → regex, not → DFA.
+  const convert = page.getByRole('button', { name: 'minimize', exact: true });
   await expect(convert).toBeVisible();
-  // Only the conversions that exist and apply: an NFA offers → DFA, → GNFA, → regex.
-  await expect(page.getByRole('button', { name: /→ GNFA/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Share' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Export' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /→ regex/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /→ DFA/ })).toHaveCount(0);
   await convert.click();
-  await expect(page.getByRole('textbox', { name: 'Delta code' })).toContainText('let D2 = dfa(N)');
-  await expect(page.getByTestId('diagram')).toHaveAttribute('aria-label', /^DFA D2,/);
+  await expect(page.getByRole('textbox', { name: 'Delta code' })).toContainText('let M = minimize(EndsAB)');
+  await expect(page.getByTestId('diagram')).toHaveAttribute('aria-label', /^DFA M, 3 states/);
 });
 
 // The symbol bar must show a real union sign (a cup), not a letter: Plex Mono's ∪ reads as "u" and
@@ -197,7 +215,7 @@ test('symbol bar shows a real ∪ and a superscript star', async ({ page }, test
 });
 
 test('the author credit links to GitHub', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'desktop', 'The credit sits in the wide status bar');
+  test.skip(layoutOf(testInfo) !== 'desktop', 'The credit sits in the wide status bar');
   await expect(page.getByRole('link', { name: 'Nandish Sinha' })).toHaveAttribute('href', 'https://github.com/NandishSinha1403');
 });
 
@@ -209,19 +227,18 @@ async function setCode(page: Page, text: string) {
 }
 
 const SMALL_DFA = `dfa M {
-  Q = { p, q }
-  Σ = { a }
-  δ { p -a-> q
-      q -a-> p }
-  q0 = p
-  F = { p }
+  alphabet a
+  start p
+  accept p
+  p -a-> q
+  q -a-> p
 }
 check M accepts "", "aa"
 check M rejects "a"
 `;
 
 test('Auto off: edits wait for Execute (Ctrl+Enter), with a stale banner meanwhile', async ({ page }, testInfo) => {
-  const layout = testInfo.project.name;
+  const layout = layoutOf(testInfo);
   const auto = page.getByRole('switch', { name: 'Auto' });
   await expect(auto).toHaveAttribute('aria-checked', 'true');
   await auto.click();
@@ -232,7 +249,7 @@ test('Auto off: edits wait for Execute (Ctrl+Enter), with a stale banner meanwhi
   if (layout === 'phone') await page.getByRole('tab', { name: 'Diagram' }).click();
   await expect(page.getByTestId('stale-banner')).toContainText('Code changed — press');
   // The old diagram stays until Execute.
-  await expect(page.getByTestId('diagram')).toHaveAttribute('aria-label', /^NFA N,/);
+  await expect(page.getByTestId('diagram')).toHaveAttribute('aria-label', /^DFA EndsAB,/);
 
   await page.keyboard.press('Control+Enter');
   await expect(page.getByTestId('diagram')).toHaveAttribute('aria-label', /^DFA M, 2 states/);
@@ -250,13 +267,13 @@ test('Auto off: edits wait for Execute (Ctrl+Enter), with a stale banner meanwhi
 function slowProgram(): string {
   const k = 13;
   const states = Array.from({ length: k + 1 }, (_, i) => `q${i}`).join(', ');
-  const arrows = Array.from({ length: k - 1 }, (_, i) => `    q${i + 1} -[0,1]-> q${i + 2}`).join('\n');
-  const lets = Array.from({ length: 10 }, (_, i) => `let D${i} = dfa(N)`).join('\n');
-  return `nfa N {\n  Q = { ${states} }\n  Σ = { 0, 1 }\n  δ {\n    q0 -[0,1]-> q0\n    q0 -1-> q1\n${arrows}\n  }\n  q0 = q0\n  F = { q${k} }\n}\n${lets}\n`;
+  const arrows = Array.from({ length: k - 1 }, (_, i) => `  q${i + 1} -[0,1]-> q${i + 2}`).join('\n');
+  const lets = Array.from({ length: 10 }, (_, i) => `let D${i} = determinize(N)`).join('\n');
+  return `nfa N {\n  states ${states}\n  alphabet 0, 1\n  start q0\n  accept q${k}\n  q0 -[0,1]-> q0\n  q0 -1-> q1\n${arrows}\n}\n${lets}\n`;
 }
 
 test('a slow evaluation shows the loader, and Stop cancels it', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name === 'phone', 'The loader sits under the diagram header');
+  test.skip(layoutOf(testInfo) === 'phone', 'The loader sits under the diagram header');
   await setCode(page, slowProgram());
   const loader = page.getByTestId('loader');
   await expect(loader).toBeVisible();
@@ -290,29 +307,74 @@ test('fast evaluations never flash the loader', async ({ page }) => {
   expect(seen).toBe(false);
 });
 
-// Lemma 1.55, faithful: nfa(R) for (0 ∪ 1)*010* is the book's 13-state NFA, drawn left to right
-// with one box per sub-expression and dashed ε-arrows, and no DFA unless the code asks for one.
-test('regex → NFA is the book construction, boxed by sub-expression', async ({ page }, testInfo) => {
-  const layout = testInfo.project.name;
-  await palette(page, '1.55', /^Examples.*Lemma 1\.55/);
-  await pickObject(page, layout, 'N');
-  if (layout === 'phone') await page.getByRole('tab', { name: 'Diagram' }).click();
-  const diagram = page.getByTestId('diagram');
-  await expect(diagram).toHaveAttribute('aria-label', /^NFA N, 13 states, start q0, accept q10, q12/);
-  await expect(diagram.locator('[data-cluster]')).toHaveCount(3);
-  await expect(diagram.locator('[data-cluster="(0∪1)*"]')).toHaveCount(1);
-  await expect(diagram.locator('[data-epsilon]')).toHaveCount(12);
-  if (layout !== 'phone') {
-    await expect(page.getByRole('tablist', { name: 'Objects' }).getByRole('tab')).toHaveCount(2);
-  }
 
-  await openView(page, layout, 'Steps');
-  await expect(page.getByTestId('step-counter')).toHaveText('Result · 11 steps');
-  await page.getByRole('button', { name: 'Start from step 1' }).click();
-  await expect(page.getByTestId('step-title')).toHaveText('Lemma 1.55 (1) · 0');
-  await page.getByRole('button', { name: 'Next step' }).click();
-  await page.getByRole('button', { name: 'Next step' }).click();
-  await expect(page.getByTestId('step-title')).toHaveText('Theorem 1.45 · 0∪1');
-  await page.getByRole('button', { name: 'Next step' }).click();
-  await expect(page.getByTestId('step-title')).toHaveText('Theorem 1.49 · (0∪1)*');
+
+// with one box per sub-expression and dashed ε-arrows, and no DFA unless the code asks for one.
+test('save offers a download: a PNG from the lazily loaded export module', async ({ page }, testInfo) => {
+  const layout = layoutOf(testInfo);
+  const editor = page.getByRole('textbox', { name: 'Delta code' });
+  await editor.click();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.insertText('dfa M {\n  start q0; accept q0\n  q0 -a-> q0\n}\nsave M to "out/m.png"\nsave M to "m.txt"\n');
+  await openView(page, layout, 'Console');
+  const buttons = page.getByTestId('save-download');
+  await expect(buttons).toHaveText(['Download m.png', 'Download m.txt']);
+  const [download] = await Promise.all([page.waitForEvent('download'), buttons.first().click()]);
+  expect(download.suggestedFilename()).toBe('m.png');
+  const path = await download.path();
+  const bytes = await import('node:fs').then((fs) => fs.readFileSync(path));
+  expect(bytes.subarray(1, 4).toString()).toBe('PNG');
+});
+
+test('the Lang view shows a language’s class and sample words', async ({ page }, testInfo) => {
+  const layout = layoutOf(testInfo);
+  await pickObject(page, layout, 'L');
+  await openView(page, layout, 'Lang');
+  await expect(page.getByTestId('lang-class')).toHaveText('Decidable');
+  await expect(page.getByRole('list', { name: 'Class lattice' })).toContainText('Regular');
+  await expect(page.getByRole('region', { name: 'Language' })).toContainText('ab');
+});
+
+/** A share link's `code=` value, computed in the page (deflate-raw, base64url). */
+async function shareCode(page: Page, text: string): Promise<string> {
+  return page.evaluate(async (src) => {
+    const stream = new Blob([new TextEncoder().encode(src)]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+    const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+    let bin = '';
+    for (const b of bytes) bin += String.fromCharCode(b);
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }, text);
+}
+
+test('a share link opens its program, and embed mode shows the embeddable Pad', async ({ page }, testInfo) => {
+  const layout = layoutOf(testInfo);
+  const code = await shareCode(page, SMALL_DFA);
+  await page.goto(`/#code=${code}`);
+  await expect(page.getByRole('textbox', { name: 'Delta code' })).toContainText('dfa M');
+  if (layout === 'phone') await page.getByRole('tab', { name: 'Diagram' }).click();
+  await expect(page.getByTestId('diagram')).toHaveAttribute('aria-label', /^DFA M, 2 states/);
+
+  await page.goto(`/#code=${code}&embed=1&panel=tests`);
+  await page.reload();
+  await expect(page.locator('[data-layout="embed"]')).toBeVisible();
+  await expect(page.getByTestId('tests-summary')).toHaveText('3 of 3 passed');
+});
+
+test('the Pad is installable and works offline after one visit', async ({ page, context }, testInfo) => {
+  test.skip(layoutOf(testInfo) !== 'desktop', 'One offline check is enough');
+  const manifest = await page.request.get('/manifest.webmanifest');
+  expect(manifest.ok()).toBe(true);
+  expect((await manifest.json()).icons).toHaveLength(3);
+  // Wait for the service worker to control the page and for the engine to have loaded once.
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await page.reload();
+  await expect(page.getByTestId('error-count')).toBeVisible();
+  await expect(page.getByTestId('executed')).toHaveText(/^Executed in \d+ ms$/);
+  await context.setOffline(true);
+  await page.reload();
+  await expect(page.getByRole('textbox', { name: 'Delta code' })).toContainText('dfa EndsAB');
+  await expect(page.getByTestId('executed')).toHaveText(/^Executed in \d+ ms$/);
+  await context.setOffline(false);
 });

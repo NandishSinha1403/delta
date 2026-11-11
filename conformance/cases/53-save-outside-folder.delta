@@ -1,0 +1,7 @@
+// SEMANTICS §10.4: a path that leaves the working folder is E515; outputs before it stay.
+dfa M {
+  alphabet a; start q0; accept q0
+  q0 -a-> q0
+}
+save M to "ok.svg"
+save M to "../m.svg"

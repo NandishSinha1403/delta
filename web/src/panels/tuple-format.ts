@@ -73,7 +73,7 @@ export function tupleOf(name: string, m: MachineView): Tuple {
       sigma,
       start: { tex: texName(start), text: start },
       accept: { tex: texName(accepting), text: accepting },
-      definition: 'Definition 1.64',
+      definition: 'the gnfa model (labels regex; special-form)',
     };
   }
   return {
@@ -85,7 +85,7 @@ export function tupleOf(name: string, m: MachineView): Tuple {
     sigma,
     start: { tex: texName(start), text: start },
     accept: { tex: `F = ${texSet(accept)}`, text: `F = ${formatSet(accept)}` },
-    definition: m.kind === 'nfa' ? 'Definition 1.37' : 'Definition 1.5',
+    definition: `the ${m.kind} model`,
   };
 }
 

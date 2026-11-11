@@ -1,0 +1,25 @@
+// 01-LANGUAGE.md §5.2, Moore outputs, verbatim; then both conversions (01 §12, SEMANTICS §11.7).
+moore M {
+  alphabet a, b
+  start q0
+  λ(q0) = 0
+  λ(q1) = 1
+  q0 -a-> q1; q0 -b-> q0
+  q1 -a-> q1; q1 -b-> q0
+}
+assert M.output("ab") == "010"      // λ(q0), then one output per step
+// Context: the conversions keep the outputs.
+let E = moore_to_mealy(M)
+assert E.model == mealy
+assert M.output("abba") == "0" ++ E.output("abba")
+let B = mealy_to_moore(E)
+assert B.model == moore
+assert B.output("abba") == E.output("abba")
+assert B.output("") == ""
+moore N {
+  alphabet a
+  start p
+  lambda(p) = "xy"
+  p -a-> p
+}
+assert N.output("aa") == "xyxyxy"

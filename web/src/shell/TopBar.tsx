@@ -1,3 +1,4 @@
+import { ProfileBadge, ShareButton } from './Share';
 import { useEngineStore, useObjects } from '../state/engine';
 import { useUiStore } from '../state/ui';
 import { useCurrentObject } from '../panels/current';
@@ -111,7 +112,7 @@ function SearchButton({ compact = false }: { compact?: boolean }) {
   );
 }
 
-/** Desktop and tablet: logo, open files, search, the book badge, theme. */
+/** Desktop and tablet: logo, open files, search, notation and explain profile, share, theme. */
 export function TopBar() {
   return (
     <header className="flex h-[52px] shrink-0 items-center gap-4 border-b border-border bg-surface px-4">
@@ -120,9 +121,8 @@ export function TopBar() {
       <div className="flex min-w-40 flex-1 justify-center">
         <SearchButton />
       </div>
-      <span className="hidden shrink-0 rounded-full border border-border-strong px-2 py-1 font-mono text-[11px] text-text-2 lg:inline">
-        Sipser 3e · Ch 1.1–1.3
-      </span>
+      <ProfileBadge />
+      <ShareButton />
       <ThemeToggle />
     </header>
   );
@@ -134,8 +134,8 @@ export function PhoneTopBar() {
   const current = useCurrentObject();
   const select = useUiStore((s) => s.select);
   // Select the stable `results` array; deriving inside the selector would re-render forever.
-  const cases = useEngineStore((s) => s.doc?.results)?.flatMap((r) => r.cases);
-  const passed = cases?.filter((c) => c.expected === c.actual).length ?? 0;
+  const cases = useEngineStore((s) => s.doc?.tests);
+  const passed = cases?.filter((c) => c.pass).length ?? 0;
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-surface px-3">
       <Logo wordmark={false} />

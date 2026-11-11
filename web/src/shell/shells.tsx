@@ -2,6 +2,7 @@ import { CodePanel, MorePanel } from '../panels/panels';
 import { DiagramPanel } from '../panels/DiagramPanel';
 import { RunPanel } from '../panels/RunPanel';
 import { StepsPanel } from '../panels/StepsPanel';
+import { ConsolePanel, LangPanel } from '../panels/LangPanel';
 import { ProblemsPanel, TestsPanel } from '../panels/TestsPanel';
 import { DeltaPanel, TuplePanel } from '../panels/TuplePanel';
 import { useEngineStore } from '../state/engine';
@@ -16,13 +17,15 @@ import { useKeyboardOpen } from './useLayout';
 /** Tuple · δ table · Steps · Tests n/n · Problems. */
 function useInspectorTabs(): TabItem<InspectorTab>[] {
   // Select the stable `results` array; deriving inside the selector would re-render forever.
-  const cases = useEngineStore((s) => s.doc?.results)?.flatMap((r) => r.cases);
-  const passed = cases?.filter((c) => c.expected === c.actual).length ?? 0;
+  const cases = useEngineStore((s) => s.doc?.tests);
+  const passed = cases?.filter((c) => c.pass).length ?? 0;
   return [
     { id: 'tuple', label: 'Tuple' },
     { id: 'delta', label: 'δ table' },
     { id: 'steps', label: 'Steps' },
     { id: 'tests', label: cases && cases.length > 0 ? `Tests ${passed}/${cases.length}` : 'Tests' },
+    { id: 'lang', label: 'Lang' },
+    { id: 'console', label: 'Console' },
     { id: 'problems', label: 'Problems' },
   ];
 }
@@ -53,6 +56,10 @@ function InspectorView({ tab }: { tab: SheetTab }) {
       return <StepsPanel />;
     case 'tests':
       return <TestsPanel />;
+    case 'lang':
+      return <LangPanel />;
+    case 'console':
+      return <ConsolePanel />;
     case 'problems':
       return <ProblemsPanel />;
     case 'run':

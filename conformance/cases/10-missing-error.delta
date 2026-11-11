@@ -1,0 +1,9 @@
+// 01-LANGUAGE.md §5.3: `tm T (missing: error)` makes a missing transition an error, not a reject.
+// Context: on "0" the head reaches ⊔, where q0 has no transition.
+tm T (missing: error) {
+  alphabet 0
+  start q0
+  accept qa
+  q0 -0 → R-> q0
+}
+check T accepts "0"

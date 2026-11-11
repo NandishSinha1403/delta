@@ -139,7 +139,7 @@ export function TuplePanel() {
             {object.sigma.join(', ')}
             {'}'}
           </p>
-          <p className="mt-4 text-xs text-muted">Definition 1.52</p>
+          <p className="mt-4 text-xs text-muted">regex</p>
         </>
       )}
     </section>

@@ -1,0 +1,5 @@
+{
+  "ok": false,
+  "diagnostics": [{ "severity": "error", "code": "E1*", "line": 6, "fixes": { "$len": 1 } }],
+  "outputs": []
+}

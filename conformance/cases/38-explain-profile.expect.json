@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "diagnostics": [],
+  "outputs": [
+    { "kind": "show", "value": { "type": "machine", "model": "nfa" } },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true }
+  ]
+}

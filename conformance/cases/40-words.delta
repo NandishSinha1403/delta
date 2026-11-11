@@ -1,0 +1,14 @@
+// 01-LANGUAGE.md §3, the `word` row: every listed operation.
+let w = "0110"
+let v = "011"
+assert len(w) == 4
+assert w[0] == '0'
+assert w ++ "1" == "01101"
+assert "ab"^3 == "ababab"
+assert rev(v) == "110"
+assert count(w, '1') == 2
+assert w ends with "10"
+assert w starts with "01"
+assert w contains "11"          // substring (`in` is membership)
+assert ε == ""
+assert len(ε) == 0

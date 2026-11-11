@@ -1,0 +1,19 @@
+// 01-LANGUAGE.md §7.1: `step … -> any <set>` gives nondeterministic successors, and the
+// default model is then nfa. Context: an NFA for "contains aa" over integer states.
+fn next(q, a) {
+  if q == 0 and a == 'a' { return {0, 1} }
+  if q == 0 { return {0} }
+  if q == 1 and a == 'a' { return {2} }
+  if q == 2 { return {2} }
+  return ∅
+}
+let N = explore {
+  start  0
+  step   q on a -> any next(q, a)
+  accept q if q == 2
+  alphabet {'a', 'b'}
+}
+assert N.model == nfa
+check N ≡ re"(a ∪ b)* a a (a ∪ b)*"
+check N accepts "aa", "baab"
+check N rejects "", "aba"

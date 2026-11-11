@@ -1,0 +1,10 @@
+// Regex to NFA — three constructions of the same language
+let R = re"(0 ∪ 1)* 0 1"
+let T = to_nfa(R, method: "textbook")
+let H = to_nfa(R, method: "thompson")
+let G = to_nfa(R, method: "glushkov")
+check T ≡ H
+check H ≡ G
+check G accepts "01", "1101"
+check G rejects "", "10"
+assert G.size == 5              // one state per symbol position, plus the start

@@ -1,0 +1,12 @@
+// 01-LANGUAGE.md §6.3: asking an undecidable question is a compile-time error.
+// Context: C and P from §6.1, padded so that the check sits on line 12, column 7,
+// exactly as in the spec's error message.
+
+lang C = cfg { S -> 0 S 1 | ε }
+lang P = { w ∈ {0,1}* | count(w,'0') == count(w,'1') }
+
+print "must not appear: E701 is reported before anything runs"
+
+
+
+check C ≡ P
