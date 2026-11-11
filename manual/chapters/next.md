@@ -18,13 +18,13 @@ Readers: **owner**, **visitor**.
 | 5b | `deltac`, `save`, the renderer, PNG/PDF export, REPL, cargo-dist | 09 NOV 2026 |
 | 5c | This manual, behind a password gate | 11 NOV 2026 |
 | 6 | Grammars (`cnf`, `parse` with CYK and Earley, `derive`, `to_pda`, `to_cfg`), Moore λ syntax and Mealy ↔ Moore, storage views in the Pad, four new tool pages | 11 NOV 2026 |
+| 6b | `main` = `v2` (PR #6), deploys from GitHub Actions once the Cloudflare secrets exist; IBM Plex Mono as the one code font (Q-32); `pump`, `myhill_nerode`, `gnf`, bounded `is_ambiguous`, `to_single_tape`; the pumping-lemma tool page | 11 NOV 2026 |
 
 ## Next
 
-- **Left from Phase 6:** `to_single_tape`, `gnf`, bounded `is_ambiguous`, a pumping-lemma tool.
 - **Phase 7, polish:** notation profiles (other textbooks), JFLAP import/export, accessibility
   audit, performance; one renderer for screen and export (`delta-render` everywhere, if its
-  layout holds up); fonts for exports that match the Pad; TikZ checked with tectonic in CI.
+  layout holds up); TikZ checked with tectonic in CI.
 - **Phase 8, mobile:** Capacitor apps for Android and iOS.
 
 ## Later

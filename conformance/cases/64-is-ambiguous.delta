@@ -1,0 +1,11 @@
+// SEMANTICS §11.9: is_ambiguous(G, upto: n) is a bounded search, labeled as such.
+let E = cfg { E -> E + E | a }
+let r = is_ambiguous(E, upto: 6)
+assert r.ambiguous and r.upto == 6
+assert r.word == "a+a+a"
+assert len(r.trees) == 2 and r.trees[0] != r.trees[1]
+assert r.trees[0].yield == "a+a+a" and r.trees[1].yield == "a+a+a"
+let u = is_ambiguous(cfg { S -> a S b | ε }, upto: 8)
+assert not u.ambiguous and u.word == none and u.trees == []
+assert u.note == "no ambiguous word up to length 8 (bounded check: longer words were not tested)"
+assert is_ambiguous(cfg { S -> A A; A -> a | ε }, upto: 2).word == "a"

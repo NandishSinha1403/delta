@@ -1,0 +1,6 @@
+// SEMANTICS §11.8: gnf(G): every rule starts with a terminal; the language is the same.
+let G = cfg { S -> S S | a S b | ε }
+let N = gnf(G)
+check N ≡ G up to 6
+let L = cfg { E -> E + T | T; T -> a }               // left recursive
+check gnf(L) ≡ L up to 7

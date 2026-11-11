@@ -1,17 +1,17 @@
 # Delta 2 — Progress
 
-_Last updated: 2026-11-11 (Phase 6 built: grammars, Moore λ, transducer conversions, storage views, tool pages)_
+_Last updated: 2026-11-11 (main = v2 via PR #6; IBM Plex Mono code font; the five Phase 6 leftovers and the pumping-lemma tool)_
 
 ## Current state
 
 | | |
 |---|---|
-| Branch | `v2` (long-lived; **never merge into `main`** until the v2 beta) |
-| v1 | Tag `v1.0-final` = `50bf153` (= `origin/main` at the time, incl. both CNAME commits). v1 stays live from `main` |
-| Phase | **1–6 done** (6: grammars, PDA↔CFG, Mealy↔Moore, storage views). Next: **7** (polish) |
-| Hosting | Cloudflare Pages, project `delta` (`delta-17m.pages.dev`), direct upload from a Mac with wrangler 4.42.0 until GitHub Actions is unlocked; then `deploy.yml` deploys on push to `main`. `delta.nandish.dev` moves from GitHub Pages (v1) to it |
-| Conformance | 60 cases, `xfail.txt` empty: all pass |
-| Tests | 149 Rust (incl. conformance); 26 Vitest; 96 Playwright (phone, tablet, desktop) |
+| Branch | `v2`; **merged into `main` on 2026-11-11** (PR #6, owner's call), `main` = `v2` = `ed1fb45` then. Work continues on `v2`; nothing goes to `main` without the owner |
+| v1 | Tag `v1.0-final` = `50bf153`. GitHub Pages (v1) has no workflow any more; the domain points at Cloudflare |
+| Phase | **1–6 done**, Phase 6 leftovers done. Next: **7** (polish), waiting for the owner's OK on the plan |
+| Hosting | Cloudflare Pages: `delta` (`delta.nandish.dev`) and `delta-manual`. `deploy.yml` deploys both on push to `main` with wrangler-action, but **skips (grey) until `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` are set**; until then deploy from the Mac (runbook at the end) |
+| Conformance | 66 cases, `xfail.txt` empty: all pass |
+| Tests | 164 Rust (incl. conformance); 26 Vitest; 97 Playwright (phone, tablet, desktop; incl. the glyph test) + 10 site |
 
 ## What Phase 0 produced
 
@@ -118,6 +118,28 @@ Q-43, Q-45–Q-48, Q-93.
 
 **Open:** the Web Analytics token (owner is enabling it in Pages → Metrics).
 
+**Made 2026-11-11 (after Phase 6), by the owner unless marked (C):**
+- PR #6 merged (`main` = `v2`). CI runs on every push and PR; it installs binaryen 133 (wasm-opt),
+  without which the export WASM was 1031 KB on CI (C). `deploy.yml`: a `secrets` job gates the
+  deploy job, so missing secrets mean "skipped", not a failure (C).
+- Q-32 closed: **IBM Plex Mono** is the one code font everywhere code appears (Pad, site, docs,
+  manual, exports, `deltac` images, social cards), including the site's chips, tables and
+  captions. Fallbacks for what Plex lacks: Noto Sans Math subset, then a Noto Sans Mono subset for
+  ⁺ ⁿ ᵏ ᵐ (owner chose this over dropping the superscripts). `scripts/subset-fonts.py` (C) cuts
+  every file from pinned, checksummed sources; `crates/delta-export/fonts/symbols.txt` is checked
+  in exports (Rust) and in the Pad (Playwright + `CSS.getPlatformFontsForNode`) (C). Export WASM
+  942 KB gzipped. ✗ (U+2717) is in none of the fonts; it's UI/terminal text only (C).
+- The five functions, shapes chosen by the owner: `pump` → `{p, x, y, z, state}` with p = the
+  given DFA's size (minimal DFA for other regular inputs), E504 if w ∉ L or |w| < p;
+  `myhill_nerode` → `{index, classes, separators}`; `is_ambiguous` → labeled record
+  `{ambiguous, upto, word, trees, note}`; `to_single_tape` → the multi-track construction.
+  `gnf` (C): via cnf, ordered substitution, Z1, Z2, … for left recursion. SEMANTICS §11.8–11.12.
+- (C) Tree counting for `is_ambiguous` is done in G itself (normal forms change ambiguity),
+  saturating at 2, with rounds so cycles count as ambiguous and trees stay finite.
+- (C) E509's text is now "not available for these arguments" (every built-in exists; some still
+  report E509 for a wrong argument kind — a Phase 7 item).
+- (C) Pumping-lemma tool page (13 tools), manual chapter "theory/10" and limits/next/parts.
+
 ## Key findings of the audit
 
 1. **v1 has no minimization at all** (no Hopcroft, Moore, Brzozowski or table method), although
@@ -183,19 +205,12 @@ The full check list (wasm build, size check, web lint/typecheck/test/build/e2e) 
    --project-name=delta-manual --branch=main`) or the gate isn't uploaded. Known limit: no rate
    limit on password guesses. From now on every phase's done-definition includes updating its
    manual chapters.
-6. PR #6 (`v2` → `main`) carries the Cloudflare `deploy.yml`; merge only when the owner says so,
-   after Actions is unlocked and `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` are set. The owner
-   still needs the step-by-step for a Pages-only API token.
-7. **Phase 7 (polish) is next.** Also left from Phase 6: `to_single_tape`, `gnf`, bounded
-   `is_ambiguous`, `myhill_nerode`, `pump`, and the pumping-lemma tool page.
+6. PR #6 is merged (`main` = `v2` at `ed1fb45`). The owner adds `CLOUDFLARE_API_TOKEN` and
+   `CLOUDFLARE_ACCOUNT_ID` later; until then `deploy.yml` skips and every step is deployed from
+   the Mac. `main` is not updated after each step unless the owner asks.
+7. **Phase 7 (polish) is next**: the plan was sent to the owner; wait for the OK before starting.
+   Phase 6 leftovers are done.
 8. **Follow-ups for later (owner, 2026-11-10; don't do yet):**
-   - Fonts for exports. Why Commit Mono now: it was the font approved for 5b, and it's DESIGN.md's
-     code font for the site. The plan (03-PRODUCTS §7, README) says Courier Prime for code, but
-     Q-32 is still open because Courier Prime lacks most maths glyphs (∪ ∩ ∈ ⊆ ≡ δ Σ ⊔ …), and the
-     Pad actually uses IBM Plex Mono + KaTeX's serif for state names. Both Courier Prime and Plex
-     are OFL, so licence isn't the blocker; coverage is. Plan: try Courier Prime (or whatever the
-     Pad settles on) + the Noto Sans Math fallback subset in `delta-export`, so exports match the
-     Pad; settle Q-32 first.
    - Unify on-screen diagrams (Graphviz) and exports (`delta-render`) on `delta-render` in Phase 7
      if its layout holds up, so what you see is what you download.
    - Verify TikZ output with tectonic (single binary) in CI.

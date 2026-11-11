@@ -77,7 +77,7 @@ pub struct Interp<'s> {
     pub notation_tokens: Vec<(String, String)>,
 }
 
-/// Names of the built-in functions (01 §12). Those not available yet report E509 when called.
+/// Names of the built-in functions (01 §12). A call none of them handles reports E509.
 pub const BUILTINS: [&str; 61] = [
     "len",
     "count",

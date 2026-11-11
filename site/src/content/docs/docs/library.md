@@ -234,6 +234,31 @@ Whether L(A) ⊆ L(B).
 assert subset_of(re"a b", re"a (a ∪ b)")
 ```
 
+### `pump`
+
+`pump(D, w)`
+
+The split w = x y z at the first state D's run visits twice: a record {p, x, y, z, state} with |xy| ≤ p, |y| ≥ 1, and x yⁱ z in the language for every i. E504 if w ∉ L(D) or |w| < p.
+
+```delta
+let s = pump(re"(a ∪ b)*ab", "bbab")
+assert s.p == 3 and s.x ++ s.y ++ s.z == "bbab"
+check re"(a ∪ b)*ab" accepts s.x ++ s.y^3 ++ s.z
+```
+
+### `myhill_nerode`
+
+`myhill_nerode(D)`
+
+The classes of a regular language: {index, classes, separators}. Each class has its shortest word, whether it is accepting, and (for a dfa) its states; separators maps each pair of class words to the shortest suffix that tells them apart.
+
+```delta
+let mn = myhill_nerode(re"(a ∪ b)*ab")
+assert mn.index == 3
+assert [c.word | c ∈ mn.classes] == [ε, "a", "ab"]
+assert mn.separators[(ε, "a")] == "b"
+```
+
 ## Grammars
 
 ### `nullable`
@@ -278,6 +303,32 @@ cfg G {
 let C = cnf(G)
 assert C.start == '<S0>'
 check C ≡ G up to 8
+```
+
+### `gnf`
+
+`gnf(G)`
+
+An equivalent grammar in Greibach normal form: every rule is A → a B₁…Bₖ (plus S0 → ε if ε ∈ L); new variables Z1, Z2, … remove left recursion.
+
+```delta
+cfg G {
+  E -> E + T | T
+  T -> a
+}
+check gnf(G) ≡ G up to 7
+```
+
+### `is_ambiguous`
+
+`is_ambiguous(G, upto: n)`
+
+A bounded search, not a decision: the first word of length ≤ n with two parse trees. A record {ambiguous, upto, word, trees, note}; the note always states the bound.
+
+```delta
+let r = is_ambiguous(cfg { E -> E + E | a }, upto: 5)
+assert r.ambiguous and r.word == "a+a+a"
+assert not is_ambiguous(cfg { S -> a S b | ε }, upto: 6).ambiguous
 ```
 
 ### `parse`
@@ -342,6 +393,26 @@ check to_cfg(P) ≡ P up to 6
 ```
 
 ## Machines
+
+### `to_single_tape`
+
+`to_single_tape(M)`
+
+A one-tape machine for a deterministic multi-tape one: each cell holds a track per tape with head marks; two sweeps per step. A one-tape machine is returned as it is.
+
+```delta
+model two { input on-tape; storage tapes(2); deterministic; accept by halting; missing reject }
+two M {
+  alphabet 0
+  start q0
+  accept qa
+  q0 -on 1: read 0; on 1: move R; on 2: write 0; on 2: move R-> q0
+  q0 -on 1: read ⊔-> qa
+}
+let S = to_single_tape(M)
+assert S.model == tm
+check S accepts "", "0", "000"
+```
 
 ### `mealy_to_moore`
 

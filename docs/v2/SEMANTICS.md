@@ -438,7 +438,7 @@ machine and model bodies; `}` ends the last statement of a block (01 §2).
 **10.6 Notation profiles** act only in the lexer and printer (01 §10): they map spellings to the
 same core tokens (`+`→union under `hmu`, `λ`→ε, `B`/`□`→⊔), so no core value depends on the profile.
 
-## 11. Grammar and transducer built-ins (01 §12)
+## 11. Grammar, transducer, regular and machine built-ins (01 §12)
 
 Let G = (V, Σ, R, S), with rules in source order. Every result records its algorithm id and steps.
 
@@ -488,4 +488,56 @@ states (q₀, ε) and (q, o) for every edge p -a / o-> q; λ((q, o)) = o, λ((q�
 (p, o′) -a-> (q, o) for each such edge and each state (p, o′). `moore_to_mealy(M)`
 (`moore/to-mealy`): the same states, and p -a / λ(q)-> q for each edge p -a-> q. Both preserve
 `output` as stated in 01 §12. Either on another model is E504.
+
+**11.8 `gnf(G)`** (`cfg/gnf`): every rule becomes A → a B₁…Bₖ (k ≥ 0, a ∈ Σ, Bᵢ ∈ V), plus
+S0 → ε iff ε ∈ L(G). Start from G′ = cnf(G); number its variables A₁…Aₙ in their order in G′
+(start first). For i = 1…n: for each j < i replace every Aᵢ → Aⱼ γ by Aᵢ → δ γ for each Aⱼ → δ;
+then remove immediate left recursion: if Aᵢ → Aᵢ α₁ | … | Aᵢ αₘ | β₁ | … | βₗ, add a fresh Zᵢ with
+Aᵢ → βⱼ | βⱼ Zᵢ and Zᵢ → αⱼ | αⱼ Zᵢ. Then for i = n−1 down to 1 replace every Aᵢ → Aⱼ γ (j > i) by
+the Aⱼ rules, and finally each Zᵢ → Aⱼ γ the same way. Fresh variables are Z1, Z2, … (skipping
+names in use); the result is trimmed, and L(gnf(G)) = L(G). More rules than the states budget is
+B602. Each phase adds a `GrammarEdit` step.
+
+**11.9 `is_ambiguous(G, upto: n)`** (`cfg/ambiguity-bounded`) is a **bounded search**, never a
+decision (ambiguity is undecidable). For each word w over Σ with |w| ≤ n, in shortlex order, it
+counts the parse trees of w in G itself (not a normal form), saturating at 2: c(A, i, j) for each
+variable and span is the least fixed point of c(A, i, j) = Σ over A → X₁…Xₖ and splits i = p₀ ≤ … ≤
+pₖ = j of Π c(Xᵢ, pᵢ₋₁, pᵢ) (a terminal counts 1 on its one-symbol span), computed by rounds with
+all values capped at 2, so infinitely many trees (a cycle A ⇒⁺ A) also count 2. The first w with
+c(S, 0, |w|) = 2 is the witness. The result is a record: `ambiguous` (bool), `upto` (n), `word`
+(the witness or none), `trees` (two distinct parse trees of the witness, or []) and `note`, which
+always states the bound: "the word w has two parse trees (checked words up to length n)" or "no
+ambiguous word up to length n (bounded check: longer words were not tested)". The two trees are
+read from the rounds in which each count first reached 1 and 2, so they are finite. `upto:` is
+required (E507); the work is bounded by the step budget (B601).
+
+**11.10 `pump(D, w)`** (`regular/pump`) for a regular D (a dfa machine is used as given; any other
+regular language is first made a minimal complete DFA) and a word w: p = |Q| of that DFA. If
+w ∉ L(D), or |w| < p, it is E504 (the split is only guaranteed for words in L with |w| ≥ p). Let
+r₀ … r_{|w|} be the run on w and j the least index with rⱼ = rᵢ for some i < j (j ≤ p by
+pigeonhole). The result is the record `{p, x, y, z, state}` with x = w[0..i], y = w[i..j],
+z = w[j..], and `state` = rᵢ (D's state value, or the class number for a constructed DFA). So
+|xy| ≤ p, |y| ≥ 1 and x yᵏ z ∈ L(D) for every k ≥ 0.
+
+**11.11 `myhill_nerode(D)`** (`regular/myhill-nerode`) for a regular D: the classes of the
+right-congruence u ≡ v ⟺ ∀z (uz ∈ L ⟺ vz ∈ L), one per state of the minimal complete DFA
+(reachable states only). Result: the record `{index, classes, separators}`. `index` is the number
+of classes; `classes` lists, in shortlex order of their words, records `{word, accepting,
+states}`: the shortlex-least word in the class, whether it is in L, and, when D is a dfa machine,
+the set of D's reachable states in the class (else {}). `separators` maps each pair (u, v) of class
+words (u before v) to the shortlex-least z with exactly one of uz, vz in L.
+
+**11.12 `to_single_tape(M)`** (`tm/single-tape`) for a deterministic k-tape machine M (`mtm(k)`;
+a one-tape `tm` is returned unchanged). The result is a `tm` whose cells hold either a symbol of
+M's tape alphabet Γ (read as that symbol on track 1 and ⊔ on the others, no head marks) or a
+track symbol `[s₁,…,sₖ]` with a head mark `^` after sᵢ when tape i's head is there, prefixed `▸`
+on cell 0. States are tuples: (:init), (q, "collect", seen) with seen the symbols under the heads
+found so far (`_` for not yet), (q, "apply", e, done) for M's edge e and the set of tapes already
+updated, (q, "place", e, done, i) while moving tape i's mark one cell, (q, "return") and
+:accept / :reject. One step of M is: from cell 0 sweep right collecting the k head symbols; if q
+is an accept state go to :accept; if no edge of M applies go to :reject; else sweep left from
+the rightmost mark, at each mark i (not yet done) write tape i's symbol and move the mark (L on
+cell 0 stays), then walk back to cell 0 and collect again. L(to_single_tape(M)) = L(M); M halts
+iff the result halts. Only reachable states and tape symbols are built; more states than the states
+budget is B602.
 

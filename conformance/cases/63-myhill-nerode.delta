@@ -1,0 +1,23 @@
+// SEMANTICS §11.11: myhill_nerode(D): the classes, their shortest words, and separators.
+dfa D {                                       // Context: q3 duplicates q0
+  alphabet a, b
+  start q0
+  accept q2
+  q0 -a-> q1
+  q0 -b-> q3
+  q1 -a-> q1
+  q1 -b-> q2
+  q2 -a-> q1
+  q2 -b-> q0
+  q3 -a-> q1
+  q3 -b-> q3
+}
+let mn = myhill_nerode(D)
+assert mn.index == 3
+assert [c.word | c ∈ mn.classes] == [ε, "a", "ab"]
+assert [c.accepting | c ∈ mn.classes] == [false, false, true]
+assert mn.classes[0].states == {:q0, :q3}
+assert mn.separators[(ε, "a")] == "b"
+assert mn.separators[("a", "ab")] == ε
+assert myhill_nerode(re"(a ∪ b)*ab").index == 3
+assert myhill_nerode(re"a*" over {'a', 'b'}).index == 2   // a* and the dead class

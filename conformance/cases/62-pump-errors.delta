@@ -1,0 +1,13 @@
+// SEMANTICS §11.10: a split is only guaranteed for words in L(D) with |w| ≥ p (E504 otherwise).
+dfa EndsAB {                                  // Context
+  alphabet a, b
+  start q0
+  accept q2
+  q0 -a-> q1
+  q0 -b-> q0
+  q1 -a-> q1
+  q1 -b-> q2
+  q2 -a-> q1
+  q2 -b-> q0
+}
+let s = pump(EndsAB, "ab")

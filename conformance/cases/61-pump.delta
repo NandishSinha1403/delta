@@ -1,0 +1,20 @@
+// SEMANTICS §11.10: pump(D, w) splits w at the first state D's run visits twice.
+dfa EndsAB {                                  // Context: words over {a, b} ending in "ab"
+  alphabet a, b
+  start q0
+  accept q2
+  q0 -a-> q1
+  q0 -b-> q0
+  q1 -a-> q1
+  q1 -b-> q2
+  q2 -a-> q1
+  q2 -b-> q0
+}
+let s = pump(EndsAB, "abab")
+assert s.p == 3
+assert (s.x, s.y, s.z) == ("a", "ba", "b")
+assert s.state == :q1
+assert len(s.x ++ s.y) <= s.p and len(s.y) >= 1
+check EndsAB accepts s.x ++ s.z, s.x ++ s.y ++ s.z, s.x ++ s.y^2 ++ s.z, s.x ++ s.y^5 ++ s.z
+let r = pump(re"(a ∪ b)*ab", "bbab")          // a regex: p from its minimal DFA
+assert r.p == 3 and r.x ++ r.y ++ r.z == "bbab"

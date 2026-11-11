@@ -46,13 +46,18 @@ Run programs at https://delta.nandish.dev/pad/ or with `deltac run --json FILE`.
 - `product(A, B, keep)`: The product DFA accepting where `keep(a_accepts, b_accepts)` is true.
 - `equivalent(A, B)`: Whether two languages are equal (decidable for Finite and Regular).
 - `subset_of(A, B)`: Whether L(A) ⊆ L(B).
+- `pump(D, w)`: The split w = x y z at the first state D's run visits twice: a record {p, x, y, z, state} with |xy| ≤ p, |y| ≥ 1, and x yⁱ z in the language for every i. E504 if w ∉ L(D) or |w| < p.
+- `myhill_nerode(D)`: The classes of a regular language: {index, classes, separators}. Each class has its shortest word, whether it is accepting, and (for a dfa) its states; separators maps each pair of class words to the shortest suffix that tells them apart.
 - `nullable(G)`: The variables that derive ε.
 - `useless(G)`: The variables that derive no word or can't be reached from the start; trim(G) drops them.
 - `cnf(G)`: An equivalent grammar in Chomsky normal form (START, DEL, UNIT, TERM, BIN, then trim); steps(cnf(G)) lists each phase.
+- `gnf(G)`: An equivalent grammar in Greibach normal form: every rule is A → a B₁…Bₖ (plus S0 → ε if ε ∈ L); new variables Z1, Z2, … remove left recursion.
+- `is_ambiguous(G, upto: n)`: A bounded search, not a decision: the first word of length ≤ n with two parse trees. A record {ambiguous, upto, word, trees, note}; the note always states the bound.
 - `parse(G, w, method: "earley")`: A parse tree of w (T.root, T.children, T.yield, T.text), or none if w ∉ L(G). CYK parses with cnf(G); steps(T) lists the table cells. Methods: earley, cyk.
 - `derive(G, w)`: The sentential forms of a leftmost derivation of w, or none.
 - `to_pda(G)`: A pushdown automaton for L(G): states :start, :loop, :accept; the stack holds the rest of a leftmost derivation.
 - `to_cfg(P)`: A grammar for a pushdown automaton's language, with variables <p,q> (trimmed).
+- `to_single_tape(M)`: A one-tape machine for a deterministic multi-tape one: each cell holds a track per tape with head marks; two sweeps per step. A one-tape machine is returned as it is.
 - `mealy_to_moore(M)`: A Moore machine with the same outputs; its states are (q, o).
 - `moore_to_mealy(M)`: A Mealy machine whose output is M's without the first λ(q₀).
 - `is_empty(L)`: Whether the language is empty (decidable up to CF).
@@ -116,7 +121,7 @@ Run programs at https://delta.nandish.dev/pad/ or with `deltac run --json FILE`.
 - E506: Pattern doesn't match. The tuple pattern has a different number of parts.
 - E507: Wrong arguments. A call with the wrong number of arguments, or an unknown named argument.
 - E508: Not a function. Only functions (and parameterized models) can be called.
-- E509: Not available yet. The built-in exists in the language but this version doesn't implement it.
+- E509: Not available yet. The built-in exists in the language but this version doesn't implement it for these arguments.
 - E512: No transition (missing: error). The machine says a missing transition is an error, and a run reached one.
 - E513: rename merges states. M.rename(f) must map different states to different values.
 - E514: Unknown file format. save picks the format from the file's extension: .svg, .png, .pdf, .tex, .txt or .json.

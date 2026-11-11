@@ -14,7 +14,8 @@ use crate::rx::{self, RegexVal, Rx};
 use crate::sim::Verdict;
 use crate::value::{Class, Object, Sym, TAG_TRACE, Value, sym_text};
 use delta_core::fa::{
-    Fa, Step, decide, determinize, minimize, ops, product, regex as core_rx, to_regex,
+    Fa, Step, decide, determinize, minimize, myhill_nerode, ops, product, pump, regex as core_rx,
+    to_regex,
 };
 use serde_json::json;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -1618,6 +1619,184 @@ impl Interp<'_> {
                     }
                 }
             }
+            "gnf" => {
+                let g = self.arg_grammar(args, 0, span)?;
+                obj(crate::gnf::gnf(&g, max).map_err(|_| budget_states(span, max))?)
+            }
+            "is_ambiguous" => {
+                let g = self.arg_grammar(args, 0, span)?;
+                let upto = named
+                    .iter()
+                    .find(|(n, _, _)| n == "upto")
+                    .map(|(_, v, _)| v.clone())
+                    .or_else(|| args.get(1).map(|a| a.0.clone()));
+                let Some(Value::Int(n)) = upto else {
+                    return err(
+                        "E507",
+                        span,
+                        "is_ambiguous(G, upto: n) needs `upto:` (it only checks words up to length n)",
+                    );
+                };
+                let n = n.max(0) as usize;
+                let fuel = self.fuel();
+                let found =
+                    crate::ambiguity::search(&g, n, fuel).map_err(|_| budget_steps(span, fuel))?;
+                let mut r: BTreeMap<String, Value> = BTreeMap::new();
+                r.insert("upto".into(), Value::Int(n as i64));
+                match found {
+                    Some(wit) => {
+                        let mut text: String = wit.word.iter().map(|s| sym_text(s)).collect();
+                        if text.is_empty() {
+                            text = "ε".to_string();
+                        }
+                        let tree = |t: crate::parse_tree::Tree| {
+                            obj(crate::parse_tree::ParseTree {
+                                tree: t,
+                                algorithm: crate::ambiguity::ID,
+                                steps: Vec::new(),
+                            })
+                        };
+                        r.insert("ambiguous".into(), Value::Bool(true));
+                        r.insert("word".into(), Value::Word(Rc::new(wit.word.clone())));
+                        r.insert(
+                            "trees".into(),
+                            Value::list(vec![tree(wit.trees.0), tree(wit.trees.1)]),
+                        );
+                        r.insert(
+                            "note".into(),
+                            text_word(&format!(
+                                "the word {text} has two parse trees (checked words up to length {n})"
+                            )),
+                        );
+                    }
+                    None => {
+                        r.insert("ambiguous".into(), Value::Bool(false));
+                        r.insert("word".into(), Value::None);
+                        r.insert("trees".into(), Value::list(Vec::new()));
+                        r.insert(
+                            "note".into(),
+                            text_word(&format!(
+                                "no ambiguous word up to length {n} (bounded check: longer words were not tested)"
+                            )),
+                        );
+                    }
+                }
+                Value::Record(Rc::new(r))
+            }
+            "pump" => {
+                let (f, alpha, values) = self.regular_dfa(args, 0, span)?;
+                let (wv, ws) = args.get(1).cloned().unwrap_or((Value::None, span));
+                let w = self.word_of(&wv, ws)?;
+                let text: String = w.iter().map(|s| sym_text(s)).collect();
+                let ix: Option<Vec<u32>> = w
+                    .iter()
+                    .map(|s| alpha.binary_search(s).ok().map(|i| i as u32))
+                    .collect();
+                let p = f.n();
+                let Some(ix) = ix.filter(|ix| f.accepts(ix)) else {
+                    return err(
+                        "E504",
+                        ws,
+                        format!("pump needs a word in the language: \"{text}\" is not in it"),
+                    );
+                };
+                if w.len() < p {
+                    return err(
+                        "E504",
+                        ws,
+                        format!(
+                            "|w| = {} is shorter than p = {p} (the DFA's number of states): a split is only guaranteed when |w| ≥ p",
+                            w.len()
+                        ),
+                    );
+                }
+                let Some(sp) = pump::split(&f, &ix) else {
+                    return err("E504", ws, format!("no state repeats on \"{text}\""));
+                };
+                let part = |a: usize, b: usize| {
+                    Value::Word(Rc::new(
+                        w.get(a..b).map(<[Sym]>::to_vec).unwrap_or_default(),
+                    ))
+                };
+                let state = match &values {
+                    Some(v) => v.get(sp.state).cloned().unwrap_or(Value::None),
+                    None => Value::Int(sp.state as i64),
+                };
+                let mut r: BTreeMap<String, Value> = BTreeMap::new();
+                r.insert("p".into(), Value::Int(p as i64));
+                r.insert("x".into(), part(0, sp.i));
+                r.insert("y".into(), part(sp.i, sp.j));
+                r.insert("z".into(), part(sp.j, w.len()));
+                r.insert("state".into(), state);
+                Value::Record(Rc::new(r))
+            }
+            "myhill_nerode" => {
+                let (f, alpha, values) = self.regular_dfa(args, 0, span)?;
+                let (min, blocks, _) = minimize::hopcroft(&f);
+                let c = myhill_nerode::classes(&min, max).map_err(|_| budget_states(span, max))?;
+                let wv = |w: &[u32]| {
+                    Value::Word(Rc::new(
+                        w.iter()
+                            .filter_map(|i| alpha.get(*i as usize).cloned())
+                            .collect(),
+                    ))
+                };
+                let mut order: Vec<usize> = (0..c.classes.len()).collect();
+                order.sort_by(|a, b| {
+                    let (wa, wb) = (&c.classes[*a].0, &c.classes[*b].0);
+                    (wa.len(), wa).cmp(&(wb.len(), wb))
+                });
+                let classes: Vec<Value> = order
+                    .iter()
+                    .map(|q| {
+                        let (w, acc) = &c.classes[*q];
+                        let states = match &values {
+                            Some(v) => blocks
+                                .get(*q)
+                                .map(|b| b.iter().filter_map(|i| v.get(*i).cloned()).collect())
+                                .unwrap_or_default(),
+                            None => BTreeSet::new(),
+                        };
+                        let mut r: BTreeMap<String, Value> = BTreeMap::new();
+                        r.insert("word".into(), wv(w));
+                        r.insert("accepting".into(), Value::Bool(*acc));
+                        r.insert("states".into(), Value::set(states));
+                        Value::Record(Rc::new(r))
+                    })
+                    .collect();
+                let pos = |q: usize| order.iter().position(|x| *x == q).unwrap_or(0);
+                let mut seps: BTreeMap<Value, Value> = BTreeMap::new();
+                for (p, q, z) in &c.separators {
+                    let (a, b) = if pos(*p) < pos(*q) {
+                        (*p, *q)
+                    } else {
+                        (*q, *p)
+                    };
+                    seps.insert(
+                        Value::tuple(vec![wv(&c.classes[a].0), wv(&c.classes[b].0)]),
+                        wv(z),
+                    );
+                }
+                let mut r: BTreeMap<String, Value> = BTreeMap::new();
+                r.insert("index".into(), Value::Int(c.classes.len() as i64));
+                r.insert("classes".into(), Value::list(classes));
+                r.insert("separators".into(), Value::Map(Rc::new(seps)));
+                Value::Record(Rc::new(r))
+            }
+            "to_single_tape" => {
+                let m = self.arg_machine(args, 0, span)?;
+                let tm = self
+                    .model_named("tm")
+                    .unwrap_or_else(|| Rc::new(Model::blank("tm")));
+                match crate::single_tape::to_single_tape(&m, tm, max) {
+                    Ok(x) => obj(x),
+                    Err(crate::single_tape::Refusal::OneTape) => obj_rc(m),
+                    Err(crate::single_tape::Refusal::Wrong(msg)) => return err("E504", span, msg),
+                    Err(crate::single_tape::Refusal::Budget) => {
+                        return Err(budget_states(span, max));
+                    }
+                }
+            }
             "to_pda" => {
                 let g = self.arg_grammar(args, 0, span)?;
                 let model = self
@@ -1907,6 +2086,36 @@ impl Interp<'_> {
             _ => return Ok(None),
         };
         Ok(Some(v))
+    }
+
+    /// A regular argument as a total DFA over its alphabet: a `dfa` machine as it is (with its
+    /// state values), anything else regular as its minimal DFA (states are then class numbers).
+    fn regular_dfa(
+        &mut self,
+        args: &Args,
+        i: usize,
+        span: Span,
+    ) -> R<(Fa, Vec<Sym>, Option<Vec<Value>>)> {
+        let (v, s) = args.get(i).cloned().unwrap_or((Value::None, span));
+        if let Some(m) = v.rc::<Machine>()
+            && m.model.name == "dfa"
+        {
+            let (f, alpha, values) = self.dfa_of(&m, s)?;
+            return Ok((f, alpha, Some(values)));
+        }
+        let l = self.to_lang(&v, s)?;
+        let alpha: Vec<Sym> = l.sigma.iter().cloned().collect();
+        let Some(f) = self.compile_lang(&l, s)? else {
+            return err(
+                "E702",
+                s,
+                "this needs a regular language (a dfa, nfa, regex or regular lang)",
+            );
+        };
+        let max = self.budget.states as usize;
+        let (d, _, _) = determinize::subset(&f, max).map_err(|_| budget_states(s, max))?;
+        let (min, _, _) = minimize::hopcroft(&d);
+        Ok((min, alpha, None))
     }
 
     fn lang_arg(&mut self, args: &Args, i: usize, span: Span) -> R<Rc<LangVal>> {

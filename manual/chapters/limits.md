@@ -45,7 +45,15 @@ The site has 143 pages; the largest file is the export WASM (2.2 MB raw).
   long runs.
 - On-screen diagrams (Graphviz) and exported ones (`delta-render`) are laid out differently.
 - TikZ output hasn't been compiled with LaTeX yet (no LaTeX on the build Mac).
-- DCF equivalence (E702), `gnf`, `is_ambiguous`, `to_single_tape`, `myhill_nerode` and `pump` are not built yet (E509 or E702).
+- DCF equivalence is not built yet (E702).
+- `is_ambiguous(G, upto: n)` only searches words up to length n; it can never say a grammar is
+  unambiguous, and its record's `note` says so.
+- `gnf` can grow a grammar a lot (a three-variable grammar became 853 rules); `to_single_tape` builds
+  one state per (old state, collected head symbols) and per edge being applied. Both are capped by
+  the states budget.
+- E509 still appears for some built-ins called with the wrong kind of argument (`star(1)`,
+  `union(1)`, `range(1)` …), where E504 or E507 would be clearer.
+- In the keyword label form, `on 2:` covers only the next operation (`;` resets to tape 1).
 - `to_cfg` grows with the cube of the normalized state count; large PDAs hit the states budget.
 - Hopcroft here rebuilds the partition per splitter, so it's slower than the textbook
   O(k·n log n) on large DFAs.

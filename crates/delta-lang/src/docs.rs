@@ -167,6 +167,22 @@ pub const LIBRARY: &[Sig] = &[
         example: "assert subset_of(re\"a b\", re\"a (a ∪ b)\")",
     },
     Sig {
+        name: "pump",
+        signature: "pump(D, w)",
+        summary: "The split w = x y z at the first state D's run visits twice: a record {p, x, y, z, state} with |xy| ≤ p, |y| ≥ 1, and x yⁱ z in the language for every i. E504 if w ∉ L(D) or |w| < p.",
+        methods: &[],
+        area: "Decisions",
+        example: "let s = pump(re\"(a ∪ b)*ab\", \"bbab\")\nassert s.p == 3 and s.x ++ s.y ++ s.z == \"bbab\"\ncheck re\"(a ∪ b)*ab\" accepts s.x ++ s.y^3 ++ s.z",
+    },
+    Sig {
+        name: "myhill_nerode",
+        signature: "myhill_nerode(D)",
+        summary: "The classes of a regular language: {index, classes, separators}. Each class has its shortest word, whether it is accepting, and (for a dfa) its states; separators maps each pair of class words to the shortest suffix that tells them apart.",
+        methods: &[],
+        area: "Decisions",
+        example: "let mn = myhill_nerode(re\"(a ∪ b)*ab\")\nassert mn.index == 3\nassert [c.word | c ∈ mn.classes] == [ε, \"a\", \"ab\"]\nassert mn.separators[(ε, \"a\")] == \"b\"",
+    },
+    Sig {
         name: "nullable",
         signature: "nullable(G)",
         summary: "The variables that derive ε.",
@@ -189,6 +205,22 @@ pub const LIBRARY: &[Sig] = &[
         methods: &[],
         area: "Grammars",
         example: "cfg G {\n  S -> a S b | ε\n}\nlet C = cnf(G)\nassert C.start == '<S0>'\ncheck C ≡ G up to 8",
+    },
+    Sig {
+        name: "gnf",
+        signature: "gnf(G)",
+        summary: "An equivalent grammar in Greibach normal form: every rule is A → a B₁…Bₖ (plus S0 → ε if ε ∈ L); new variables Z1, Z2, … remove left recursion.",
+        methods: &[],
+        area: "Grammars",
+        example: "cfg G {\n  E -> E + T | T\n  T -> a\n}\ncheck gnf(G) ≡ G up to 7",
+    },
+    Sig {
+        name: "is_ambiguous",
+        signature: "is_ambiguous(G, upto: n)",
+        summary: "A bounded search, not a decision: the first word of length ≤ n with two parse trees. A record {ambiguous, upto, word, trees, note}; the note always states the bound.",
+        methods: &[],
+        area: "Grammars",
+        example: "let r = is_ambiguous(cfg { E -> E + E | a }, upto: 5)\nassert r.ambiguous and r.word == \"a+a+a\"\nassert not is_ambiguous(cfg { S -> a S b | ε }, upto: 6).ambiguous",
     },
     Sig {
         name: "parse",
@@ -221,6 +253,14 @@ pub const LIBRARY: &[Sig] = &[
         methods: &[],
         area: "Grammars",
         example: "pda P {\n  alphabet a, b\n  start q0\n  accept q1\n  q0 -a, ε → A-> q0\n  q0 -ε, ε → ε-> q1\n  q1 -b, A → ε-> q1\n}\ncheck to_cfg(P) ≡ P up to 6",
+    },
+    Sig {
+        name: "to_single_tape",
+        signature: "to_single_tape(M)",
+        summary: "A one-tape machine for a deterministic multi-tape one: each cell holds a track per tape with head marks; two sweeps per step. A one-tape machine is returned as it is.",
+        methods: &[],
+        area: "Machines",
+        example: "model two { input on-tape; storage tapes(2); deterministic; accept by halting; missing reject }\ntwo M {\n  alphabet 0\n  start q0\n  accept qa\n  q0 -on 1: read 0; on 1: move R; on 2: write 0; on 2: move R-> q0\n  q0 -on 1: read ⊔-> qa\n}\nlet S = to_single_tape(M)\nassert S.model == tm\ncheck S accepts \"\", \"0\", \"000\"",
     },
     Sig {
         name: "mealy_to_moore",
@@ -628,8 +668,8 @@ pub const ERRORS: &[ErrorDoc] = &[
     ErrorDoc {
         code: "E509",
         title: "Not available yet",
-        explain: "The built-in exists in the language but this version doesn't implement it.",
-        example: "let x = myhill_nerode(1)",
+        explain: "The built-in exists in the language but this version doesn't implement it for these arguments.",
+        example: "let x = star(1)",
     },
     ErrorDoc {
         code: "E512",

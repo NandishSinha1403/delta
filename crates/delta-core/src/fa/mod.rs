@@ -8,8 +8,10 @@
 pub mod decide;
 pub mod determinize;
 pub mod minimize;
+pub mod myhill_nerode;
 pub mod ops;
 pub mod product;
+pub mod pump;
 pub mod regex;
 pub mod to_regex;
 

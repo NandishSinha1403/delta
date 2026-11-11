@@ -1,0 +1,17 @@
+// SEMANTICS §11.12: to_single_tape(M) simulates k tapes with tracks on one tape.
+model two { input on-tape; storage tapes(2); deterministic; accept by halting; missing reject }  // Context
+two M {                                        // Context: 0ⁿ1ⁿ, counting on tape 2
+  alphabet 0, 1
+  start qs
+  accept qa
+  qs -on 2: write $; on 2: move R-> q0
+  q0 -on 1: read 0; on 1: move R; on 2: write 0; on 2: move R-> q0
+  q0 -on 1: read 1; on 2: move L-> q1
+  q0 -on 1: read ⊔; on 2: move L-> q1
+  q1 -on 1: read 1; on 1: move R; on 2: read 0; on 2: move L-> q1
+  q1 -on 1: read ⊔; on 2: read $-> qa
+}
+let S = to_single_tape(M)
+assert S.model == tm
+assert [w | w ∈ {'0','1'}^≤6, S.accepts(w)] == [ε, "01", "0011", "000111"]
+assert [w | w ∈ {'0','1'}^≤6, S.accepts(w) != M.accepts(w)] == []

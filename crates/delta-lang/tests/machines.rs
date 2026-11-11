@@ -157,3 +157,44 @@ fn explain_profiles_add_citations_only() {
         cited["outputs"][0]["value"]["states"]
     );
 }
+
+/// A two-tape counter machine: tape 2 holds one 0 per unmatched 0 read, above a $ floor; each
+/// 1 removes one; it accepts at the end of the input when the count is back to the floor.
+const TWO_TAPE_EQUAL: &str = r#"model two { input on-tape; storage tapes(2); deterministic; accept by halting; missing reject }
+two M {
+  alphabet 0, 1
+  start qs
+  accept qa
+  qs -on 2: write $; on 2: move R-> q
+  q -on 1: read 0; on 1: move R; on 2: read ⊔; on 2: write 0; on 2: move R-> q
+  q -on 1: read 0; on 1: move R; on 2: read 0; on 2: write 0; on 2: move R-> q
+  q -on 1: read 1; on 2: move L-> d
+  q -on 1: read ⊔; on 2: move L-> e
+  d -on 1: read 1; on 2: read 0; on 2: write ⊔-> n
+  n -on 1: move R-> q
+  e -on 2: read $-> qa
+}
+"#;
+
+#[test]
+fn single_tape_machines_agree_with_their_multi_tape_originals() {
+    // Every word up to length 8 gets the same verdict from both machines, and some are accepted.
+    let src = format!(
+        "{TWO_TAPE_EQUAL}let S = to_single_tape(M)\n\
+         assert S.model == tm\n\
+         assert [w | w ∈ {{'0','1'}}^≤8, S.accepts(w) != M.accepts(w)] == []\n\
+         assert len([w | w ∈ {{'0','1'}}^≤8, S.accepts(w)]) >= 3\n"
+    );
+    let out = run(&src);
+    assert!(all_pass(&out), "{out}");
+}
+
+#[test]
+fn single_tape_leaves_one_tape_machines_alone_and_refuses_automata() {
+    let out = run(
+        "tm T {\n  alphabet 0\n  start q0\n  accept qa\n  q0 -0 → R-> q0\n  q0 -⊔ → R-> qa\n}\nassert to_single_tape(T) == T",
+    );
+    assert!(all_pass(&out), "{out}");
+    let out = run("dfa D {\n  start q0\n  accept q0\n  q0 -a-> q0\n}\nlet S = to_single_tape(D)");
+    assert_eq!(out["diagnostics"][0]["code"], "E504", "{out}");
+}

@@ -1,6 +1,7 @@
 //! Delta 2: the language. `run(source)` parses, checks and evaluates a program and returns the
 //! output document of 02-ENGINE.md §7 as JSON.
 
+pub mod ambiguity;
 pub mod ast;
 pub mod build;
 pub mod builtins;
@@ -9,6 +10,7 @@ pub mod cnf;
 pub mod diag;
 pub mod docs;
 pub mod explain;
+pub mod gnf;
 pub mod grammar;
 pub mod hooks;
 pub mod interp;
@@ -25,6 +27,7 @@ pub mod prelude;
 pub mod render;
 pub mod rx;
 pub mod sim;
+pub mod single_tape;
 pub mod transducers;
 pub mod value;
 
