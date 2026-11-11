@@ -77,7 +77,7 @@ pub struct Interp<'s> {
     pub notation_tokens: Vec<(String, String)>,
 }
 
-/// Names of the built-in functions (01 §12). A call none of them handles reports E509.
+/// Names of the built-in functions (01 §12). One not implemented yet (`range`) reports E509.
 pub const BUILTINS: [&str; 61] = [
     "len",
     "count",
@@ -473,7 +473,7 @@ impl<'s> Interp<'s> {
                 }
                 self.emit(s.span, out)
             }
-            StmtKind::Save(e, p) => {
+            StmtKind::Save(e, p, theme) => {
                 let v = self.eval(e)?;
                 let pv = self.eval(p)?;
                 let Value::Word(w) = &pv else {
@@ -519,10 +519,12 @@ impl<'s> Interp<'s> {
                 }
                 let line = self.line(s.span);
                 let value = self.value_json(&v);
-                self.emit(
-                    s.span,
-                    json!({ "kind": "save", "line": line, "path": path, "format": format, "value": value, "text": v.print_text() }),
-                )
+                let mut out = json!({ "kind": "save", "line": line, "path": path, "format": format, "value": value, "text": v.print_text() });
+                // Only a written theme is in the output; without one the host uses its own.
+                if let Some((t, _)) = theme {
+                    out["theme"] = json!(t);
+                }
+                self.emit(s.span, out)
             }
             StmtKind::Check(subject, kind) => self.check(s, subject, kind),
             StmtKind::Run(m, w) => self.run_stmt(s, m, w),
@@ -1392,7 +1394,7 @@ fn free_in_stmt(s: &Stmt, out: &mut BTreeSet<String>) {
                 CheckKind::Holds(None) => {}
             }
         }
-        StmtKind::Run(a, b) | StmtKind::Save(a, b) => {
+        StmtKind::Run(a, b) | StmtKind::Save(a, b, _) => {
             free_in_expr(a, out);
             free_in_expr(b, out);
         }
@@ -1543,7 +1545,7 @@ fn walk_stmt(s: &Stmt, f: &mut dyn FnMut(&Expr)) {
                 CheckKind::Holds(None) => {}
             }
         }
-        StmtKind::Run(a, b) | StmtKind::Save(a, b) => {
+        StmtKind::Run(a, b) | StmtKind::Save(a, b, _) => {
             walk_expr(a, f);
             walk_expr(b, f);
         }

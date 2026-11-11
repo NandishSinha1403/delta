@@ -1,0 +1,2 @@
+// 01-LANGUAGE.md §12: a library function called with the wrong number of arguments is E507.
+let x = union(re"a")

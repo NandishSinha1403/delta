@@ -5,6 +5,8 @@ export type PhoneView = 'code' | 'diagram' | 'tuple' | 'run' | 'more';
 export type InspectorTab = 'tuple' | 'delta' | 'steps' | 'tests' | 'lang' | 'console' | 'problems';
 export type SheetTab = InspectorTab | 'run';
 export type Theme = 'dark' | 'light';
+/** The theme of downloaded drawings: one of the two, or whatever the Pad shows. */
+export type DownloadTheme = Theme | 'match';
 /** The left rail's drawers. */
 export type RailPanel = 'files' | 'examples' | 'conversions' | 'tests' | 'settings';
 
@@ -12,6 +14,7 @@ export type RailPanel = 'files' | 'examples' | 'conversions' | 'tests' | 'settin
 const FILES_KEY = 'delta.v2.files';
 const OLD_SOURCE_KEY = 'delta.source';
 const THEME_KEY = 'delta.theme';
+const DOWNLOAD_THEME_KEY = 'delta.downloadTheme';
 const AUTO_KEY = 'delta.auto';
 
 // Browser storage can be missing or throw (private windows, blocked site data); it only holds
@@ -98,6 +101,9 @@ interface UiStore {
   openShared: (source: string) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  /** Downloads: Light, Dark or Match Pad (the default). A `(theme: …)` in the program wins. */
+  downloadTheme: DownloadTheme;
+  setDownloadTheme: (theme: DownloadTheme) => void;
   /** Auto: re-evaluate while typing. Off: only Execute (⌘↵ / Ctrl+Enter) updates. */
   auto: boolean;
   setAuto: (auto: boolean) => void;
@@ -134,6 +140,11 @@ interface UiStore {
 function initialTheme(): Theme {
   const saved = load(THEME_KEY);
   return saved === 'light' || saved === 'dark' ? saved : 'dark';
+}
+
+function initialDownloadTheme(): DownloadTheme {
+  const saved = load(DOWNLOAD_THEME_KEY);
+  return saved === 'light' || saved === 'dark' ? saved : 'match';
 }
 
 function persist(files: DeltaFile[], activeId: string): void {
@@ -211,6 +222,11 @@ export const useUiStore = create<UiStore>()((set, get) => {
     setTheme: (theme) => {
       save(THEME_KEY, theme);
       set({ theme });
+    },
+    downloadTheme: initialDownloadTheme(),
+    setDownloadTheme: (downloadTheme) => {
+      save(DOWNLOAD_THEME_KEY, downloadTheme);
+      set({ downloadTheme });
     },
     auto: load(AUTO_KEY) !== 'off',
     setAuto: (auto) => {

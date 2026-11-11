@@ -39,7 +39,7 @@ errors or failing tests, so it works in scripts and CI.
 | `--show` | Draws shown machines as pictures, in terminals that can show images (kitty, Ghostty, iTerm2, WezTerm, foot and other sixel terminals). Elsewhere it lists the arrows as text. |
 | `--format F` | Also writes every shown machine as a file: `svg`, `png`, `pdf`, `tikz` or `txt`, named `line-N.ext` after the line of its `show`. |
 | `--out DIR` | The folder for those files (default: the current folder). |
-| `--dark` | Dark pictures, for dark terminals. |
+| `--theme light\|dark` | Light (default) or dark pictures; a `save … (theme: …)` in the program wins. |
 | `--json` | Prints the whole result as JSON (the [output schema](/schema/output-v2.json)). Writes no files. |
 
 `deltac run -` reads the program from standard input. Set `DELTAC_IMAGES` to `kitty`, `iterm`,

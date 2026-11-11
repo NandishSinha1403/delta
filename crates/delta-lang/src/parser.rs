@@ -461,7 +461,12 @@ impl<'a> Parser<'a> {
                 }
                 self.bump();
                 let path = self.expr()?;
-                Ok(StmtKind::Save(v, path))
+                // `"m.png" (theme: dark)` parses as a call of the path; take the options back out.
+                let (path, theme) = match path.kind {
+                    ExprKind::Call(callee, args) => (*callee, self.save_options(&args)?),
+                    _ => (path, None),
+                };
+                Ok(StmtKind::Save(v, path, theme))
             }
             Tok::Kw(Kw::Assert) => {
                 self.bump();
@@ -491,9 +496,11 @@ impl<'a> Parser<'a> {
                 // `dfa M { … }` or `pda P (options) { … }`
                 let next = self.peek_nth(1);
                 let after = self.peek_nth(2);
-                if matches!(next, Tok::Ident(_))
-                    && matches!(after, Tok::Op(Op::LBrace | Op::LParen))
-                {
+                let named = matches!(next, Tok::Ident(_))
+                    && matches!(after, Tok::Op(Op::LBrace | Op::LParen));
+                // `mtm(2) M { … }`: a parameterized model, then the name.
+                let with_args = matches!(self.model_args_end(), Some((Tok::Ident(_), _)));
+                if named || with_args {
                     let e = self.machine_literal()?;
                     let (n, s) = match &e.kind {
                         ExprKind::Machine(m) => (m.name.clone().unwrap_or_default(), m.model_span),
@@ -1165,7 +1172,9 @@ impl<'a> Parser<'a> {
                 })
             }
             Tok::Ident(ref name)
-                if self.models.contains(name) && self.peek_nth(1) == Tok::Op(Op::LBrace) =>
+                if self.models.contains(name)
+                    && (self.peek_nth(1) == Tok::Op(Op::LBrace)
+                        || matches!(self.model_args_end(), Some((Tok::Op(Op::LBrace), _)))) =>
             {
                 self.machine_literal()
             }
@@ -1557,6 +1566,38 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// The options of `save … to path (theme: light | dark)`: only `theme` exists.
+    fn save_options(&mut self, args: &[Arg]) -> PResult<Option<(String, Span)>> {
+        let mut theme = None;
+        for a in args {
+            let value = match &a.value.kind {
+                ExprKind::Var(n) => Some(n.clone()),
+                ExprKind::Word(w) => Some(w.concat()),
+                _ => None,
+            };
+            match (a.name.as_deref(), value.as_deref()) {
+                (Some("theme"), Some(t @ ("light" | "dark"))) => {
+                    theme = Some((t.to_string(), a.value.span));
+                }
+                (Some("theme"), _) => {
+                    return Err(self.error(
+                        "E101",
+                        a.value.span,
+                        "a save theme is `light` or `dark`: `save M to \"m.png\" (theme: dark)`",
+                    ));
+                }
+                _ => {
+                    return Err(self.error(
+                        "E101",
+                        a.value.span,
+                        "the only save option is the theme: `save M to \"m.png\" (theme: dark)`",
+                    ));
+                }
+            }
+        }
+        Ok(theme)
+    }
+
     fn canonical_machine(&mut self) -> PResult<Expr> {
         let start = self.bump().span.from; // machine
         let (model, model_span) = self.ident("a model name")?;
@@ -1604,13 +1645,58 @@ impl<'a> Parser<'a> {
 
     // ----- machine literals (machine lexing mode) -----
 
-    /// `model [Name] [(options)] { items }`, starting at the model name.
+    /// At a model name followed by `(int, …)`: the two tokens after the `)`, if that is the shape
+    /// (so `mtm(2) M {` and `mtm(2) {` are literals, and `mtm(2)` alone is a model value).
+    fn model_args_end(&mut self) -> Option<(Tok, Tok)> {
+        if self.peek_nth(1) != Tok::Op(Op::LParen) {
+            return None;
+        }
+        let mut n = 2;
+        loop {
+            match self.peek_nth(n) {
+                Tok::Int(_) | Tok::Op(Op::Comma) => n += 1,
+                Tok::Op(Op::RParen) if n > 2 => break,
+                _ => return None,
+            }
+        }
+        let first = self.peek_nth(n + 1);
+        let second = self.peek_nth(n + 2);
+        match (&first, &second) {
+            (Tok::Op(Op::LBrace), _) => Some((first, second)),
+            (Tok::Ident(_), Tok::Op(Op::LBrace | Op::LParen)) => Some((first, second)),
+            _ => None,
+        }
+    }
+
+    /// `model[(args)] [Name] [(options)] { items }`, starting at the model name.
     fn machine_literal(&mut self) -> PResult<Expr> {
         let mt = self.bump();
         let model = match mt.tok {
             Tok::Ident(n) => n,
             _ => return Err(self.error("E101", mt.span, "expected a model name")),
         };
+        // A parameterized model's arguments, like the 2 of `mtm(2) M { … }`.
+        let mut model_args = Vec::new();
+        if self.at(Op::LParen) {
+            self.bump();
+            loop {
+                let t = self.bump();
+                match t.tok {
+                    Tok::Int(n) => model_args.push(n),
+                    _ => {
+                        return Err(self.error(
+                            "E101",
+                            t.span,
+                            "expected a number as a model argument",
+                        ));
+                    }
+                }
+                if !self.eat(Op::Comma) {
+                    break;
+                }
+            }
+            self.expect(Op::RParen, "to close the model arguments")?;
+        }
         let name = match self.peek().tok {
             Tok::Ident(n) => {
                 self.bump();
@@ -1650,6 +1736,7 @@ impl<'a> Parser<'a> {
         Ok(Expr {
             kind: ExprKind::Machine(Rc::new(MachineLit {
                 model,
+                model_args,
                 model_span: mt.span,
                 name,
                 options,

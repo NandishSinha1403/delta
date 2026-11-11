@@ -145,6 +145,8 @@ function ConversionsDrawer() {
 function SettingsDrawer() {
   const theme = useUiStore((s) => s.theme);
   const setTheme = useUiStore((s) => s.setTheme);
+  const downloadTheme = useUiStore((s) => s.downloadTheme);
+  const setDownloadTheme = useUiStore((s) => s.setDownloadTheme);
   const mode = useEngineStore((s) => s.doc?.mode);
   const version = useEngineStore((s) => s.version);
   return (
@@ -159,6 +161,24 @@ function SettingsDrawer() {
               {t === 'dark' ? 'Dark' : 'Light'}
             </label>
           ))}
+        </fieldset>
+        <fieldset>
+          <legend className="mb-1 text-xs text-muted">Downloads</legend>
+          {(['light', 'dark', 'match'] as const).map((t) => (
+            <label key={t} className="mr-4 inline-flex items-center gap-1.5 text-text">
+              <input
+                type="radio"
+                name="download-theme"
+                checked={downloadTheme === t}
+                onChange={() => setDownloadTheme(t)}
+                className="accent-[var(--accent)]"
+              />
+              {t === 'light' ? 'Light' : t === 'dark' ? 'Dark' : 'Match Pad'}
+            </label>
+          ))}
+          <p className="mt-1 text-[11px] text-faint">
+            Theme of saved drawings. <code className="font-mono">save M to "m.png" (theme: dark)</code> overrides it.
+          </p>
         </fieldset>
         <div>
           <p className="text-xs text-muted">Checking mode</p>

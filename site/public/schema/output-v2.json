@@ -125,6 +125,13 @@
           "text": {
             "type": "string"
           },
+          "theme": {
+            "description": "save: only when the program wrote `(theme: …)`; otherwise the host's theme",
+            "enum": [
+              "light",
+              "dark"
+            ]
+          },
           "value": {
             "type": "object"
           },

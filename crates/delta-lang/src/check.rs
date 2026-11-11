@@ -321,7 +321,7 @@ impl Checker<'_> {
                     CheckKind::Holds(None) => {}
                 }
             }
-            StmtKind::Run(m, w) | StmtKind::Save(m, w) => {
+            StmtKind::Run(m, w) | StmtKind::Save(m, w, _) => {
                 self.expr(m);
                 self.expr(w);
             }

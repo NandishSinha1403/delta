@@ -68,8 +68,9 @@ export interface EngineApi {
   /** Lays out a Graphviz DOT graph; returns Graphviz's `json` output. */
   layout(dot: string): Promise<string>;
   /** The file a `save` output names: text (svg, tex, txt, json) or bytes (png, pdf). The same
-   * renderer as `deltac`, so the Pad's file and the terminal's are identical. */
-  exportFile(value: unknown, format: string, text: string): Promise<string | Uint8Array>;
+   * renderer as `deltac`, so the Pad's file and the terminal's are identical. `dark` picks the
+   * drawing's theme. */
+  exportFile(value: unknown, format: string, text: string, dark: boolean): Promise<string | Uint8Array>;
   /** The engine's version, for the status bar and bug reports. */
   version(): Promise<string>;
   /** Stop: terminates the worker (WASM cannot be interrupted) and starts a fresh one. Calls in

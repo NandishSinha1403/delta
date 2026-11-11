@@ -240,8 +240,8 @@ pub enum StmtKind {
     Return(Option<Expr>),
     Print(Vec<Expr>),
     Show(Expr),
-    /// `save value to path`.
-    Save(Expr, Expr),
+    /// `save value to path [(theme: light | dark)]`: the theme, if written, with its span.
+    Save(Expr, Expr, Option<(String, Span)>),
     Assert(Expr),
     Check(Expr, CheckKind),
     Run(Expr, Expr),
@@ -357,6 +357,8 @@ pub enum MItem {
 #[derive(Clone, Debug)]
 pub struct MachineLit {
     pub model: String,
+    /// Arguments of a parameterized model (`mtm(2) M { … }`), else empty.
+    pub model_args: Vec<i64>,
     pub model_span: Span,
     pub name: Option<String>,
     pub options: Vec<(String, Span)>,

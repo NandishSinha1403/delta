@@ -1,6 +1,6 @@
 //! `deltac`: the Delta command-line tool (named so it doesn't clash with git-delta's `delta`).
 //!
-//! - `deltac run [--json] [--show] [--format F] [--out DIR] [--dark] FILE` runs a Delta 2
+//! - `deltac run [--json] [--show] [--format F] [--out DIR] [--theme T] FILE` runs a Delta 2
 //!   program (`-` reads it from stdin).
 //! - `deltac repl` starts an interactive session.
 //! - `deltac check FILE` / `deltac json FILE` are the Delta 1 checker (kept for the v1 Pad).
@@ -27,7 +27,7 @@ run options:
   --show          draw shown machines in the terminal (kitty, iTerm2 or sixel; else as text)
   --format F      also write every shown machine as F: svg, png, pdf, tikz or txt
   --out DIR       folder for --format files (default: the current folder)
-  --dark          dark drawings
+  --theme T       light (default) or dark drawings; `save … (theme: …)` overrides it
 
 Files named by `save x to \"file\"` are written inside the current folder.";
 
@@ -118,7 +118,15 @@ fn parse_run(args: &[String]) -> Result<(String, run::Options), String> {
         match a.as_str() {
             "--json" => opts.json = true,
             "--show" => opts.show = true,
+            // `--dark` is the old spelling of `--theme dark` (kept, not listed in the help).
             "--dark" => opts.dark = true,
+            "--theme" => {
+                opts.dark = match it.next().map(String::as_str) {
+                    Some("light") => false,
+                    Some("dark") => true,
+                    _ => return Err("--theme needs `light` or `dark`".into()),
+                };
+            }
             "--format" => {
                 let f = it.next().ok_or("--format needs a value")?;
                 if !run::FORMATS.iter().any(|(name, _)| name == f) {

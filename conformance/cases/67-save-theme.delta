@@ -1,0 +1,9 @@
+// 01-LANGUAGE.md §8: save follows the host's theme unless the program fixes one.
+dfa M {                                         // Context
+  start q0; accept q0
+  q0 -0-> q1; q0 -1-> q0
+  q1 -0-> q0; q1 -1-> q1
+}
+save M to "m.png"
+save M to "slides.png" (theme: dark)
+save M to "print.pdf" (theme: light)

@@ -130,7 +130,7 @@ Run programs at https://delta.nandish.dev/pad/ or with `deltac run --json FILE`.
 - E506: Pattern doesn't match. The tuple pattern has a different number of parts.
 - E507: Wrong arguments. A call with the wrong number of arguments, or an unknown named argument.
 - E508: Not a function. Only functions (and parameterized models) can be called.
-- E509: Not available yet. The built-in exists in the language but this version doesn't implement it for these arguments.
+- E509: Not available yet. The built-in exists in the language but this version doesn't implement it.
 - E512: No transition (missing: error). The machine says a missing transition is an error, and a run reached one.
 - E513: rename merges states. M.rename(f) must map different states to different values.
 - E514: Unknown file format. save picks the format from the file's extension: .svg, .png, .pdf, .tex, .txt or .json.

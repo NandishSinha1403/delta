@@ -10,7 +10,7 @@ _Last updated: 2026-11-11 (main = v2 via PR #6; IBM Plex Mono code font; the fiv
 | v1 | Tag `v1.0-final` = `50bf153`. GitHub Pages (v1) has no workflow any more; the domain points at Cloudflare |
 | Phase | **1–6 done**, Phase 6 leftovers done. Next: **7** (polish), waiting for the owner's OK on the plan |
 | Hosting | Cloudflare Pages: `delta` (`delta.nandish.dev`) and `delta-manual`. `deploy.yml` deploys both on push to `main` with wrangler-action, but **skips (grey) until `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` are set**; until then deploy from the Mac (runbook at the end) |
-| Conformance | 66 cases, `xfail.txt` empty: all pass |
+| Conformance | 71 cases, `xfail.txt` empty: all pass |
 | Tests | 164 Rust (incl. conformance); 26 Vitest; 97 Playwright (phone, tablet, desktop; incl. the glyph test) + 10 site |
 
 ## What Phase 0 produced
@@ -139,6 +139,21 @@ Q-43, Q-45–Q-48, Q-93.
 - (C) E509's text is now "not available for these arguments" (every built-in exists; some still
   report E509 for a wrong argument kind — a Phase 7 item).
 - (C) Pumping-lemma tool page (13 tools), manual chapter "theory/10" and limits/next/parts.
+
+**Made 2026-11-11 (Phase 7, owner-approved plan; (C) = Claude's call):**
+- `main` is kept in sync with `v2` after each green step (owner).
+- Themes (owner): the user picks the theme of their output. Pad: Settings → Downloads = Light /
+  Dark / Match Pad (default Match Pad). Language: `save M to "m.png" (theme: dark)` adds `theme`
+  to the save output (SEMANTICS §10.4); without it the host decides. `deltac --theme light|dark`
+  (`--dark` kept as a hidden alias). The Pad's light theme already existed; palette differences
+  vs the plan were reported, no colors changed.
+- Item 8 (owner): `on t:` lasts until the next `on`. Also (C): parameterized models start
+  literals (`mtm(2) M { … }`), the k-tape tuple short form for any on-tape model with k ≥ 2,
+  `star(regex)` works, wrong argument counts to union/intersect/difference/concat/product/star
+  are E507. `range` stays E509 (not implemented; `0..n` exists).
+- Renderer (owner): switch the Pad to `delta-render`, keeping finger, highlight, zoom, legend and
+  colors; drop Graphviz only after all diagram tests pass. State names in STIX Two Text italic
+  everywhere delta-render draws; edge labels and code stay IBM Plex Mono.
 
 ## Key findings of the audit
 

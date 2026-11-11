@@ -668,8 +668,8 @@ pub const ERRORS: &[ErrorDoc] = &[
     ErrorDoc {
         code: "E509",
         title: "Not available yet",
-        explain: "The built-in exists in the language but this version doesn't implement it for these arguments.",
-        example: "let x = star(1)",
+        explain: "The built-in exists in the language but this version doesn't implement it.",
+        example: "let x = range(0, 3)",
     },
     ErrorDoc {
         code: "E512",
@@ -870,6 +870,7 @@ pub fn output_schema() -> serde_json::Value {
                 "properties": {
                     "kind": { "enum": ["print", "show", "test", "trace", "save"] },
                     "path": { "type": "string", "description": "save: relative, `/`-separated, never leaves the working folder" },
+                    "theme": { "enum": ["light", "dark"], "description": "save: only when the program wrote `(theme: …)`; otherwise the host's theme" },
                     "format": { "enum": ["svg", "png", "pdf", "tex", "txt", "json"] },
                     "line": { "type": "integer" },
                     "text": { "type": "string" },

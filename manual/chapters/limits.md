@@ -51,9 +51,7 @@ The site has 143 pages; the largest file is the export WASM (2.2 MB raw).
 - `gnf` can grow a grammar a lot (a three-variable grammar became 853 rules); `to_single_tape` builds
   one state per (old state, collected head symbols) and per edge being applied. Both are capped by
   the states budget.
-- E509 still appears for some built-ins called with the wrong kind of argument (`star(1)`,
-  `union(1)`, `range(1)` …), where E504 or E507 would be clearer.
-- In the keyword label form, `on 2:` covers only the next operation (`;` resets to tape 1).
+- `range(…)` is listed as a built-in but not implemented (E509); use `0..n` or `0..=n`.
 - `to_cfg` grows with the cube of the normalized state count; large PDAs hit the states budget.
 - Hopcroft here rebuilds the partition per splitter, so it's slower than the textbook
   O(k·n log n) on large DFAs.

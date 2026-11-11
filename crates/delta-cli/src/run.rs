@@ -154,6 +154,11 @@ pub fn file_bytes(
 fn save(o: &Json, dark: bool) -> bool {
     let path = o["path"].as_str().unwrap_or("");
     let format = o["format"].as_str().unwrap_or("");
+    // A theme written in the program (`save M to "m.png" (theme: dark)`) wins over --theme.
+    let dark = match o["theme"].as_str() {
+        Some(t) => t == "dark",
+        None => dark,
+    };
     let result = file_bytes(format, &o["value"], o["text"].as_str(), dark)
         .and_then(|bytes| write_inside_cwd(path, &bytes));
     match result {

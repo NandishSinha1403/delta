@@ -404,6 +404,81 @@ impl P<'_> {
         Ok(w)
     }
 
+    /// `(a₁, …, aₖ)`: one symbol per tape.
+    fn sym_tuple(&mut self, k: usize) -> Result<Vec<Sym>, String> {
+        if self.bump() != Some(T::Sym("(".into())) {
+            return Err(format!("expected `(` and {k} entries, one per tape"));
+        }
+        let mut out = vec![self.sym()?];
+        while self.eat(&T::Comma) {
+            out.push(self.sym()?);
+        }
+        if self.bump() != Some(T::Sym(")".into())) {
+            return Err("expected `)` to close the tuple".to_string());
+        }
+        if out.len() != k {
+            return Err(format!(
+                "this machine has {k} tapes, so each tuple needs {k} entries, not {}",
+                out.len()
+            ));
+        }
+        Ok(out)
+    }
+
+    /// The k-tape short form: `(0, ⊔) → (0, 0), (R, R)`; also `(r…) → (d…)` when every entry
+    /// is L, R or S, `(r…) → (w…)` without moves, and `(r…)` alone.
+    fn tuple_label(&mut self, k: usize) -> Result<Label, String> {
+        let reads = self.sym_tuple(k)?;
+        let mut ops: Vec<LOp> = reads
+            .into_iter()
+            .enumerate()
+            .map(|(t, a)| LOp::Read(t, a))
+            .collect();
+        if !self.eat(&T::Arrow) {
+            return Ok(Label::new(ops));
+        }
+        let second = self.sym_tuple(k)?;
+        let is_dir = |s: &Sym| matches!(&**s, "L" | "R" | "S");
+        let to_dir = |s: &Sym| match &**s {
+            "L" => Dir::L,
+            "R" => Dir::R,
+            _ => Dir::S,
+        };
+        if self.eat(&T::Comma) {
+            let moves = self.sym_tuple(k)?;
+            if !moves.iter().all(is_dir) {
+                return Err("the moves are L, R or S".to_string());
+            }
+            ops.extend(
+                second
+                    .into_iter()
+                    .enumerate()
+                    .map(|(t, x)| LOp::Write(t, x)),
+            );
+            ops.extend(
+                moves
+                    .iter()
+                    .enumerate()
+                    .map(|(t, d)| LOp::Move(t, to_dir(d))),
+            );
+        } else if second.iter().all(is_dir) {
+            ops.extend(
+                second
+                    .iter()
+                    .enumerate()
+                    .map(|(t, d)| LOp::Move(t, to_dir(d))),
+            );
+        } else {
+            ops.extend(
+                second
+                    .into_iter()
+                    .enumerate()
+                    .map(|(t, x)| LOp::Write(t, x)),
+            );
+        }
+        Ok(Label::new(ops))
+    }
+
     fn dir(&mut self) -> Result<Dir, String> {
         match self.bump() {
             Some(T::Word(w)) if w == "L" => Ok(Dir::L),
@@ -519,10 +594,10 @@ impl P<'_> {
                 }
                 other => return Err(format!("unknown operation `{other}`")),
             }
+            // `on t:` stays in force until the next `on` (tape 1 before any `on`).
             if !self.eat(&T::Semi) {
                 break;
             }
-            tape = 0;
         }
         Ok(Label::new(ops))
     }
@@ -533,6 +608,14 @@ impl P<'_> {
             return self.keyword_label();
         }
         let m = self.model;
+        let tapes = m
+            .storage
+            .iter()
+            .filter(|k| **k == crate::model::StorageKind::Tape)
+            .count();
+        if m.input == InputMode::OnTape && tapes >= 2 && self.peek() == Some(&T::Sym("(".into())) {
+            return self.tuple_label(tapes);
+        }
         if m.input == InputMode::OnTape {
             // `0 → x, R` or `x → R` (also `0 → x` with no move).
             let a = self.sym()?;

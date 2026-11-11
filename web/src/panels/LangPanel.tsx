@@ -169,10 +169,15 @@ function SaveButton({ output }: { output: { [key: string]: unknown } }) {
   const format = String(output.format ?? 'txt');
   const name = path.split('/').pop() ?? path;
   const [state, setState] = useState<'idle' | 'busy' | 'error'>('idle');
+  const padTheme = useUiStore((s) => s.theme);
+  const downloadTheme = useUiStore((s) => s.downloadTheme);
+  // `save … (theme: dark)` in the program wins; else the Downloads setting (Match Pad by default).
+  const written = output.theme === 'light' || output.theme === 'dark' ? output.theme : null;
+  const theme = written ?? (downloadTheme === 'match' ? padTheme : downloadTheme);
   const download = async () => {
     setState('busy');
     try {
-      const data = await engine.exportFile(output.value, format, String(output.text ?? ''));
+      const data = await engine.exportFile(output.value, format, String(output.text ?? ''), theme === 'dark');
       // A Blob copies the bytes, so the worker's buffer can be reused.
       const blob = new Blob([typeof data === 'string' ? data : new Uint8Array(data)], {
         type: MIME[format] ?? 'application/octet-stream',

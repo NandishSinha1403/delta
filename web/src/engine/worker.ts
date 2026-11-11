@@ -42,15 +42,15 @@ const api = {
     return (await loadGraphviz()).layout(dot, 'json', 'dot');
   },
   /** A `save` output's file: text for svg, tex, txt and json; bytes for png and pdf. */
-  async exportFile(value: unknown, format: string, text: string): Promise<string | Uint8Array> {
+  async exportFile(value: unknown, format: string, text: string, dark: boolean): Promise<string | Uint8Array> {
     await ready;
     const json = JSON.stringify(value);
     if (format === 'png' || format === 'pdf') {
-      const svg = render_file(json, 'svg', text, false);
+      const svg = render_file(json, 'svg', text, dark);
       const m = await loadExporter();
       return format === 'png' ? m.png(svg, 2) : m.pdf(svg);
     }
-    return render_file(json, format, text, false);
+    return render_file(json, format, text, dark);
   },
   async version(): Promise<string> {
     await ready;

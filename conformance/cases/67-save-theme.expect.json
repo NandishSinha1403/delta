@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "diagnostics": [],
+  "outputs": [
+    { "kind": "save", "line": 7, "path": "m.png", "format": "png" },
+    { "kind": "save", "line": 8, "path": "slides.png", "format": "png", "theme": "dark" },
+    { "kind": "save", "line": 9, "path": "print.pdf", "format": "pdf", "theme": "light" }
+  ]
+}

@@ -4,11 +4,11 @@ two M {                                        // Context: 0ⁿ1ⁿ, counting on
   alphabet 0, 1
   start qs
   accept qa
-  qs -on 2: write $; on 2: move R-> q0
-  q0 -on 1: read 0; on 1: move R; on 2: write 0; on 2: move R-> q0
+  qs -on 2: write $; move R-> q0
+  q0 -on 1: read 0; move R; on 2: write 0; move R-> q0
   q0 -on 1: read 1; on 2: move L-> q1
   q0 -on 1: read ⊔; on 2: move L-> q1
-  q1 -on 1: read 1; on 1: move R; on 2: read 0; on 2: move L-> q1
+  q1 -on 1: read 1; move R; on 2: read 0; move L-> q1
   q1 -on 1: read ⊔; on 2: read $-> qa
 }
 let S = to_single_tape(M)

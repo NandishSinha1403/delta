@@ -94,7 +94,12 @@ the model's storages in order (§3.3), and o ∈ Δ* is the output so far (only 
   first tape starts as (ε, w) if w ≠ ε, else (ε, ⊔); other tapes start as (ε, ⊔). The tape is
   infinite to the right only: a `Move L` at the left end leaves the head where it is (02 §2.1)
   [Q-63].
-- **tapes(k)** — k tapes as above, numbered **1…k** in labels (`on 1: …`) [Q-64].
+- **tapes(k)** — k tapes as above, numbered **1…k** in labels (`on 1: …`) [Q-64]. In the keyword
+  form, `on t:` applies to every following operation of the label until the next `on`; before
+  any `on`, operations act on tape 1. So `on 2: write $; move R` writes and moves on tape 2. The
+  short form `(r₁, …, rₖ) → (w₁, …, wₖ), (d₁, …, dₖ)` is `Read(t, rₜ)`, `Write(t, wₜ)`,
+  `Move(t, dₜ)` for t = 1…k; a second tuple of only L/R/S is the moves; a tuple must have k
+  entries (E309 otherwise).
 - **queue** — a word over Γ, written front first [ε].
 - **counters(k)** — (n₁, …, n_k) ∈ ℕᵏ, named `c1`…`ck` in labels [all 0].
 - Several storages may be listed (`storage stack, stack`). Ops address them by position when the
@@ -404,7 +409,8 @@ generator source only inside a `lang` set-builder, where they are never iterated
 this is E2xx [Q-25].
 
 **10.3 Machine literals** desugar to `machine μ { states …; alphabet …; start …; accept …;
-edges […] }` (01 §5.6):
+edges […] }` (01 §5.6); for `μ(n₁, …) M { … }`, μ is the model instantiated with those arguments
+(a count different from μ's parameters is E507):
 - `q -ℓ-> p` adds edge (q, ℓ, p); `q -[ℓ₁, …, ℓₖ]-> p` adds k edges (the list is read with the
   model's label grammar, so `-[a, X -> YZ]->` is one pda edge); `δ(q, a) = p` adds (q, a, p);
   `δ(q, a) = {p₁, …}` adds one edge per pᵢ; a `table` adds one edge per non-∅ cell.
@@ -428,7 +434,10 @@ edges […] }` (01 §5.6):
   have an empty, `.` or `..` part, else E515. The image formats and `tex` need a machine, else
   E516. The result is one output `{ kind: "save", line, path, format, value, text }`, where `path`
   is p with `\` turned into `/`, `format` the lower-case extension, `value` the `show` view of e
-  and `text` what `print e` would print (the contents of a `.txt` file).
+  and `text` what `print e` would print (the contents of a `.txt` file). `save e to p (theme: t)`
+  with t ∈ {light, dark} adds `theme: t` to the output; any other option or value is E101. Without
+  it the output has no `theme` and the host draws in its own theme (the Pad's Downloads setting,
+  `deltac --theme`). The theme changes only colors, never the layout.
   Nothing is written by the engine: the host writes `path` relative to its working folder. Two
   `save`s to the same path both appear, in order; the host keeps the last.
 

@@ -459,6 +459,14 @@ impl Interp<'_> {
                 format!("unknown model `{}`", m.model),
             )));
         };
+        let model = if m.model_args.is_empty() {
+            model
+        } else {
+            Rc::new(
+                crate::model::instantiate(&model, &m.model_args, m.model_span)
+                    .map_err(Flow::Error)?,
+            )
+        };
         let (eff, initial_stack) = self.apply_options(&model, &m.options)?;
         let mut body = Body::default();
         self.collect(&m.items, &eff, &mut body)?;

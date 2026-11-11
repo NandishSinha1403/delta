@@ -1907,12 +1907,7 @@ impl Interp<'_> {
                 };
                 obj(self.fa_machine(&p, &alpha, &values, "dfa", Some(prov)))
             }
-            "star"
-                if args.len() == 1
-                    && args
-                        .first()
-                        .is_some_and(|(v, _)| v.downcast::<Machine>().is_some()) =>
-            {
+            "star" if args.len() == 1 => {
                 let a = self.arg_machine(args, 0, span)?;
                 let (f, alpha) = self.machine_fa(&a, span)?;
                 let mut values = vec![fresh_atom("start", &a.states)];
@@ -2082,6 +2077,33 @@ impl Interp<'_> {
                         .map(|s| text_word(&s.text))
                         .collect(),
                 )
+            }
+            "union" | "intersect" | "difference" | "concat" => {
+                return err(
+                    "E507",
+                    span,
+                    format!(
+                        "`{name}` takes two machines or regexes, but {} argument(s) were given",
+                        args.len()
+                    ),
+                );
+            }
+            "product" => {
+                return err(
+                    "E507",
+                    span,
+                    "`product` takes two machines and a function fn(x, y) deciding acceptance",
+                );
+            }
+            "star" => {
+                return err(
+                    "E507",
+                    span,
+                    format!(
+                        "`star` takes one machine or regex, but {} argument(s) were given",
+                        args.len()
+                    ),
+                );
             }
             _ => return Ok(None),
         };

@@ -1,0 +1,20 @@
+// 01-LANGUAGE.md §4–5: a parameterized model starts a literal (`mtm(2) M { … }`), with the
+// k-tape short form `(r₁, r₂) → (w₁, w₂), (d₁, d₂)`; `(r…) → (d…)` when every entry is a move.
+mtm(2) M {                                      // Context: 0ⁿ1ⁿ, counting on tape 2
+  alphabet 0, 1
+  start qs
+  accept qa
+  qs -(0, ⊔) → (0, $), (S, R)-> q0
+  qs -(1, ⊔) → (1, $), (S, R)-> q0
+  qs -(⊔, ⊔) → (⊔, ⊔), (S, S)-> qa
+  q0 -(0, ⊔) → (0, 0), (R, R)-> q0
+  q0 -(1, ⊔) → (S, L)-> q1
+  q0 -(⊔, ⊔) → (S, L)-> q1
+  q1 -(1, 0) → (R, L)-> q1
+  q1 -(⊔, $)-> qa
+}
+assert M.model == mtm(2)
+assert [w | w ∈ {'0','1'}^≤6, M.accepts(w)] == [ε, "01", "0011", "000111"]
+let K = mtm(3) { start q; accept q }
+assert K.model == mtm(3)
+check star(re"ab") accepts "", "abab"

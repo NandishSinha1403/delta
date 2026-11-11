@@ -1,0 +1,6 @@
+// 01-LANGUAGE.md §8: the only save option is the theme, and it is light or dark.
+dfa M {                                         // Context
+  start q0; accept q0
+  q0 -0-> q0
+}
+save M to "m.png" (theme: blue)

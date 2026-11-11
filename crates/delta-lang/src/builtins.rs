@@ -247,7 +247,7 @@ impl Interp<'_> {
             _ => err(
                 "E509",
                 span,
-                format!("`{name}` is not available for these arguments in this version of Delta 2"),
+                format!("`{name}` is not available yet in this version of Delta 2"),
             ),
         }
     }

@@ -1,0 +1,17 @@
+// SEMANTICS §3 (tapes(k)): `on t:` applies until the next `on`; before any `on`, tape 1.
+model two { input on-tape; storage tapes(2); deterministic; accept by halting; missing reject }  // Context
+two C {                                         // Context: copies the input to tape 2, then walks back to $
+  alphabet a, b
+  start s
+  accept done
+  s -on 2: write $; move R-> q
+  q -read a; move R; on 2: write a; move R-> q
+  q -read b; move R; on 2: write b; move R-> q
+  q -read ⊔; on 2: move L-> back
+  back -on 2: read a; move L-> back
+  back -on 2: read b; move L-> back
+  back -on 2: read $-> done
+}
+check C accepts "", "a", "ab", "abba"
+let s = C.run("ab")
+assert s.verdict == :accept

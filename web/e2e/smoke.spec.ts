@@ -326,6 +326,34 @@ test('save offers a download: a PNG from the lazily loaded export module', async
   expect(bytes.subarray(1, 4).toString()).toBe('PNG');
 });
 
+// Downloads follow the Pad's theme by default (Match Pad), the Settings choice overrides that,
+// and a theme written in the program overrides both.
+test('downloaded drawings follow Match Pad, the Downloads setting and save (theme: …)', async ({ page }, testInfo) => {
+  test.skip(layoutOf(testInfo) !== 'desktop', 'the settings drawer is in the desktop rail');
+  const editor = page.getByRole('textbox', { name: 'Delta code' });
+  await editor.click();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.insertText('dfa M {\n  start q0; accept q0\n  q0 -a-> q0\n}\nsave M to "a.svg"\nsave M to "b.svg" (theme: light)\n');
+  await openView(page, 'desktop', 'Console');
+  const buttons = page.getByTestId('save-download');
+  await expect(buttons).toHaveCount(2);
+  const background = async (i: number) => {
+    const [download] = await Promise.all([page.waitForEvent('download'), buttons.nth(i).click()]);
+    const path = await download.path();
+    const text = await import('node:fs').then((fs) => fs.readFileSync(path, 'utf8'));
+    return /<rect width="100%" height="100%" fill="(#[0-9a-f]+)"/.exec(text)?.[1];
+  };
+  // The Pad starts dark, Downloads starts at Match Pad.
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  expect(await background(0)).toBe('#0d0e10');
+  expect(await background(1)).toBe('#ffffff');
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.getByRole('radio', { name: 'Light' }).last().check();
+  expect(await background(0)).toBe('#ffffff');
+  await page.getByRole('radio', { name: 'Dark' }).last().check();
+  expect(await background(1)).toBe('#ffffff');
+});
+
 test('the Lang view shows a language’s class and sample words', async ({ page }, testInfo) => {
   const layout = layoutOf(testInfo);
   await pickObject(page, layout, 'L');

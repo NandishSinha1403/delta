@@ -216,7 +216,12 @@ q0 -[a, b]-> q1            // several labels on one arrow
 | queue | | `read a; dequeue X; enqueue YZ` |
 | gnfa | `ab* ∪ c` (a regex) | |
 
-`push YZ` leaves `Y` on top. Moves are `L`, `R` and `S`.
+`push YZ` leaves `Y` on top. Moves are `L`, `R` and `S`. The k-tape short form works for any
+on-tape model with k ≥ 2 tapes: one tuple of k reads, then `→` and a tuple of writes with a tuple
+of moves (`(0, ⊔) → (0, 0), (R, R)`), only the moves (`(1, ⊔) → (S, L)`, when every entry is L, R
+or S), or only the writes. A parameterized model starts a literal with its arguments:
+`mtm(2) M { … }`. In the keyword form, `on 2:` applies to
+every operation after it until the next `on` (`on 1: read 0; move R; on 2: write 0; move R`).
 
 **Moore outputs.** A Moore machine gives each state's output with `λ(q) = w` (ASCII
 `lambda(q) = w`), the same shape as `δ(q, a) = p`. In a machine body, `λ` followed by `(` is the
@@ -480,7 +485,13 @@ return e
 save M to "even-zeros.svg"
 save M.minimize() to "out/min.pdf"
 save M.states to "states.txt"
+save M to "slides.png" (theme: dark)
 ```
+
+Drawings follow the theme you are working in: the Pad's ☀/☾ setting (or its Downloads choice:
+Light, Dark or Match Pad), and `deltac --theme light|dark` (light by default). Writing
+`(theme: light)` or `(theme: dark)` after the file name fixes the theme for that file, whatever
+the host's setting.
 
 The path is relative and stays inside the folder the program runs in: no leading `/`, no drive
 letter, no `..`. The engine itself never writes files. It emits a `save` output and the host
@@ -632,7 +643,7 @@ directive  = "use" ( "notation" ( string | "{" pairs "}" ) | "strict" | "explain
 item       = modeldecl | machinedecl | langdecl | fndecl | stmt ;
 
 modeldecl  = "model" ident [ "(" params ")" ] [ "extends" ident ] "{" { property } "}" ;
-machinedecl= ident ident [ "(" options ")" ] "{" { field | transition | mfor | mif } "}"   (* first ident = model *)
+machinedecl= ident [ "(" ints ")" ] ident [ "(" options ")" ] "{" { field | transition | mfor | mif } "}"   (* first ident = model, with a parameterized model's arguments: mtm(2) M { … } *)
            | "machine" ident "{" { field } "}" ;
 field      = fieldname ( [":"] exprlist | "=" expr ) ;
 transition = state edge state                (* edge: one token in machine-body mode, §2 *)
@@ -647,7 +658,7 @@ stmt       = "let" pattern "=" expr | "var" ident "=" expr | ident "=" expr
            | "if" expr block { "else" "if" expr block } [ "else" block ]
            | "for" pattern ( "∈" | "in" ) expr block | "while" expr block
            | "return" [ expr ] | "print" exprlist | "show" expr | "assert" expr
-           | "save" expr "to" expr
+           | "save" expr "to" expr [ "(" "theme" ":" ( "light" | "dark" ) ")" ]
            | "check" checkspec | "run" expr "on" expr | expr ;
 expr       = … | atom | setbuilder | "re" string [ "over" expr ]
            | "explore" [ ident ] "{" { exclause } "}" | "fixpoint" ident "from" expr block ;

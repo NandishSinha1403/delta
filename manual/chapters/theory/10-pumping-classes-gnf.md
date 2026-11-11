@@ -69,8 +69,9 @@ edge, sweep left writing each tape's symbol and moving its mark, walk back to `�
 Only reachable (state, symbol) pairs are built, by a worklist. The 0ⁿ1ⁿ two-tape example becomes
 a 68-state one-tape machine; conformance case 66 checks both accept the same words up to length 6.
 
-Gotcha found while testing: in the keyword label form, `on 2:` covers only the operation right
-after it (`;` resets to tape 1), so `on 2: write $; on 2: move R` needs `on 2:` twice.
+Found while testing: in the keyword label form, `on 2:` used to cover only the operation right
+after it. Since Phase 7 it lasts until the next `on` (owner's call), so `on 2: write $; move R`
+writes and moves on tape 2.
 
 ## Questions they'll ask
 
