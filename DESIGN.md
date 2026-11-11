@@ -59,13 +59,14 @@ IBM Plex Mono. The subset (ASCII, primes, subscript digits) and the width table 
 measures names with (`crates/delta-render/src/stix_widths.rs`) are both cut by
 `scripts/subset-fonts.py`; the Pad loads it as `--font-state`.
 
-### PNG watermark
+### File watermark
 
-Every PNG file a user gets (`save … to "x.png"`, `deltac --format png`, the Pad's PNG download)
+Every SVG, PNG and PDF file a user gets (`save`, `deltac --format`, the Pad's downloads)
 has an 18px strip under the drawing, on the drawing's background, holding **Delta by Nandish**
 right-aligned in IBM Plex Mono 10px (`#6b7884` on light, `#8c9199` on dark). The drawing itself
-is unchanged; a drawing narrower than the mark is centred on a wider canvas. SVG, PDF and TikZ
-files, terminal previews and social cards have no mark (`delta_export::png_file` vs `png`).
+is unchanged; a drawing narrower than the mark is centred on a wider canvas. TikZ files,
+terminal previews and social cards have no mark (`delta_render::watermark`, applied to the SVG
+file that PNG and PDF are drawn from).
 
 Everything that isn't code keeps its font: Schibsted Grotesk on the site and manual, IBM Plex
 Sans for the Pad's UI, DotGothic16 for the logo, the maths serif for formulas.

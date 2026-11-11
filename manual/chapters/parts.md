@@ -21,8 +21,8 @@ Readers: **contributor**, **owner**.
 Text version: `delta-lang` is the language; it uses `delta-core`'s automata algorithms. Two
 front ends wrap it: `delta-wasm` for the browser and `delta-cli` for the terminal. Drawing to
 files is `delta-render` (layout, SVG, TikZ, text) and `delta-export` (PNG/PDF), used by the CLI
-and, through `delta-export-wasm`, by the Pad. PNG files get a "Delta by Nandish" strip under
-the drawing (`delta_export::png_file`); terminal previews and social cards use plain `png`. The docs site is generated partly by `deltac
+and, through `delta-export-wasm`, by the Pad. SVG, PNG and PDF files get a "Delta by Nandish"
+strip under the drawing (`delta_render::watermark`); TikZ, terminal previews and social cards don't. The docs site is generated partly by `deltac
 gen-docs`.
 
 | Part | What it does | Where | In → out | How it fails |

@@ -133,7 +133,8 @@ pub fn value_text(v: &Json) -> String {
 }
 
 /// The contents of a text file for a `save` (`svg`, `tex`/`tikz`, `txt`, `json`): the same in
-/// `deltac` and the Pad. `text` is the save output's `print` text, used for `.txt`.
+/// `deltac` and the Pad. `text` is the save output's `print` text, used for `.txt`. An `svg`
+/// file carries the "Delta by Nandish" strip; PNG and PDF are drawn from that same SVG.
 pub fn text_file(
     format: &str,
     value: &Json,
@@ -142,7 +143,9 @@ pub fn text_file(
 ) -> Result<String, String> {
     let not_drawable = || "only machines can be drawn".to_string();
     match format {
-        "svg" => svg_of(value, dark).ok_or_else(not_drawable),
+        "svg" => svg_of(value, dark)
+            .map(|s| delta_render::watermark(&s))
+            .ok_or_else(not_drawable),
         "tex" | "tikz" => tikz_of(value).ok_or_else(not_drawable),
         "txt" => Ok(format!(
             "{}\n",

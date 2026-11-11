@@ -15,11 +15,13 @@ mod stix_widths;
 mod svg;
 mod text;
 mod tikz;
+mod watermark;
 
 pub use layered::layout;
 pub use svg::{FONT, NAME_FONT, Theme, arrow_path, describe, svg};
 pub use text::text;
 pub use tikz::tikz;
+pub use watermark::{WATERMARK, watermark};
 
 /// A diagram to draw: states, and arrows between them by index.
 // `#[derive(...)]` asks the compiler to write common trait impls (copying, printing, comparing).

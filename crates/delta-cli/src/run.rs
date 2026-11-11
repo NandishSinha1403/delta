@@ -141,7 +141,7 @@ pub fn file_bytes(
         "png" | "pdf" => {
             let svg = delta_lang::render::text_file("svg", value, text, dark)?;
             if format == "png" {
-                delta_export::png_file(&svg, 2.0)
+                delta_export::png(&svg, 2.0)
             } else {
                 delta_export::pdf(&svg)
             }
@@ -291,5 +291,20 @@ mod tests {
             assert!(b.as_ref().is_ok_and(|b| !b.is_empty()), "{f}: {b:?}");
         }
         assert!(file_bytes("svg", &serde_json::json!({ "type": "set" }), None, false).is_err());
+        // SVG, PNG and PDF files carry the mark; TikZ doesn't.
+        let svg = String::from_utf8(file_bytes("svg", v, None, false).unwrap_or_default());
+        assert!(svg.is_ok_and(|s| s.contains(delta_render::WATERMARK)));
+        let tex = String::from_utf8(file_bytes("tex", v, None, false).unwrap_or_default());
+        assert!(tex.is_ok_and(|s| !s.contains(delta_render::WATERMARK)));
+        let plain = delta_export::png(
+            &delta_lang::render::svg_of(v, false).unwrap_or_default(),
+            2.0,
+        );
+        let png = file_bytes("png", v, None, false);
+        let height = |b: &[u8]| {
+            b.get(20..24)
+                .map_or(0, |h| u32::from_be_bytes([h[0], h[1], h[2], h[3]]))
+        };
+        assert!(height(&png.unwrap_or_default()) > height(&plain.unwrap_or_default()));
     }
 }

@@ -63,7 +63,8 @@ build.
    saved ends-ab.png
    ```
 
-   The PNG has a small "Delta by Nandish" line under the drawing; SVG and PDF files don't.
+   The PNG has a small "Delta by Nandish" line under the drawing, as SVG and PDF files do; TikZ
+   files don't.
 
 4. Try the REPL: run `deltac repl`, type `:load ends-ab.delta` (it runs the file and keeps its
    definitions), then `EndsAB.accepts("aab")`. It prints `true`. Leave with `:quit`.

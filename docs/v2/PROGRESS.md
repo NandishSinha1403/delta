@@ -159,9 +159,9 @@ Q-43, Q-45–Q-48, Q-93.
   DOT/JSON code are gone (Q-34 confirmed). Pad `dist` 6.6 MB → 5.8 MB: the lazy 818 KB (635 KB
   gzipped) Graphviz chunk is removed; the startup bundle is unchanged (312 KB gzipped). Export
   module 967 KB gzipped with the STIX subset (budget 1000). Social cards regenerated (11).
-- PNG watermark (owner, 2026-11-11): every PNG file (`save`, `deltac --format png`, the Pad's
-  download) has a "Delta by Nandish" strip under the drawing (SEMANTICS §10.4, DESIGN.md).
-  Terminal previews and social cards stay unmarked; SVG/PDF/TikZ too.
+- File watermark (owner, 2026-11-11): every SVG, PNG and PDF file (`save`, `deltac --format`,
+  the Pad's downloads) has a "Delta by Nandish" strip under the drawing (`render/watermark`,
+  SEMANTICS §10.4, DESIGN.md). TikZ, terminal previews and social cards stay unmarked.
 
 ## Key findings of the audit
 
