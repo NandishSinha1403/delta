@@ -1,5 +1,6 @@
 # cargo-dist: release packages for `deltac` (04-ROADMAP.md, Phase 5b). `dist build` works
-# locally; the generated .github/workflows/release.yml runs on a `v*` tag once Actions is on.
+# locally; the generated .github/workflows/release.yml runs on a `v*` tag (e.g. v2.0.0-rc.1).
+# Linux builds are musl (static), so they run on any distribution.
 [workspace]
 members = ["cargo:."]
 
@@ -13,11 +14,26 @@ ci = "github"
 installers = ["shell", "powershell", "homebrew", "msi"]
 # A GitHub repo to push Homebrew formulas to
 tap = "NandishSinha1403/homebrew-tap"
+# The Homebrew formula is `brew install nandishsinha1403/tap/delta-lang`
+formula = "delta-lang"
 # Publish jobs to run in CI
-publish-jobs = ["homebrew"]
+publish-jobs = ["homebrew", "./publish-crates"]
+# Prereleases (v2.0.0-rc.1) get the Homebrew formula too; publish-crates skips them itself,
+# since a crates.io version can only be yanked, never deleted.
+publish-prereleases = true
+# .deb packages (cargo-deb), attached to the GitHub release with everything else
+global-artifacts-jobs = ["./build-deb"]
 # Target platforms to build apps for (Rust target-triple syntax)
-targets = ["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"]
+targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-pc-windows-msvc", "x86_64-unknown-linux-musl", "aarch64-unknown-linux-musl"]
 # Path that installers should place binaries in
 install-path = "CARGO_HOME"
 # Whether to install an updater program
 install-updater = false
+# release.yml is generated, then the two custom-job paths are fixed by hand: dist 0.34 writes
+# `uses: $/.github/...` instead of `./.github/...`. Re-apply that fix after `dist generate`.
+allow-dirty = ["ci"]
+
+# Native runners: musl builds on x86-64 and ARM64 Linux, both macOS architectures on Apple Silicon.
+[dist.github-custom-runners]
+x86_64-unknown-linux-musl = "ubuntu-22.04"
+aarch64-unknown-linux-musl = "ubuntu-24.04-arm"

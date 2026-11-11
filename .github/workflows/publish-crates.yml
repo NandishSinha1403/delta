@@ -1,0 +1,30 @@
+# Publishes the crates `cargo install delta-cli` needs (called by release.yml through cargo-dist's
+# publish-jobs). Prereleases are skipped: a crates.io version can be yanked but never deleted.
+name: Publish crates
+on:
+  workflow_call:
+    inputs:
+      plan:
+        required: true
+        type: string
+
+jobs:
+  publish:
+    if: ${{ !fromJson(inputs.plan).announcement_is_prerelease }}
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the token exists
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          if [ -z "$CARGO_REGISTRY_TOKEN" ]; then
+            echo "::error::CARGO_REGISTRY_TOKEN is not set (see docs/v2/PROGRESS.md, releases)"
+            exit 1
+          fi
+      - uses: dtolnay/rust-toolchain@stable
+      # cargo publish --workspace publishes in dependency order and skips publish = false crates.
+      - name: Publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish --workspace --locked

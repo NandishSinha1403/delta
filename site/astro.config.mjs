@@ -26,7 +26,7 @@ export default defineConfig({
         ThemeSelect: './src/components/NoThemeSelect.astro',
       },
       sidebar: [
-        { label: 'Start', items: [{ label: 'Docs home', link: '/docs/' }, { label: 'Open the Pad ↗', link: '/pad/' }] },
+        { label: 'Start', items: [{ label: 'Docs home', link: '/docs/' }, { label: 'Open the Pad ↗', link: '/pad/' }, { label: 'Download deltac', link: '/download/' }] },
         { label: 'Tools', collapsed: true, items: [{ autogenerate: { directory: 'tools' } }] },
         { label: 'Learn', collapsed: true, items: [{ autogenerate: { directory: 'learn' } }] },
         { label: 'Practice', collapsed: true, items: [{ autogenerate: { directory: 'practice' } }] },

@@ -220,7 +220,7 @@ checksum = "be1e0bca6c3637f992fc1cc7cbc52a78c1ef6db076dbf1059c4323d6a2048376"
 
 [[package]]
 name = "delta-cli"
-version = "0.0.1"
+version = "2.0.0-rc.1"
 dependencies = [
  "delta-core",
  "delta-dsl",
@@ -234,7 +234,7 @@ dependencies = [
 
 [[package]]
 name = "delta-core"
-version = "0.0.1"
+version = "2.0.0-rc.1"
 dependencies = [
  "proptest",
  "rustc-hash",
@@ -245,7 +245,7 @@ dependencies = [
 
 [[package]]
 name = "delta-dsl"
-version = "0.0.1"
+version = "2.0.0-rc.1"
 dependencies = [
  "delta-core",
  "serde",
@@ -255,7 +255,7 @@ dependencies = [
 
 [[package]]
 name = "delta-export"
-version = "0.0.1"
+version = "2.0.0-rc.1"
 dependencies = [
  "resvg",
  "svg2pdf",
@@ -263,7 +263,7 @@ dependencies = [
 
 [[package]]
 name = "delta-export-wasm"
-version = "0.0.1"
+version = "2.0.0-rc.1"
 dependencies = [
  "delta-export",
  "wasm-bindgen",
@@ -271,7 +271,7 @@ dependencies = [
 
 [[package]]
 name = "delta-lang"
-version = "0.0.1"
+version = "2.0.0-rc.1"
 dependencies = [
  "delta-core",
  "delta-render",
@@ -282,11 +282,11 @@ dependencies = [
 
 [[package]]
 name = "delta-render"
-version = "0.0.1"
+version = "2.0.0-rc.1"
 
 [[package]]
 name = "delta-wasm"
-version = "0.0.1"
+version = "2.0.0-rc.1"
 dependencies = [
  "console_error_panic_hook",
  "delta-lang",

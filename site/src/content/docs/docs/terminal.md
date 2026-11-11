@@ -9,16 +9,18 @@ same file. (It is called `deltac` because `delta` is already the name of a popul
 
 ## Install
 
-There are no release packages yet. Build it from the repository with a recent stable Rust
-(install it with [rustup](https://rustup.rs)):
+Every way to install it, with the files for each platform, is on [Download](/download/).
 
-```sh
-git clone https://github.com/NandishSinha1403/delta
-cd delta
-cargo install --path crates/delta-cli
-```
+| Where | Command |
+|---|---|
+| macOS (Homebrew) | `brew install nandishsinha1403/tap/delta-lang` |
+| macOS, Linux (script) | `curl --proto '=https' --tlsv1.2 -LsSf https://github.com/NandishSinha1403/delta/releases/latest/download/delta-cli-installer.sh \| sh` |
+| Debian, Ubuntu (.deb) | `curl -LO https://github.com/NandishSinha1403/delta/releases/latest/download/delta-lang-amd64.deb && sudo apt install ./delta-lang-amd64.deb` (`arm64` on ARM) |
+| Windows (PowerShell) | `powershell -ExecutionPolicy Bypass -c "irm https://github.com/NandishSinha1403/delta/releases/latest/download/delta-cli-installer.ps1 \| iex"` |
+| Windows (installer) | [delta-cli-x86_64-pc-windows-msvc.msi](https://github.com/NandishSinha1403/delta/releases/latest/download/delta-cli-x86_64-pc-windows-msvc.msi) |
+| Any platform (Rust) | `cargo install delta-cli` |
 
-Then check that it works:
+The Linux builds are static, so they run on any distribution. Then check that it works:
 
 ```sh
 deltac --version
