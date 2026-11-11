@@ -1,3 +1,4 @@
+import { PresentButton } from './Present';
 import { ProfileBadge, ShareButton } from './Share';
 import { useEngineStore, useObjects } from '../state/engine';
 import { useUiStore } from '../state/ui';
@@ -112,7 +113,7 @@ function SearchButton({ compact = false }: { compact?: boolean }) {
   );
 }
 
-/** Desktop and tablet: logo, open files, search, notation and explain profile, share, theme. */
+/** Desktop and tablet: logo, open files, search, notation and explain profile, present, share, theme. */
 export function TopBar() {
   return (
     <header className="flex h-[52px] shrink-0 items-center gap-4 border-b border-border bg-surface px-4">
@@ -122,6 +123,7 @@ export function TopBar() {
         <SearchButton />
       </div>
       <ProfileBadge />
+      <PresentButton />
       <ShareButton />
       <ThemeToggle />
     </header>

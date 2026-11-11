@@ -139,6 +139,60 @@
   --syn-text: #000000;
 }
 
+/* Presentation mode's projector themes (DESIGN.md, "Presentation mode"): the palette's hues,
+   lightness changed only where projector contrast needed it. Ratios on the background: text
+   18.1:1 (dark) / 11.6:1 (light), active 12.6:1 / 7.1:1, muted text 7.0:1 / 7.1:1. "Match Pad"
+   sets no attribute, so the Pad's own tokens apply. */
+[data-present='dark'] {
+  color-scheme: dark;
+  --bg: #080e17;
+  --surface: #080e17;
+  --surface-2: #080e17;
+  --surface-3: #080e17;
+  --canvas: #080e17;
+  --node-fill: #080e17;
+  --grid-dot: #080e17;
+  --text: #f1faee;
+  --text-2: #f1faee;
+  --accept: #f1faee;
+  --muted: #71a2c0;
+  --faint: #71a2c0;
+  --dim: #71a2c0;
+  --edge: #71a2c0;
+  --node: #71a2c0;
+  --border: #1d3557;
+  --border-strong: #71a2c0;
+  --accent: #a8dadc;
+  --on-accent: #080e17;
+  --navy: #1d3557;
+  --navy-2: #1d3557;
+}
+
+[data-present='light'] {
+  color-scheme: light;
+  --bg: #f1faee;
+  --surface: #f1faee;
+  --surface-2: #f1faee;
+  --surface-3: #f1faee;
+  --canvas: #f1faee;
+  --node-fill: #f1faee;
+  --grid-dot: #f1faee;
+  --text: #1d3557;
+  --text-2: #1d3557;
+  --accept: #1d3557;
+  --muted: #325871;
+  --faint: #325871;
+  --dim: #325871;
+  --edge: #457b9d;
+  --node: #457b9d;
+  --border: #457b9d;
+  --border-strong: #457b9d;
+  --accent: #325871;
+  --on-accent: #f1faee;
+  --navy: #a8dadc;
+  --navy-2: #a8dadc;
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);

@@ -57,6 +57,11 @@ export async function shareLink(source: string): Promise<string> {
   return `${base()}#code=${await encodeSource(source)}`;
 }
 
+/** A share link that opens straight into presentation mode (`?present`). */
+export async function presentLink(source: string, what: string): Promise<string> {
+  return `${base()}?present=${what}#code=${await encodeSource(source)}`;
+}
+
 export async function embedSnippet(source: string): Promise<string> {
   const url = `${base()}#code=${await encodeSource(source)}&embed=1&panel=diagram&run=1`;
   return `<iframe src="${url}" width="100%" height="420" loading="lazy" title="Delta example"></iframe>`;

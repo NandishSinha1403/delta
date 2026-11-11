@@ -306,5 +306,20 @@ mod tests {
                 .map_or(0, |h| u32::from_be_bytes([h[0], h[1], h[2], h[3]]))
         };
         assert!(height(&png.unwrap_or_default()) > height(&plain.unwrap_or_default()));
+        // The PDF page is taller than the bare drawing's by the strip (its MediaBox height).
+        let page_height = |b: &[u8]| -> f64 {
+            let s = String::from_utf8_lossy(b);
+            s.split("/MediaBox [")
+                .nth(1)
+                .and_then(|r| r.split(']').next())
+                .and_then(|r| r.split_whitespace().nth(3))
+                .and_then(|h| h.parse().ok())
+                .unwrap_or(0.0)
+        };
+        let svg = delta_lang::render::svg_of(v, false).unwrap_or_default();
+        let plain_pdf = delta_export::pdf(&svg).unwrap_or_default();
+        let pdf = file_bytes("pdf", v, None, false).unwrap_or_default();
+        assert!(page_height(&plain_pdf) > 0.0);
+        assert!(page_height(&pdf) > page_height(&plain_pdf) + 10.0);
     }
 }

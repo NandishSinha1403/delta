@@ -4,11 +4,12 @@ import { EXAMPLES } from '../examples';
 import { applyConversion } from '../panels/current';
 import { useObjects } from '../state/engine';
 import { useUiStore } from '../state/ui';
+import { PRESENT_COMMANDS, shortcutLabel, usePresentStore } from '../state/present';
 import { filterCommands } from './palette-filter';
 
 interface Command {
   id: string;
-  group: 'Examples' | 'Conversions' | 'Go to object';
+  group: 'Examples' | 'Conversions' | 'Go to object' | 'Present';
   label: string;
   hint: string;
   run: () => void;
@@ -56,6 +57,15 @@ export function CommandPalette() {
           run: () => applyConversion(c, args),
         });
       }
+    }
+    for (const c of PRESENT_COMMANDS) {
+      out.push({
+        id: `present-${c.what}`,
+        group: 'Present',
+        label: c.label,
+        hint: `Full screen · ${shortcutLabel()} starts the last one`,
+        run: () => usePresentStore.getState().start(c.what),
+      });
     }
     for (const ex of EXAMPLES) {
       out.push({

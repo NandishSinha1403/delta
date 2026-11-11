@@ -162,6 +162,13 @@ Q-43, Q-45–Q-48, Q-93.
 - File watermark (owner, 2026-11-11): every SVG, PNG and PDF file (`save`, `deltac --format`,
   the Pad's downloads) has a "Delta by Nandish" strip under the drawing (`render/watermark`,
   SEMANTICS §10.4, DESIGN.md). TikZ, terminal previews and social cards stay unmarked.
+- Presentation mode (owner-approved mockup + changes, 2026-11-11): Present button (desktop,
+  tablet), palette "Present: …" (all layouts), Ctrl+Alt+P / ⌘⌥P (skips AltGr+P that types a
+  character; cancels Chrome's Page Setup only while the Pad has focus). Run / diagram only
+  (trace steps) / tuple and δ-table (objects); projector dark / light / Match Pad (DESIGN.md
+  table, all text ≥ 7:1); code beside with the arrow just taken marked (`transitionMarks`); L
+  laser (brand red), B blank, Esc; `?present[=run|diagram|tuple]` and Share → Copy presentation
+  link. (C): an × exit button for touch screens; `.` also blanks (clickers send it).
 
 ## Key findings of the audit
 
@@ -200,12 +207,15 @@ The full check list (wasm build, size check, web lint/typecheck/test/build/e2e) 
 
 ## Next session: start here
 
-**Phase 7 in progress (2026-11-11).** Done and deployed: themes, `delta-render` in the Pad
-(Graphviz removed), STIX Two Text italic state names (DESIGN.md, manual credits, social cards).
-**Next:** the presentation-mode mockup is with the owner; wait for the OK before building it.
-Then: notation profiles, JFLAP (roxmltree approved), performance, accessibility
-(@axe-core/playwright approved), TikZ in CI, exit check. Light-theme palette differences were
-reported to the owner; no colors changed yet.
+**Phase 7 in progress (2026-11-11).** Done: themes, `delta-render` in the Pad, STIX names, file
+watermark (SVG/PNG/PDF), presentation mode. **Next (owner's order):** C (notation profiles hmu
+and linz, JFLAP import/export, accessibility with axe on six viewports, performance: TM loop
+hashes + Hopcroft + Pad profiling, TikZ via tectonic in CI, papercuts), then D (exit check).
+**Also asked (owner, 2026-11-11): deltac releases** with cargo-dist (musl Linux x86-64/ARM64,
+macOS both, Windows; shell, PowerShell, MSI, Homebrew `delta-lang` in
+`NandishSinha1403/homebrew-tap`, .deb via cargo-deb; crates.io; /download page; Terminal page).
+Blocked on the owner: the tap repo and the secrets `HOMEBREW_TAP_TOKEN`, `CARGO_REGISTRY_TOKEN`
+(instructions were given). Test with v2.0.0-rc.1 (brew + shell script on the Mac) before v2.0.0.
 
 1. Read `CLAUDE.md`, then this file.
 2. **Domain — done 2026-11-09.** The CNAME `delta` → `delta-17m.pages.dev` is live; the Pages

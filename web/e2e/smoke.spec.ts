@@ -406,3 +406,73 @@ test('the Pad is installable and works offline after one visit', async ({ page, 
   await expect(page.getByTestId('executed')).toHaveText(/^Executed in \d+ ms$/);
   await context.setOffline(false);
 });
+
+test('presentation mode: steps the run with keys, marks the code, blank, laser, Esc', async ({ page }, testInfo) => {
+  const layout = layoutOf(testInfo);
+  if (layout === 'phone') {
+    // Phones have no Present button; the command palette starts it.
+    await palette(page, 'present', /Present: the run/);
+  } else {
+    await page.getByRole('button', { name: 'Present' }).click();
+    await page.getByRole('button', { name: 'Start presenting' }).click();
+  }
+  const show = page.getByTestId('presentation');
+  await expect(show).toBeVisible();
+  await expect(show).toHaveAttribute('data-present', 'dark');
+  await expect(show).toContainText('run EndsAB on "abab"');
+  const counter = page.getByTestId('present-counter');
+  await expect(counter).toHaveText(/0 \/ 4/);
+
+  await page.keyboard.press('ArrowRight');
+  await expect(counter).toHaveText(/1 \/ 4/);
+  if (layout !== 'phone') await expect(page.getByTestId('code-mark')).toHaveText('q0 -a-> q1');
+  await page.keyboard.press('PageDown');
+  await expect(counter).toHaveText(/2 \/ 4/);
+  if (layout !== 'phone') await expect(page.getByTestId('code-mark')).toHaveText('q1 -b-> q2');
+  await page.keyboard.press('End');
+  await expect(counter).toHaveText(/4 \/ 4/);
+  await expect(page.getByTestId('present-message')).toContainText('accepted');
+  await page.keyboard.press('Home');
+  await expect(counter).toHaveText(/0 \/ 4/);
+
+  await page.keyboard.press('b');
+  await expect(page.getByTestId('blank')).toBeVisible();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByTestId('blank')).toHaveCount(0);
+  // The key that ended the blank screen did nothing else.
+  await expect(counter).toHaveText(/0 \/ 4/);
+
+  await page.keyboard.press('l');
+  await page.mouse.move(200, 200);
+  await page.mouse.move(220, 210);
+  await expect(page.getByTestId('laser')).toBeVisible();
+  await page.keyboard.press('l');
+  await expect(page.getByTestId('laser')).toHaveCount(0);
+
+  await page.keyboard.press('Escape');
+  await expect(show).toHaveCount(0);
+
+  // Ctrl+Alt+P (⌘⌥P on a Mac) starts it again, with the same settings.
+  await page.keyboard.press('ControlOrMeta+Alt+KeyP');
+  await expect(show).toBeVisible();
+  await page.keyboard.press('ControlOrMeta+Alt+KeyP');
+  await expect(show).toHaveCount(0);
+});
+
+test('presentation mode: tuple view, light theme, and ?present on a link', async ({ page }, testInfo) => {
+  test.skip(layoutOf(testInfo) === 'phone', 'The Present panel is on the desktop and tablet top bar');
+  await page.getByRole('button', { name: 'Present' }).click();
+  await page.getByRole('button', { name: 'Tuple and δ-table' }).click();
+  await page.getByRole('button', { name: 'Light', exact: true }).click();
+  await page.getByRole('button', { name: 'Start presenting' }).click();
+  const show = page.getByTestId('presentation');
+  await expect(show).toHaveAttribute('data-present', 'light');
+  await expect(show.getByRole('math', { name: 'EndsAB = (Q, Σ, δ, q0, F)' })).toBeVisible();
+  await page.getByRole('button', { name: 'Exit presentation (Esc)' }).click();
+  await expect(show).toHaveCount(0);
+
+  await page.goto('/?present=diagram');
+  await expect(show).toBeVisible();
+  await expect(show).toHaveAttribute('data-what', 'diagram');
+  await expect(show.getByTestId('diagram')).toHaveAttribute('aria-label', /^DFA EndsAB,/);
+});

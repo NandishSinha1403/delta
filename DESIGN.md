@@ -71,6 +71,30 @@ file that PNG and PDF are drawn from).
 Everything that isn't code keeps its font: Schibsted Grotesk on the site and manual, IBM Plex
 Sans for the Pad's UI, DotGothic16 for the logo, the maths serif for formulas.
 
+## Presentation mode
+
+Full screen for lectures: a header (file › what is shown, step n / N, key hints, exit), the view,
+and a footer (large tape, the step's formula and sentence, ← → and Laser). Type scales with the
+viewport (`max(px, vw)`), the tape cells are min(84px, 8vh). The active state and the arrow just
+taken are drawn **three times as thick** as the rest (4.8 / 4.2 px against 1.6 / 1.4).
+
+Projector themes (`[data-present]` in `web/src/index.css`): the palette's hues, lightness changed
+only where projector contrast needed it. Contrast is WCAG, on the projector background.
+
+| Role | Dark | Light |
+|---|---|---|
+| Background, blank screen | `#080E17` (navy at 6% lightness) | `#F1FAEE` honeydew |
+| Text, state names | `#F1FAEE` honeydew, 18.1:1 | `#1D3557` navy, 11.6:1 |
+| Active: ring, arrow just taken, tape head, marked code | `#A8DADC` powder, 12.6:1 | `#325871` (steel at 32%), 7.1:1 |
+| Muted text | `#71A2C0` (steel at 60%), 7.0:1 | `#325871`, 7.1:1 |
+| Edges, state outlines | `#71A2C0`, 7.0:1 | `#457B9D` steel, 4.3:1 (lines: 3:1 needed) |
+| Current-state fill, marked-line fill | `#1D3557` navy (honeydew on it 11.6:1) | `#A8DADC` powder (navy on it 8.1:1) |
+| Laser | `#E63946` brand red with a glow | the same |
+
+In light, active and muted text share `#325871`; the active state stands out by its thicker
+stroke and powder fill. A rejected run keeps the Pad's `--reject`. "Match Pad" uses the Pad's own
+tokens. Keys: ← → / Page Up/Down, Home, End, L, B (or `.`), Esc; Ctrl+Alt+P / ⌘⌥P toggles it.
+
 ## Components
 
 - **btn-square**: radius 0, `#fff` on `#121212` text, 8×12px (large: 14×20px, 20px text), a 12px

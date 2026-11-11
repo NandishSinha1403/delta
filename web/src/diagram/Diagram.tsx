@@ -68,8 +68,8 @@ interface View {
   k: number;
 }
 
-function fit(layout: RenderLayout, box: { w: number; h: number }): View {
-  const k = Math.min(box.w / layout.width, box.h / layout.height, 1.75) * 0.9;
+function fit(layout: RenderLayout, box: { w: number; h: number }, max: number): View {
+  const k = Math.min(box.w / layout.width, box.h / layout.height, max) * 0.9;
   return { k, x: (box.w - layout.width * k) / 2, y: (box.h - layout.height * k) / 2 };
 }
 
@@ -130,10 +130,13 @@ interface Props {
   overlay?: Overlay;
   /** Show the finger/accept/edge legend (off where space is tight). */
   legend?: boolean;
+  /** Presentation mode: no zoom buttons, larger fit, and the active state and the arrow just
+   * taken drawn three times as thick as the rest (DESIGN.md). */
+  presenting?: boolean;
 }
 
 /** A state diagram in the book's style: circles, double circles for accept states, a start arrow. */
-export function Diagram({ name, machine, overlay = {}, legend = true }: Props) {
+export function Diagram({ name, machine, overlay = {}, legend = true, presenting = false }: Props) {
   const { layout, error } = useLayout(machine);
   const host = useRef<HTMLDivElement>(null);
   // useId gives ids with ":" which are awkward in url(#…); strip them.
@@ -153,7 +156,7 @@ export function Diagram({ name, machine, overlay = {}, legend = true }: Props) {
     return () => ro.disconnect();
   }, []);
 
-  const shown = layout && box.w > 0 && box.h > 0 ? (view ?? fit(layout, box)) : null;
+  const shown = layout && box.w > 0 && box.h > 0 ? (view ?? fit(layout, box, presenting ? 4 : 1.75)) : null;
 
   const zoomAt = (factor: number, at: Point) => {
     if (!shown) return;
@@ -285,7 +288,7 @@ export function Diagram({ name, machine, overlay = {}, legend = true }: Props) {
                       d={shape.path}
                       fill="none"
                       stroke={stroke}
-                      strokeWidth={hot ? 2.2 : 1.4}
+                      strokeWidth={hot ? (presenting ? 4.2 : 2.2) : 1.4}
                       strokeDasharray={epsilon ? '5 4' : undefined}
                       data-epsilon={epsilon || undefined}
                     />
@@ -348,7 +351,7 @@ export function Diagram({ name, machine, overlay = {}, legend = true }: Props) {
                       n={n}
                       fill={isActive ? 'var(--navy)' : 'var(--node-fill)'}
                       stroke={stroke}
-                      strokeWidth={isActive || isFocus ? 2.6 : 1.6}
+                      strokeWidth={isActive || isFocus ? (presenting ? 4.8 : 2.6) : 1.6}
                       strokeDasharray={s.trap ? '4 3' : undefined}
                       filter={isActive ? `url(#${glowId})` : undefined}
                     />
@@ -398,6 +401,7 @@ export function Diagram({ name, machine, overlay = {}, legend = true }: Props) {
           </span>
         </div>
       )}
+      {!presenting && (
       <div
         role="toolbar"
         aria-label="Zoom"
@@ -413,6 +417,7 @@ export function Diagram({ name, machine, overlay = {}, legend = true }: Props) {
           Fit
         </ZoomButton>
       </div>
+      )}
     </div>
   );
 }

@@ -64,6 +64,22 @@ Give each state's output with `λ(q) = w` (or `lambda(q) = w`); `mealy_to_moore`
 **Share** copies a link with the program in it; **Embed** copies an `<iframe>` snippet for a
 teaching page (`&embed=1&panel=…`).
 
+## How to present in a lecture
+
+**Present** (top bar), the command palette ("Present: …") or **Ctrl+Alt+P** (⌘⌥P on a Mac)
+opens presentation mode: full screen, large type, no editor. It shows one of three things: the
+current run step by step (diagram, the code beside it with the arrow just taken marked, a large
+tape and the step's formula), the diagram alone (← → replay a construction's trace), or the
+tuple and δ-table (← → move between objects).
+- Keys: ← → (and a clicker's Page Up/Down) step, Home/End jump, **L** laser pointer, **B** blank
+  screen (any key returns), **Esc** exits.
+- Themes: projector dark, projector light (bright rooms) or Match Pad. The projector colors are
+  the palette's hues with every text color at 7:1 or more on its background (DESIGN.md).
+- **Share → Copy presentation link** gives a link with `?present=run` (or `diagram`, `tuple`)
+  that opens straight into presentation mode.
+- The shortcut skips Ctrl+Shift+P (Firefox's private window) and, on Windows layouts where
+  AltGr+P types a character, leaves those keys to the editor.
+
 ## How to save pictures
 
 - Pad: `save M to "m.png"`, then the Console's **Download m.png** button.
@@ -92,3 +108,4 @@ teaching page (`&embed=1&panel=…`).
 <details class="selftest"><summary>3. What keyword builds a machine from successors?</summary><code>explore</code>.</details>
 <details class="selftest"><summary>4. How does a teacher put a live example in a page?</summary>The Embed button: an iframe with <code>#code=…&amp;embed=1</code>.</details>
 <details class="selftest"><summary>5. Which terminals show images with <code>--show</code>?</summary>kitty, Ghostty (kitty protocol), iTerm2, WezTerm (iTerm2 protocol), foot/mlterm/contour (sixel).</details>
+<details class="selftest"><summary>6. How do you start presentation mode, and what does B do?</summary>The Present button, the palette or Ctrl+Alt+P (⌘⌥P); B blanks the screen until the next key.</details>

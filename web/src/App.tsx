@@ -1,12 +1,16 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { EmbedShell } from './shell/Embed';
 import { decodeSource, parseHash } from './state/share';
 import { CommandPalette } from './shell/CommandPalette';
+import { isApple, isPresentShortcut, parseWhat, usePresentStore } from './state/present';
 import { DesktopShell, PhoneShell, TabletShell } from './shell/shells';
 import { useLayout } from './shell/useLayout';
 import { useEngineStore } from './state/engine';
 import { execute } from './state/execute';
 import { useUiStore } from './state/ui';
+
+// Presentation mode is loaded the first time someone presents.
+const Presentation = lazy(() => import('./shell/Presentation'));
 
 // Re-evaluate shortly after typing stops, not on every keystroke.
 const DEBOUNCE_MS = 150;
@@ -32,6 +36,7 @@ export function App() {
   const activeId = useUiStore((s) => s.activeId);
   const auto = useUiStore((s) => s.auto);
   const theme = useUiStore((s) => s.theme);
+  const presenting = usePresentStore((s) => s.presenting);
   const evaluate = useEngineStore((s) => s.evaluate);
   const clearRun = useEngineStore((s) => s.clearRun);
 
@@ -53,6 +58,35 @@ export function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
+
+  // `?present` (or `?present=run|diagram|tuple`) on a share link opens straight into presentation
+  // mode, once the shared program has been evaluated.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('present') || hash.embed) return;
+    const what = parseWhat(params.get('present')) ?? undefined;
+    const startWhenReady = () => {
+      if (useEngineStore.getState().doc) usePresentStore.getState().start(what);
+      else window.setTimeout(startWhenReady, 100);
+    };
+    startWhenReady();
+  }, [hash.embed]);
+
+  // Ctrl+Alt+P (⌘⌥P on a Mac) starts presenting. The browser's own use of the keys (Chrome's
+  // Page Setup on a Mac) is cancelled only here, while the Pad has focus.
+  useEffect(() => {
+    const apple = isApple();
+    const onKey = (e: KeyboardEvent) => {
+      if (!isPresentShortcut(e, apple)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const p = usePresentStore.getState();
+      if (p.presenting) p.stop();
+      else p.start();
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, []);
 
   // ⌘K / Ctrl+K opens the command palette and ⌘↵ / Ctrl+Enter executes, from anywhere. Capture
   // phase, so they win over the editor's own bindings (Mod-Enter would insert a blank line).
@@ -78,6 +112,11 @@ export function App() {
     <>
       {layout === 'desktop' ? <DesktopShell /> : layout === 'tablet' ? <TabletShell /> : <PhoneShell />}
       <CommandPalette />
+      {presenting && (
+        <Suspense fallback={null}>
+          <Presentation />
+        </Suspense>
+      )}
     </>
   );
 }

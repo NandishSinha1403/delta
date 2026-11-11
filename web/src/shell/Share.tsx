@@ -1,17 +1,23 @@
 import { useState } from 'react';
-import { embedSnippet, shareLink } from '../state/share';
+import { usePresentStore } from '../state/present';
+import { embedSnippet, presentLink, shareLink } from '../state/share';
 import { useUiStore } from '../state/ui';
 
 /** Share: copy a link that holds the program, or an `<iframe>` embed of it. */
 export function ShareButton() {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
-  const copy = async (what: 'link' | 'embed') => {
+  const copy = async (what: 'link' | 'embed' | 'present') => {
     const source = useUiStore.getState().source;
-    const text = what === 'link' ? await shareLink(source) : await embedSnippet(source);
+    const text =
+      what === 'link'
+        ? await shareLink(source)
+        : what === 'present'
+          ? await presentLink(source, usePresentStore.getState().what)
+          : await embedSnippet(source);
     try {
       await navigator.clipboard.writeText(text);
-      setCopied(what === 'link' ? 'Link copied' : 'Embed copied');
+      setCopied(what === 'embed' ? 'Embed copied' : 'Link copied');
     } catch {
       window.prompt('Copy this:', text);
     }
@@ -37,6 +43,9 @@ export function ShareButton() {
           </button>
           <button type="button" role="menuitem" onClick={() => void copy('embed')} className="block w-full rounded px-2 py-1.5 text-left text-xs hover:bg-surface-2">
             Copy embed
+          </button>
+          <button type="button" role="menuitem" onClick={() => void copy('present')} className="block w-full rounded px-2 py-1.5 text-left text-xs hover:bg-surface-2">
+            Copy presentation link
           </button>
         </div>
       )}
