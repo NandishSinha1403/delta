@@ -31,8 +31,26 @@ No other hues. Red is not part of the system: failure is `#ededed` on a dark chi
 - **Schibsted Grotesk** (variable, self-hosted, OFL): headlines weight 500; hero `clamp(32px,
   2.6vw + 22px, 60px)` at `-0.045em`; section heads `clamp(28px, 3.2vw, 44px)` at `-0.04em`;
   metrics 56px at `-3.36px`; body 16px/1.6.
-- **Commit Mono** (400/500, self-hosted, OFL): code, chips, table data, metrics units, captions.
+- **IBM Plex Mono** (400/500, self-hosted, OFL): code, chips, table data, metrics units, captions.
   Tabular numerals everywhere data is aligned.
+
+### Code font (Q-32)
+
+IBM Plex Mono is the one code font everywhere code appears: the Pad editor (400/600), code on the
+site, docs and manual, exports (SVG/PNG/PDF), `deltac` terminal images and social cards. It has no
+Greek and few maths symbols, so two subsets fill exactly the characters it lacks, in this order:
+
+1. **Noto Sans Math**: Greek, ∪ ∩ ∈ ⊆ ≡ ⊔ ⊢ ▸ ⟨ ⟩ and the other maths symbols and arrows.
+2. **Noto Sans Mono**: superscripts, subscripts and modifier letters (⁺ ⁿ ᵏ ᵐ ₖ).
+
+Stack: `'IBM Plex Mono', 'Delta Math', 'Delta Sup', ui-monospace, …` on the web (the two
+fallback faces carry `unicode-range`, so they load only when used); `IBM Plex Mono, Noto Sans
+Math, Noto Sans Mono` in SVG. All files are self-hosted and cut by `scripts/subset-fonts.py`.
+`crates/delta-export/fonts/symbols.txt` lists every symbol Delta code uses; a Rust test (exports)
+and a Playwright test (the Pad) fail if any of them is drawn by another font.
+
+Everything that isn't code keeps its font: Schibsted Grotesk on the site and manual, IBM Plex
+Sans for the Pad's UI, DotGothic16 for the logo, the maths serif for formulas.
 
 ## Components
 

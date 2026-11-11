@@ -37,7 +37,7 @@ repository; code excerpts are pulled from the source at build time, so they can'
 | Readers | 1. the owner preparing for interviews, 2. a contributor, 3. an operator, 4. a user, 5. a visitor |
 | Public or private | Private (one password, owner only). Operating details and decision history live here, not on the public site |
 | Where it lives | `delta-manual.pages.dev` (Cloudflare Pages project `delta-manual`) behind a password gate (`manual/functions/_middleware.js`); never a custom domain |
-| Design system | `DESIGN.md` ("Dark Tech": black ground, Schibsted Grotesk + Commit Mono). The manual reuses the site's fonts and theme |
+| Design system | `DESIGN.md` ("Dark Tech": black ground, Schibsted Grotesk + IBM Plex Mono). The manual reuses the site's fonts and theme |
 | Sensitive areas | Cloudflare account and tokens; the copyrighted textbook PDF in the repo root (never committed); the manual's password (Pages secret `MANUAL_PASS`) |
 | Facts that change often | Cloudflare plan limits, tool versions (wrangler pinned at 4.42.0), test counts and WASM sizes (each quoted with its date) |
 

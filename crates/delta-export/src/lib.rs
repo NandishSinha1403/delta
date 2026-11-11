@@ -1,4 +1,5 @@
-//! SVG → PNG and PDF, with Commit Mono and a Noto Sans Math subset (for ⊔, ⊢, ▸ …) built in.
+//! SVG → PNG and PDF, with the code font built in: IBM Plex Mono, plus Noto Sans Math (Greek,
+//! ∪ ∩ ∈ ⊔ ⊢ ▸ …) and Noto Sans Mono (⁺ ⁿ ᵏ …) subsets for exactly the characters Plex lacks.
 //!
 //! `deltac` and the Pad's export module (`delta-export-wasm`) both call these two functions on
 //! the SVG from `delta-render`, so a file saved in the terminal and one downloaded from the Pad
@@ -7,21 +8,26 @@
 // `Arc` is a shared, reference-counted pointer that can cross threads; usvg keeps fonts in one.
 use std::sync::Arc;
 
-/// The embedded fonts (OFL; licences in `fonts/`). Subsets: Latin, Greek, arrows, maths.
-const COMMIT_MONO: &[u8] = include_bytes!("../fonts/CommitMono-400-Regular.subset.otf");
+/// The embedded fonts (OFL; licences in `fonts/`), cut by `scripts/subset-fonts.py`.
+const PLEX_MONO: &[u8] = include_bytes!("../fonts/IBMPlexMono-Regular.subset.ttf");
 const NOTO_MATH: &[u8] = include_bytes!("../fonts/NotoSansMath-Regular.subset.ttf");
+const NOTO_MONO: &[u8] = include_bytes!("../fonts/NotoSansMono-Regular.subset.ttf");
+
+/// The font stack for SVG text: the code font first, then its two fallbacks.
+pub const FONT_FAMILY: &str = "IBM Plex Mono, Noto Sans Math, Noto Sans Mono, monospace";
 
 /// The largest PNG side we draw, in pixels (keeps a huge machine from using gigabytes).
 pub const MAX_SIDE: u32 = 8192;
 
 fn options() -> resvg::usvg::Options<'static> {
     let mut db = resvg::usvg::fontdb::Database::new();
-    db.load_font_data(COMMIT_MONO.to_vec());
+    db.load_font_data(PLEX_MONO.to_vec());
     db.load_font_data(NOTO_MATH.to_vec());
-    db.set_monospace_family("CommitMono");
-    db.set_sans_serif_family("CommitMono");
+    db.load_font_data(NOTO_MONO.to_vec());
+    db.set_monospace_family("IBM Plex Mono");
+    db.set_sans_serif_family("IBM Plex Mono");
     resvg::usvg::Options {
-        font_family: "CommitMono".to_string(),
+        font_family: "IBM Plex Mono".to_string(),
         fontdb: Arc::new(db),
         ..resvg::usvg::Options::default()
     }
@@ -77,7 +83,7 @@ pub fn pdf(svg: &str) -> Result<Vec<u8>, String> {
 mod tests {
     use super::*;
 
-    const SVG: &str = r##"<svg xmlns="http://www.w3.org/2000/svg" width="60" height="30" font-family="CommitMono, Noto Sans Math, monospace"><rect width="100%" height="100%" fill="#fff"/><text x="4" y="20" font-size="14">q0 ⊔</text></svg>"##;
+    const SVG: &str = r##"<svg xmlns="http://www.w3.org/2000/svg" width="60" height="30" font-family="IBM Plex Mono, Noto Sans Math, Noto Sans Mono, monospace"><rect width="100%" height="100%" fill="#fff"/><text x="4" y="20" font-size="14">q0 ⊔</text></svg>"##;
 
     #[test]
     fn png_has_the_right_size_and_ink() {
@@ -104,6 +110,63 @@ mod tests {
         let blank_cup = png(&SVG.replace("q0 ⊔", " "), 1.0).unwrap_or_default();
         let cup = png(&SVG.replace("q0 ⊔", "⊔"), 1.0).unwrap_or_default();
         assert_ne!(blank_cup, cup);
+    }
+
+    /// The glyph ids each character of `line` is drawn with, with the font's family name;
+    /// glyph 0 is the "missing glyph" box.
+    fn glyphs(line: &str) -> Vec<(String, u16, String)> {
+        let svg = format!(
+            r##"<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="30" font-family="{FONT_FAMILY}"><text x="4" y="20" font-size="14">{line}</text></svg>"##
+        );
+        let Ok(tree) = tree(&svg) else {
+            return Vec::new();
+        };
+        let db = options().fontdb;
+        let mut out = Vec::new();
+        for node in tree.root().children() {
+            // `if let`: runs the block only when the pattern matches (here: a text node).
+            if let resvg::usvg::Node::Text(text) = node {
+                for span in text.layouted() {
+                    for g in &span.positioned_glyphs {
+                        let family = db
+                            .face(g.font)
+                            .and_then(|f| f.families.first().map(|(name, _)| name.clone()))
+                            .unwrap_or_default();
+                        out.push((g.text.clone(), g.id.0, family));
+                    }
+                }
+            }
+        }
+        out
+    }
+
+    #[test]
+    fn every_delta_symbol_has_a_glyph_in_the_embedded_fonts() {
+        let symbols = include_str!("../fonts/symbols.txt");
+        let line: String = symbols
+            .lines()
+            .filter(|l| !l.starts_with('#'))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let drawn = glyphs(&line);
+        let expected = line.chars().filter(|c| !c.is_whitespace()).count();
+        let shown: Vec<_> = drawn.iter().filter(|(t, _, _)| t.trim() != "").collect();
+        assert_eq!(shown.len(), expected, "every character was laid out");
+        let fonts = ["IBM Plex Mono", "Noto Sans Math", "Noto Sans Mono"];
+        let missing: Vec<_> = shown
+            .iter()
+            .filter(|(_, id, family)| *id == 0 || !fonts.contains(&family.as_str()))
+            .map(|(t, _, f)| format!("{t} ({f})"))
+            .collect();
+        assert!(missing.is_empty(), "no glyph for: {}", missing.join(", "));
+        // Plain code is set in Plex itself, not a fallback.
+        assert!(glyphs("q0").iter().all(|(_, _, f)| f == "IBM Plex Mono"));
+    }
+
+    #[test]
+    fn a_character_no_font_has_is_reported_missing() {
+        // ✨ is in none of the three fonts: the check above would catch it.
+        assert!(glyphs("✨").iter().any(|(_, id, _)| *id == 0));
     }
 
     #[test]

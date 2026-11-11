@@ -45,7 +45,7 @@ res = await call(new Request('https://m.example/', { headers: { Cookie: `delta_m
 assert.equal(res.status, 401);
 
 // Fonts, icon and robots.txt are public; nothing else is.
-for (const p of ['/fonts/commit-mono-latin-400-normal.woff2', '/favicon.svg', '/robots.txt']) {
+for (const p of ['/fonts/ibm-plex-mono-400.woff2', '/favicon.svg', '/robots.txt']) {
   assert.equal((await call(new Request('https://m.example' + p))).status, 200, p);
 }
 assert.equal((await call(new Request('https://m.example/sitemap-index.xml'))).status, 401);

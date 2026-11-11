@@ -1,0 +1,4 @@
+# Every non-ASCII character Delta code can contain. Each must be drawn by one of the embedded
+# code fonts (IBM Plex Mono, Noto Sans Math, Noto Sans Mono): checked for exports by
+# delta-export's tests and for the Pad by web/e2e/glyphs.spec.ts. Lines starting with # are skipped.
+Σ Γ Δ δ ε λ μ φ ω ∪ ∩ ∈ ∉ ∋ ⊆ ⊂ ≡ ≠ ≤ ≥ ∁ ∖ ∘ ∧ ¬ ∅ ⋃ ⊔ ⊢ ⊣ ⊥ ▸ □ ⟨ ⟩ → ← ↔ ⟶ ⇒ ⇥ × · ⁺ ⁿ ᵏ ᵐ ⁱ ᴿ ₀ ₁ ₂ ₃ ₄ ₖ ¹ ² ³ ─ │ ┌ ┐ └ ┘ ├ ┬ ✓ … — – − § é ü

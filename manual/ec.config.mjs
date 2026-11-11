@@ -13,7 +13,7 @@ export default defineEcConfig({
   styleOverrides: {
     borderRadius: '12px',
     borderColor: 'rgba(255, 255, 255, 0.145)',
-    codeFontFamily: "'Commit Mono', ui-monospace, Menlo, monospace",
+    codeFontFamily: "'IBM Plex Mono', 'Delta Math', 'Delta Sup', ui-monospace, Menlo, monospace",
     codeFontSize: '13px',
     codeBackground: '#0a0a0a',
   },

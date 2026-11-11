@@ -1,5 +1,5 @@
 /* The docs in the front page's Dark Tech world: #000 ground, #0a0a0a panels with a 1px ring,
-   Schibsted Grotesk prose and headings, Commit Mono code, #52a8ff for active states only. */
+   Schibsted Grotesk prose and headings, IBM Plex Mono code, #52a8ff for active states only. */
 @import './fonts.css';
 
 :root,
@@ -21,7 +21,7 @@
   --sl-color-hairline: rgba(255, 255, 255, 0.145);
   --sl-color-hairline-light: rgba(255, 255, 255, 0.08);
   --sl-font: 'Schibsted Grotesk', ui-sans-serif, system-ui, sans-serif;
-  --sl-font-mono: 'Commit Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --sl-font-mono: 'IBM Plex Mono', 'Delta Math', 'Delta Sup', ui-monospace, 'SFMono-Regular', Menlo, monospace;
   color-scheme: dark;
 }
 

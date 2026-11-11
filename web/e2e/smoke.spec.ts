@@ -185,8 +185,8 @@ test('Convert buttons add the conversion and show its result', async ({ page }, 
   await expect(page.getByTestId('diagram')).toHaveAttribute('aria-label', /^DFA M, 3 states/);
 });
 
-// The symbol bar must show a real union sign (a cup), not a letter: Plex Mono's ∪ reads as "u" and
-// JetBrains Mono's as "U". The button is screenshotted next to identical buttons holding "U" and
+// The symbol bar must show a real union sign (a cup), not a letter: Plex Mono has no ∪, and a
+// system fallback can draw it like a "u" or "U". The button is screenshotted next to identical buttons holding "U" and
 // "u"; the pixels must differ from both. (Compared in the same browser, so no stored baseline is
 // needed and the test means the same on macOS and on CI's Linux.)
 test('symbol bar shows a real ∪ and a superscript star', async ({ page }, testInfo) => {
@@ -195,7 +195,7 @@ test('symbol bar shows a real ∪ and a superscript star', async ({ page }, test
   const union = bar.getByRole('button', { name: /union/ });
   await expect(union).toHaveText('∪');
   await page.evaluate(() => document.fonts.ready);
-  expect(await page.evaluate(() => document.fonts.check('16px "Delta Cup"', '∪'))).toBe(true);
+  expect(await page.evaluate(() => document.fonts.check('16px "Delta Math"', '∪'))).toBe(true);
   await expect(bar.getByRole('button', { name: /star/ }).locator('sup')).toHaveText('∗');
 
   const shot = await union.screenshot();

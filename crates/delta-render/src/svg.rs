@@ -51,8 +51,9 @@ impl Theme {
     }
 }
 
-/// The font stack. `delta-export` embeds both fonts; elsewhere `monospace` is the fallback.
-pub const FONT: &str = "CommitMono, Noto Sans Math, monospace";
+/// The font stack: IBM Plex Mono, then the fallbacks for what it lacks. `delta-export` embeds all
+/// three; elsewhere `monospace` is the last resort.
+pub const FONT: &str = "IBM Plex Mono, Noto Sans Math, Noto Sans Mono, monospace";
 
 const ARROW: f64 = 9.0;
 const ARROW_HALF: f64 = 4.2;

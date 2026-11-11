@@ -26,11 +26,12 @@ Readers: **all**.
 
 ## Fonts (all SIL Open Font License 1.1)
 
-- **Commit Mono** 1.143 (Eigil Nikolajsen): code on the site; exports (a subset in
-  `crates/delta-export/fonts/`).
-- **Noto Sans Math** 3.000 (the Noto Project Authors): the symbols Commit Mono lacks, in exports.
+- **IBM Plex Mono** 2.5.0 (IBM): the one code font: the Pad, the site, this manual, exports,
+  `deltac` images and social cards (subsets cut by `scripts/subset-fonts.py`).
+- **Noto Sans Math** 3.000 (the Noto Project Authors): Greek and the maths symbols Plex lacks.
+- **Noto Sans Mono** (the Noto Project Authors): the superscripts Plex lacks (⁺ ⁿ ᵏ).
 - **Schibsted Grotesk**: the site's headlines and prose.
-- **IBM Plex Sans/Mono, DotGothic16**: the Pad.
+- **IBM Plex Sans, DotGothic16**: the Pad's UI and logo.
 
 ## Works it draws on
 
@@ -54,7 +55,7 @@ Cocke–Younger–Kasami).
 ## Self-test
 
 <details class="selftest"><summary>1. Delta's licence?</summary>MIT.</details>
-<details class="selftest"><summary>2. Which fonts are embedded in exports, and why two?</summary>Commit Mono and a Noto Sans Math subset, for the symbols (⊔, ⊢, ▸) Commit Mono lacks.</details>
+<details class="selftest"><summary>2. Which fonts are embedded in exports, and why three?</summary>IBM Plex Mono, plus Noto Sans Math and Noto Sans Mono subsets for the characters Plex lacks (Greek, ⊔ ⊢ ▸, and superscripts like ⁿ).</details>
 <details class="selftest"><summary>3. Which library lays out on-screen diagrams?</summary>Graphviz, via @hpcc-js/wasm-graphviz.</details>
 <details class="selftest"><summary>4. Where may Sipser be quoted?</summary>Only in explain profiles and this private manual.</details>
 <details class="selftest"><summary>5. What does the REPL use for line editing?</summary>rustyline 19.</details>

@@ -61,7 +61,7 @@ Goal: within ten seconds a visitor understands what Delta is, and within thirty 
 ```
 
 - **The hero is real.** The example is an embedded Pad that runs in the visitor's browser. The diagram animates the run on load, once, and stops; `prefers-reduced-motion` turns that off.
-- The page uses the Pad's design system (near-black, the palette, Courier Prime for code). The big headline uses **IBM Plex Sans**, with the logo word in **DotGothic16**.
+- The page uses the Pad's design system (near-black, the palette, IBM Plex Mono for code). The big headline uses **IBM Plex Sans**, with the logo word in **DotGothic16**.
 - **Performance:** the hero loads the engine lazily after first paint. Lighthouse ≥ 95, and LCP under 2 s on 4G.
 - **On a phone** the hero stacks: headline, then buttons, then the editor and output as tabs.
 
@@ -177,7 +177,7 @@ Options (in the hash): `embed=1`, `panel` (diagram, tests, lang, console), `run`
 | Brand red (logo tile, Share, primary CTA on the front page) and errors | `#E63946` |
 | Tints | navy `#1D3557`, active fill `#16263D`, steel blue `#457B9D` |
 | Accept states | `#F1FAEE` double ring |
-| Fonts | code: Courier Prime (fallback Courier New → STIX Two Math); UI: IBM Plex Sans; logo: DotGothic16; math: STIX Two Text |
+| Fonts | code: IBM Plex Mono (fallbacks: Noto Sans Math, Noto Sans Mono subsets; Q-32); UI: IBM Plex Sans; logo: DotGothic16; math: STIX Two Text |
 | Syntax | VS Code Dark+ / Light+ |
 | Light theme | paper `#F1FAEE`, ink `#1D3557`, active `#457B9D` |
 | Motion | 150–250 ms; respects reduced motion |

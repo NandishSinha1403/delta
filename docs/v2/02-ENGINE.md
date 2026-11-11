@@ -14,7 +14,7 @@ crates/
 ├─ delta-classes   the decidability-class lattice, closure and decision tables   (NEW)
 ├─ delta-explain   explain profiles (textbook citations as data)                 (NEW; content moved out of core)
 ├─ delta-render    layered layout, SVG, TikZ, ASCII (no dependencies)            (split out of core)
-├─ delta-export    SVG → PNG/PDF (resvg, svg2pdf, embedded Commit Mono)          (NEW, Phase 5b)
+├─ delta-export    SVG → PNG/PDF (resvg, svg2pdf, embedded IBM Plex Mono)         (NEW, Phase 5b)
 ├─ delta-wasm      browser and app API                                           (KEEP; new surface)
 ├─ delta-export-wasm  the Pad's lazily loaded image export                       (NEW, Phase 5b)
 └─ delta-cli       the `deltac` binary: run | repl | check | …                   (KEEP; extended)

@@ -1,5 +1,5 @@
 /* Self-hosted faces (SIL OFL 1.1; licenses in /fonts). Schibsted Grotesk for headlines and prose,
-   Commit Mono for code, data and metrics. */
+   IBM Plex Mono for code, data and metrics. */
 @font-face {
   font-family: 'Schibsted Grotesk';
   font-style: normal;
@@ -16,17 +16,36 @@
   src: url('/fonts/schibsted-grotesk-latin-ext-wght-normal.woff2') format('woff2-variations');
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+1EF2-1EFF, U+20A0-20AB, U+20AD-20C0, U+2C60-2C7F, U+A720-A7FF;
 }
+/* IBM Plex Mono is the one code font (DESIGN.md). It has no Greek and few maths symbols, so two
+   Noto subsets fill exactly what it lacks; unicode-range means they load only when a page uses them.
+   Built by scripts/subset-fonts.py. */
 @font-face {
-  font-family: 'Commit Mono';
+  font-family: 'IBM Plex Mono';
   font-style: normal;
   font-display: swap;
   font-weight: 400;
-  src: url('/fonts/commit-mono-latin-400-normal.woff2') format('woff2');
+  src: url('/fonts/ibm-plex-mono-400.woff2') format('woff2');
 }
 @font-face {
-  font-family: 'Commit Mono';
+  font-family: 'IBM Plex Mono';
   font-style: normal;
   font-display: swap;
   font-weight: 500;
-  src: url('/fonts/commit-mono-latin-500-normal.woff2') format('woff2');
+  src: url('/fonts/ibm-plex-mono-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Delta Math';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400 500;
+  src: url('/fonts/noto-sans-math-delta.woff2') format('woff2');
+  unicode-range: U+0391-03C9, U+03D1, U+03D5, U+03F5, U+2100-214F, U+2190-231F, U+25A0-25FF, U+27E6-27FF;
+}
+@font-face {
+  font-family: 'Delta Sup';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400 500;
+  src: url('/fonts/noto-sans-mono-sup.woff2') format('woff2');
+  unicode-range: U+1D2C-1D6A, U+2070-209F;
 }

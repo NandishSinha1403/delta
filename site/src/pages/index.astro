@@ -1,6 +1,6 @@
 ---
 // The front page (03-PRODUCTS.md §2) in the Dark Tech world: black ground, Schibsted Grotesk
-// headlines, Commit Mono for every piece of data, square CTAs, pill status chips.
+// headlines, IBM Plex Mono for every piece of data, square CTAs, pill status chips.
 import '../styles/fonts.css';
 import { beaconScript } from '../lib/analytics.mjs';
 import { padUrl } from '../lib/pad-link.mjs';
@@ -162,13 +162,13 @@ const nav = [
     <meta name="theme-color" content="#000000" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preload" href="/fonts/schibsted-grotesk-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/commit-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/ibm-plex-mono-400.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/img/hero-dfa.webp" as="image" />
   </head>
   <body>
     <Fragment set:html={`<!--
 THESIS: Delta's front page is the machine itself: a real rendered DFA under a black scrim, then real runs, checks and constructions laid out as instrument readouts, never marketing cards.
-OWN-WORLD: #000 ground, #0a0a0a panels ringed in rgba(255,255,255,.145), Schibsted Grotesk 500 headlines with tight tracking, Commit Mono for every datum, square white CTAs, #1f1f1f pill chips with status dots (#62c073 pass, #999 warn, #ededed fail), #52a8ff for the active state only.
+OWN-WORLD: #000 ground, #0a0a0a panels ringed in rgba(255,255,255,.145), Schibsted Grotesk 500 headlines with tight tracking, IBM Plex Mono for every datum, square white CTAs, #1f1f1f pill chips with status dots (#62c073 pass, #999 warn, #ededed fail), #52a8ff for the active state only.
 STORY: a student sees a running automaton, reads a real trace, tries it live, learns that questions know their decidability, and opens the Pad.
 FIRST VIEWPORT: full-height divisible-by-5 render behind a bottom scrim; headline and CTA bottom-left; provenance caption bottom-right; header at 38px.
 FORM: brief-pinned (user's Dark Tech spec); seed key: pinned-by-brief.
@@ -457,7 +457,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
         --accent: #52a8ff;
         --ok: #62c073;
         --sans: 'Schibsted Grotesk', ui-sans-serif, system-ui, sans-serif;
-        --mono: 'Commit Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+        --mono: 'IBM Plex Mono', 'Delta Math', 'Delta Sup', ui-monospace, 'SFMono-Regular', Menlo, monospace;
         --pad-x: 56px;
         color-scheme: dark;
       }

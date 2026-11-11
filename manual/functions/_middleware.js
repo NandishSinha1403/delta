@@ -62,7 +62,7 @@ function page(status, wrong, next) {
 <link rel="icon" href="/favicon.svg">
 <style>
 @font-face { font-family: 'Schibsted Grotesk'; font-weight: 400 900; font-display: swap; src: url('/fonts/schibsted-grotesk-latin-wght-normal.woff2') format('woff2-variations'); }
-@font-face { font-family: 'Commit Mono'; font-weight: 400; font-display: swap; src: url('/fonts/commit-mono-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'IBM Plex Mono'; font-weight: 400; font-display: swap; src: url('/fonts/ibm-plex-mono-400.woff2') format('woff2'); }
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: #000; color: #ededed; }
 body { display: grid; place-items: center; padding: 20px; font: 16px/1.6 'Schibsted Grotesk', system-ui, sans-serif; }
@@ -70,12 +70,12 @@ form { width: 100%; max-width: 360px; padding: 28px; background: #0a0a0a; border
 .mark { display: block; margin-bottom: 18px; }
 h1 { margin: 0 0 4px; font-weight: 500; font-size: 28px; letter-spacing: -0.04em; color: #fff; }
 p { margin: 0 0 20px; color: #999; font-size: 14px; }
-label { display: block; margin-bottom: 6px; font: 12px 'Commit Mono', ui-monospace, monospace; text-transform: uppercase; color: #999; }
-input { width: 100%; padding: 10px 12px; background: #000; color: #fff; border: 0; border-radius: 0; box-shadow: 0 0 0 1px rgba(255,255,255,.145); font: 15px 'Commit Mono', ui-monospace, monospace; }
+label { display: block; margin-bottom: 6px; font: 12px 'IBM Plex Mono', ui-monospace, monospace; text-transform: uppercase; color: #999; }
+input { width: 100%; padding: 10px 12px; background: #000; color: #fff; border: 0; border-radius: 0; box-shadow: 0 0 0 1px rgba(255,255,255,.145); font: 15px 'IBM Plex Mono', ui-monospace, monospace; }
 input:focus { outline: none; box-shadow: 0 0 0 1px #52a8ff; }
 button { margin-top: 16px; width: 100%; padding: 10px 12px; background: #fff; color: #121212; border: 0; border-radius: 0; font: 500 15px 'Schibsted Grotesk', system-ui, sans-serif; cursor: pointer; }
 button:hover { background: #e6e6e6; box-shadow: 0 0 0 4px rgba(255,255,255,.08); }
-.wrong { margin: 12px 0 0; display: inline-flex; gap: 6px; align-items: center; padding: 4px 10px; background: #1f1f1f; border-radius: 100px; font: 12px 'Commit Mono', ui-monospace, monospace; text-transform: uppercase; color: #ededed; }
+.wrong { margin: 12px 0 0; display: inline-flex; gap: 6px; align-items: center; padding: 4px 10px; background: #1f1f1f; border-radius: 100px; font: 12px 'IBM Plex Mono', ui-monospace, monospace; text-transform: uppercase; color: #ededed; }
 .wrong::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #ededed; }
 </style>
 </head>

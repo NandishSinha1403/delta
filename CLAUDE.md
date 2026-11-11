@@ -39,7 +39,7 @@ owner says so. `v1.0-final` tags the last v1.
 - `crates/delta-lang`: **v2** lexer (normal + machine-body modes), parser, checker, interpreter
 - `crates/delta-dsl`: v1 lexer, parser, checker (the web app uses it until the Pad moves to v2)
 - `crates/delta-render`: layered layout, SVG, TikZ, text drawings of machines (no dependencies)
-- `crates/delta-export`: SVG → PNG/PDF (resvg, svg2pdf) with the embedded Commit Mono + Noto Sans Math subsets
+- `crates/delta-export`: SVG → PNG/PDF (resvg, svg2pdf) with the embedded IBM Plex Mono + Noto Sans Math/Mono subsets (`scripts/subset-fonts.py`)
 - `crates/delta-wasm`: wasm-bindgen facade, JSON in / JSON out
 - `crates/delta-export-wasm`: the Pad's lazily loaded PNG/PDF export (`web/src/engine/export-pkg/`, generated)
 - `crates/delta-cli`: the `deltac` binary (`run`, `repl` and `gen-docs` are v2; `check`/`json` are v1);

@@ -6,7 +6,7 @@
 //! - [`tikz`]: the same geometry as a TikZ picture.
 //! - [`text`]: a plain-text listing for terminals that can't show images.
 //!
-//! Text is measured as Commit Mono (every character 0.6 em wide), the font `delta-export`
+//! Text is measured as IBM Plex Mono (every character 0.6 em wide), the font `delta-export`
 //! embeds, so the boxes fit the labels exactly when the SVG is rasterized.
 
 mod layered;
@@ -145,7 +145,7 @@ pub struct Layout {
     pub start: Option<Curve>,
 }
 
-/// Font sizes and the width of one character (Commit Mono advances are 600/1000 em).
+/// Font sizes and the width of one character (IBM Plex Mono advances are 600/1000 em).
 pub const NAME_SIZE: f64 = 15.0;
 pub const LABEL_SIZE: f64 = 13.0;
 pub const LABEL_LINE: f64 = 16.0;
