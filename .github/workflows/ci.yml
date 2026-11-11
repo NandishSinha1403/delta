@@ -2,7 +2,7 @@
 name: CI
 on:
   pull_request:
-  push: { branches: [main] }
+  push:                                   # every branch
 permissions: { contents: read }
 concurrency: { group: "ci-${{ github.ref }}", cancel-in-progress: true }
 
@@ -41,6 +41,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with: { targets: wasm32-unknown-unknown }
       - uses: Swatinem/rust-cache@v2
+      - name: Install binaryen (wasm-opt keeps the .wasm files within budget)
+        run: |
+          curl -sSfL https://github.com/WebAssembly/binaryen/releases/download/version_133/binaryen-version_133-x86_64-linux.tar.gz | tar xz -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/binaryen-version_133/bin" >> "$GITHUB_PATH"
       - run: ./scripts/build-wasm.sh
       - run: ./scripts/check-wasm-size.sh
       - uses: pnpm/action-setup@v4
@@ -52,10 +56,13 @@ jobs:
           cache-dependency-path: |
             web/pnpm-lock.yaml
             site/pnpm-lock.yaml
+            manual/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
         working-directory: web
       - run: pnpm install --frozen-lockfile
         working-directory: site
+      - run: pnpm install --frozen-lockfile
+        working-directory: manual
       - run: pnpm lint
         working-directory: web
       - run: pnpm typecheck
@@ -72,6 +79,9 @@ jobs:
         run: ./scripts/build-site.sh
       - run: pnpm test:site
         working-directory: web
+      - name: Build the manual (password gate test, excerpts, noindex check)
+        run: pnpm build
+        working-directory: manual
       - uses: actions/upload-artifact@v4
         if: failure()
         with: { name: playwright-report, path: web/playwright-report, retention-days: 7 }

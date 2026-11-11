@@ -6,13 +6,38 @@ permissions: { contents: read }
 concurrency: { group: deploy, cancel-in-progress: true }
 
 jobs:
+  # Deploys only once both Cloudflare secrets exist; until then the deploy job shows as skipped
+  # (grey), not failed, and the site is deployed from a Mac with wrangler (PROGRESS.md runbook).
+  secrets:
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - id: check
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -n "$TOKEN" ] && [ -n "$ACCOUNT" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID not set: deploy skipped."
+          fi
+
   deploy:
+    needs: secrets
+    if: needs.secrets.outputs.ready == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with: { targets: wasm32-unknown-unknown }
       - uses: Swatinem/rust-cache@v2
+      - name: Install binaryen (wasm-opt keeps the .wasm files within budget)
+        run: |
+          curl -sSfL https://github.com/WebAssembly/binaryen/releases/download/version_133/binaryen-version_133-x86_64-linux.tar.gz | tar xz -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/binaryen-version_133/bin" >> "$GITHUB_PATH"
       - run: cargo test --workspace
       - uses: pnpm/action-setup@v4             # reads "packageManager" from web/package.json
         with: { package_json_file: web/package.json }
@@ -23,18 +48,36 @@ jobs:
           cache-dependency-path: |
             web/pnpm-lock.yaml
             site/pnpm-lock.yaml
+            manual/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
         working-directory: web
       - run: pnpm install --frozen-lockfile
         working-directory: site
+      - run: pnpm install --frozen-lockfile
+        working-directory: manual
       - run: pnpm test
         working-directory: web
       # The front page and docs at /, the Pad at /pad/ (03-PRODUCTS.md §1).
       - run: ./scripts/build-site.sh
-      # Cloudflare Pages, direct upload to the "delta" project; --branch=main makes it production.
-      - uses: cloudflare/wrangler-action@v3
+      - run: ./scripts/check-wasm-size.sh
+      # The private manual; its password gate (functions/_middleware.js) is tested in the build.
+      - run: pnpm build
+        working-directory: manual
+      # Cloudflare Pages, direct upload; --branch=main makes it production.
+      - name: Deploy the site (project "delta")
+        uses: cloudflare/wrangler-action@v3
         with:
           wranglerVersion: "4.42.0"             # the version the first deploys used
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy site/dist --project-name=delta --branch=main
+      # From inside manual/, so functions/ (the password gate) is uploaded with dist/.
+      # MANUAL_PASS is a secret on the Pages project itself, never in GitHub or the repo.
+      - name: Deploy the manual (project "delta-manual")
+        uses: cloudflare/wrangler-action@v3
+        with:
+          wranglerVersion: "4.42.0"
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: manual
+          command: pages deploy dist --project-name=delta-manual --branch=main
