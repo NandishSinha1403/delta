@@ -34,6 +34,20 @@ jobs:
             exit 1
           fi
 
+  tikz:
+    # Every TikZ drawing compiles in a plain standalone + tikz document (tectonic: one binary).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build -p delta-cli
+      - name: Install tectonic 0.15.0
+        run: |
+          curl -sSfL "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.15.0/tectonic-0.15.0-x86_64-unknown-linux-musl.tar.gz" | tar xz -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - run: ./scripts/check-tikz.sh
+
   web:
     runs-on: ubuntu-latest
     steps:

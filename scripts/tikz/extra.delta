@@ -1,0 +1,22 @@
+// Machines whose TikZ labels use every special spelling: ε, the blanks ⊔ and □, arrows, stacks.
+nfa N {
+  start q0; accept q1
+  q0 -ε-> q1
+  q0 -[a, b]-> q0
+}
+show N
+pda P {
+  start p; accept p
+  p -[a, ε → A]-> p
+  p -[b, A → ε]-> p
+}
+show P
+tm T {
+  start q0; accept qa; reject qr
+  q0 -[a → b, R]-> q0
+  q0 -[⊔ → ⊔, L]-> qa
+  q0 -[b → R]-> qr
+}
+show T
+use notation "linz"
+show T

@@ -17,7 +17,8 @@ fn tex(s: &str) -> String {
             '→' => r"\to{}",
             '←' => r"\leftarrow{}",
             '⊔' => r"\sqcup{}",
-            '□' => r"\square{}",
+            // `\square` needs amssymb; an empty framed box needs nothing beyond LaTeX.
+            '□' => r"\mbox{\setlength{\fboxsep}{0pt}\fbox{\rule{0pt}{0.6em}\rule{0.6em}{0pt}}}",
             '∅' => r"\emptyset{}",
             '·' => r"\cdot{}",
             '$' | '&' | '#' | '%' | '_' | '{' | '}' => {
@@ -150,5 +151,14 @@ mod tests {
         );
         assert!(out.contains(".. controls"));
         assert!(out.trim_end().ends_with(r"\end{tikzpicture}"));
+    }
+
+    /// The .tex promises only `\usepackage{tikz}`: no command from amssymb or other packages.
+    #[test]
+    fn labels_need_only_core_latex() {
+        let t = tex("ε λ δ Σ Γ → ← ⊔ □ ∅ ·");
+        for cmd in [r"\square", r"\Box", r"\blacksquare"] {
+            assert!(!t.contains(cmd), "{t}");
+        }
     }
 }
