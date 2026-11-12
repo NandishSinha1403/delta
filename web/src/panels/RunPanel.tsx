@@ -21,8 +21,8 @@ type Status = 'ready' | 'running' | 'accepted' | 'rejected';
 function StatusPill({ status }: { status: Status }) {
   const style: Record<Status, string> = {
     ready: 'bg-surface-3 text-muted',
-    running: 'bg-navy-2 text-accent',
-    accepted: 'bg-navy text-accent',
+    running: 'bg-navy-2 text-on-navy',
+    accepted: 'bg-navy text-on-navy',
     rejected: 'bg-reject/15 text-reject',
   };
   const text: Record<Status, string> = {
@@ -70,7 +70,7 @@ function Tape({ input, pos, big }: { input: readonly string[]; pos: number; big:
             i < pos
               ? 'bg-surface-2 text-faint'
               : i === pos
-                ? 'border-2 border-accent bg-navy text-accent'
+                ? 'border-2 border-accent bg-navy text-on-navy'
                 : 'bg-surface-3 text-text'
           }`}
         >
@@ -101,7 +101,7 @@ function TapeStrip({ cells, head, label }: { cells: string[]; head: number; labe
           key={i}
           aria-current={i === head ? 'true' : undefined}
           className={`grid h-8 min-w-7 shrink-0 place-items-center rounded px-1.5 ${
-            i === head ? 'border-2 border-accent bg-navy text-accent' : 'bg-surface-3 text-text'
+            i === head ? 'border-2 border-accent bg-navy text-on-navy' : 'bg-surface-3 text-text'
           }`}
         >
           {c}
@@ -211,7 +211,7 @@ function Timeline({ machine, run, pos, go }: { machine: MachineView; run: RunVie
               aria-label={known ? `${hasStorage(run) ? `Step ${i}` : `After ${i} symbols`}: ${configuration(machine, run, i)}` : `Step ${i}`}
               className={`rounded-md px-2 py-1 ${
                 i === pos
-                  ? 'border border-accent bg-navy text-accent'
+                  ? 'border border-accent bg-navy text-on-navy'
                   : known
                     ? 'bg-surface-2 text-text-2'
                     : 'border border-dashed border-border-strong text-faint'
@@ -432,7 +432,7 @@ export function RunPanel({ variant = 'stack' }: { variant?: 'strip' | 'stack' })
     <section aria-label={`Run ${object.name}`} onKeyDown={keys} className="flex h-full min-h-0 flex-col gap-3 p-4">
       <div className="flex items-center gap-2">
         <div className="min-w-0 flex-1">{inputBox}</div>
-        <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${run ? 'bg-navy-2 text-accent' : 'bg-surface-3 text-muted'}`}>
+        <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${run ? 'bg-navy-2 text-on-navy' : 'bg-surface-3 text-muted'}`}>
           {run ? `step ${pos} / ${n}` : 'no run'}
         </span>
       </div>

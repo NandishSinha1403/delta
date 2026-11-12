@@ -66,9 +66,8 @@ export function SymbolBar({ view }: Props) {
             {/* The star is shown as the book prints it: a superscript after an expression. */}
             {s.symbol === '*' ? (
               <span className="font-serif text-lg leading-none">
-                <span aria-hidden="true" className="text-faint">
-                  R
-                </span>
+                {/* A CSS-drawn "R": seen, but not part of the name (WCAG 2.5.3). */}
+                <span aria-hidden="true" className="text-faint before:content-['R']" />
                 <sup className="text-xs">∗</sup>
               </span>
             ) : (

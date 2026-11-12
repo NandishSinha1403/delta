@@ -70,6 +70,8 @@
   --on-accent: #0d0e10;
   --navy: #1d3557;
   --navy-2: #16263d;
+  /* Accent-colored text on navy or navy-2 (4.5:1 or more in every theme). */
+  --on-navy: var(--accent);
   --steel: #457b9d;
   --steel-soft: #7fa9bc;
   --brand: #e63946;
@@ -116,6 +118,7 @@
   --on-accent: #ffffff;
   --navy: #a8dadc;
   --navy-2: #dcefef;
+  --on-navy: #285e7a;
   --steel: #457b9d;
   --steel-soft: #457b9d;
   --brand: #e63946;
@@ -166,6 +169,7 @@
   --on-accent: #080e17;
   --navy: #1d3557;
   --navy-2: #1d3557;
+  --on-navy: var(--accent);
 }
 
 [data-present='light'] {
@@ -191,6 +195,7 @@
   --on-accent: #f1faee;
   --navy: #a8dadc;
   --navy-2: #a8dadc;
+  --on-navy: var(--accent);
 }
 
 @theme inline {
@@ -215,6 +220,7 @@
   --color-dim: var(--dim);
   --color-navy: var(--navy);
   --color-navy-2: var(--navy-2);
+  --color-on-navy: var(--on-navy);
   --color-steel: var(--steel);
   --color-steel-soft: var(--steel-soft);
   --color-brand: var(--brand);
