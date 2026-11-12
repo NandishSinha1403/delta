@@ -114,7 +114,11 @@ The **computation tree** on w has the initial configuration C₀ = (q₀, 0, ini
 its root and the successors of each node as its children. The generic simulator explores it
 breadth first with a visited set on configurations, under the budget (02 §2.2). The visited set
 makes ε-loops and other configuration cycles terminate whenever the reachable configuration space
-is finite. Otherwise the budget stops it with the verdict `unknown` (§6.2).
+is finite. Otherwise the budget stops it with the verdict `unknown` (§6.2). Each configuration
+explored costs 1 + the number of cells on its tapes against the `steps` budget (`sim/cost`), so a
+machine without tapes spends one step per configuration and a tape that keeps growing spends
+more: with the default budget (10,000,000) a head that runs right over blanks forever stops after
+about 4,500 moves, and a machine working on a 100-cell tape gets about 100,000.
 
 ---
 

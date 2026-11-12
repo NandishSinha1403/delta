@@ -374,7 +374,13 @@ impl Machine {
             }
             let mut next = Vec::new();
             for &i in &frontier {
-                explored += 1;
+                // `sim/cost`: a configuration costs 1 plus its tape cells, since copying and
+                // remembering it takes that long; a head running off over blanks then stops
+                // after a few thousand steps instead of taking minutes.
+                let cells: usize = nodes.get(i).map_or(0, |c| {
+                    c.tapes.iter().map(|t| t.left.len() + t.right.len()).sum()
+                });
+                explored = explored.saturating_add(1 + cells as u64);
                 if explored > fuel {
                     return Ok(RunResult {
                         verdict: Verdict::Unknown,

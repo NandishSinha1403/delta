@@ -636,7 +636,7 @@ check to_cfg(to_pda(G)) ≡ G up to 6
 | X999 | internal | engine restarts; your code is kept |
 
 - **`use strict`** requires every field to be written explicitly and disables inference. Teachers use it for assignments. The default is **lenient**.
-- **Budgets:** steps, states created, recursion depth and output size. Defaults are generous; adjust with `budget { steps: 50_000_000 }`. Hitting a budget is an *outcome*, not a crash: the program stops there, the outputs it already produced stay, and the result has `ok: false` with a B6xx diagnostic. (A machine *run* that runs out of budget instead gets the verdict `unknown` and the program goes on.)
+- **Budgets:** steps, states created, recursion depth and output size. Defaults are generous; adjust with `budget { steps: 50_000_000 }`. Hitting a budget is an *outcome*, not a crash: the program stops there, the outputs it already produced stay, and the result has `ok: false` with a B6xx diagnostic. (A machine *run* that runs out of budget instead gets the verdict `unknown` and the program goes on.) A run step of a machine with a tape costs 1 + its tape cells, so a Turing machine that runs away on a growing tape reaches `unknown` in well under a second.
 - **Verdicts.** A run of a machine on a word ends with one of four verdicts, the same words everywhere (traces, JSON, the playground):
   - **accept**: an accepting configuration was reached;
   - **reject**: every branch ended without accepting;
