@@ -136,6 +136,9 @@ Run programs at https://delta.nandish.dev/pad/ or with `deltac run --json FILE`.
 - E514: Unknown file format. save picks the format from the file's extension: .svg, .png, .pdf, .tex, .txt or .json.
 - E515: Path leaves the folder. A save path is relative and stays inside the folder the program runs in: no leading /, no drive letter, no `..`.
 - E516: Nothing to draw. Only machines can be saved as .svg, .png, .pdf or .tex. Save other values as .txt or .json.
+- E517: Not a JFLAP file. In v2.0 `import` reads JFLAP files (.jff) only; modules across Delta files come in v2.1. Without `as`, the file name must be a Delta name: write `import "my file.jff" as M` otherwise.
+- E518: File not found. In the terminal, `import` reads the file from the folder the program runs in. In the Pad, open the .jff file first (Files → Open file…); it is then found by its tab name.
+- E519: Can't convert the JFLAP file. The file isn't JFLAP XML, or it holds something Delta can't read: Mealy and Moore machines, multi-tape or building-block Turing machines. Finite automata, pushdown automata, one-tape Turing machines and grammars import.
 - B601: Step budget reached. The program stopped after the step budget. Outputs so far stay; raise it with budget { steps: … }.
 - B602: States budget reached. A construction created more states than the states budget.
 - B603: Depth budget reached. Recursion went deeper than the depth budget.

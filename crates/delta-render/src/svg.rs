@@ -322,11 +322,13 @@ mod tests {
                     name: "q0".into(),
                     start: true,
                     accept: false,
+                    reject: false,
                 },
                 Node {
                     name: "<a&b>".into(),
                     start: false,
                     accept: true,
+                    reject: false,
                 },
             ],
             edges: vec![

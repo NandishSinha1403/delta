@@ -476,3 +476,37 @@ test('presentation mode: tuple view, light theme, and ?present on a link', async
   await expect(show).toHaveAttribute('data-what', 'diagram');
   await expect(show.getByTestId('diagram')).toHaveAttribute('aria-label', /^DFA EndsAB,/);
 });
+
+// A JFLAP file opens in its own tab and shows its machine; a Delta file can import it by name.
+const EVEN_JFF = `<?xml version="1.0" encoding="UTF-8" standalone="no"?><structure><type>fa</type><automaton>
+<state id="0" name="even"><initial/><final/></state><state id="1" name="odd"/>
+<transition><from>0</from><to>1</to><read>0</read></transition>
+<transition><from>1</from><to>0</to><read>0</read></transition>
+<transition><from>0</from><to>0</to><read>1</read></transition>
+<transition><from>1</from><to>1</to><read>1</read></transition>
+</automaton></structure>`;
+
+async function openFromDevice(page: Page, name: string, text: string) {
+  const [chooser] = await Promise.all([
+    page.waitForEvent('filechooser'),
+    palette(page, 'open file', /^Files\s*Open file/),
+  ]);
+  await chooser.setFiles({ name, mimeType: 'application/xml', buffer: Buffer.from(text) });
+}
+
+test('Open file… opens a JFLAP .jff file, and a program imports it', async ({ page }, testInfo) => {
+  const layout = layoutOf(testInfo);
+  await openFromDevice(page, 'zeros.jff', EVEN_JFF);
+  if (layout !== 'phone') {
+    await expect(page.getByRole('navigation', { name: 'Open files' })).toContainText('zeros.jff');
+  } else {
+    await page.getByRole('tab', { name: 'Diagram' }).click();
+  }
+  await expect(page.getByTestId('diagram')).toHaveAttribute('aria-label', /^DFA zeros, 2 states, start even, accept even/);
+
+  await openFromDevice(page, 'use.delta', 'import "zeros.jff" as Z\ncheck Z accepts "00", "1"\n');
+  if (layout === 'phone') await page.getByRole('tab', { name: 'Code' }).click();
+  await expect(page.getByRole('textbox', { name: 'Delta code' })).toContainText('import "zeros.jff" as Z');
+  if (layout === 'phone') await page.getByRole('tab', { name: 'Diagram' }).click();
+  await expect(page.getByTestId('diagram')).toHaveAttribute('aria-label', /^DFA Z, 2 states, start even/);
+});

@@ -1,0 +1,9 @@
+// 01-LANGUAGE §8, "JFLAP files": import binds an ordinary machine; save writes it back.
+import "74-jflap-fa.jff" as M            // λ is ε, "ab" a chain, "q 1" renamed
+import "74-jflap-pda.jff" as P           // starts with Z on the stack
+check M accepts "ab", "aba"
+check M rejects "a", "b"
+check P accepts "ab", "aabb"
+check P rejects "", "abb"
+show M
+save M to "m.jff"

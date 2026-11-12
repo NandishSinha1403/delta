@@ -6,6 +6,7 @@ import { useEngineStore, useObjects } from '../state/engine';
 import { useUiStore, type RailPanel } from '../state/ui';
 import { Credit } from './Credit';
 import { Icon, type IconName } from './icons';
+import { openFromDevice } from '../state/open-file';
 
 const ITEMS: readonly { id: RailPanel; label: string; icon: IconName }[] = [
   { id: 'files', label: 'Files', icon: 'files' },
@@ -76,9 +77,15 @@ function FilesDrawer() {
           </li>
         ))}
       </ul>
-      <button type="button" onClick={newFile} className="mx-4 mt-2 text-xs text-accent hover:underline">
-        + New file
-      </button>
+      <div className="flex gap-4 px-4 pt-2">
+        <button type="button" onClick={newFile} className="text-xs text-accent hover:underline">
+          + New file
+        </button>
+        <button type="button" onClick={() => void openFromDevice()} className="text-xs text-accent hover:underline">
+          Open file…
+        </button>
+      </div>
+      <p className="px-4 pt-3 text-[11px] text-faint">Opens .delta programs and JFLAP .jff files.</p>
       <p className="px-4 pt-3 text-[11px] text-faint">Files are kept in this browser only.</p>
     </>
   );

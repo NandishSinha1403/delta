@@ -124,11 +124,13 @@ mod tests {
                     name: "q1".into(),
                     start: true,
                     accept: false,
+                    reject: false,
                 },
                 Node {
                     name: "acc_1".into(),
                     start: false,
                     accept: true,
+                    reject: false,
                 },
             ],
             edges: vec![Edge {

@@ -6,10 +6,11 @@ import { useObjects } from '../state/engine';
 import { useUiStore } from '../state/ui';
 import { PRESENT_COMMANDS, shortcutLabel, usePresentStore } from '../state/present';
 import { filterCommands } from './palette-filter';
+import { openFromDevice } from '../state/open-file';
 
 interface Command {
   id: string;
-  group: 'Examples' | 'Conversions' | 'Go to object' | 'Present';
+  group: 'Files' | 'Examples' | 'Conversions' | 'Go to object' | 'Present';
   label: string;
   hint: string;
   run: () => void;
@@ -67,6 +68,13 @@ export function CommandPalette() {
         run: () => usePresentStore.getState().start(c.what),
       });
     }
+    out.push({
+      id: 'open-file',
+      group: 'Files',
+      label: 'Open file…',
+      hint: 'A .delta program or a JFLAP .jff file from this device',
+      run: () => void openFromDevice(),
+    });
     for (const ex of EXAMPLES) {
       out.push({
         id: `ex-${ex.id}`,

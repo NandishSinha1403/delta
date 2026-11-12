@@ -765,6 +765,7 @@ mod tests {
                     name: format!("q{i}"),
                     start: i == 0,
                     accept: i + 1 == n,
+                    reject: false,
                 })
                 .collect(),
             edges: edges

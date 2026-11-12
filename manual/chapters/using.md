@@ -87,6 +87,17 @@ tuple and δ-table (← → move between objects).
   machines inline in kitty, Ghostty, iTerm2, WezTerm or sixel terminals;
   `--format pdf --out figs` writes every shown machine.
 
+## How to bring JFLAP files in and out
+
+- Pad: **Files → Open file…** (or "Open file…" in ⌘K) opens a `.jff` file in a tab, which shows
+  its machine. Any Delta tab can then `import "name.jff" as M`; the name is the tab's.
+- Terminal: `import "lab3/pda.jff" as P` reads the file from the folder `deltac` runs in.
+- Back out: `save M to "m.jff"` (machines and grammars) opens in JFLAP 7.
+- What converts: finite automata (a `dfa` when deterministic, else an `nfa`), pushdown automata
+  (a new start state pushes JFLAP's `Z`), one-tape Turing machines and grammars. λ becomes ε, a
+  multi-character read becomes a chain of states, a state name that isn't a Delta name becomes
+  `q` and its JFLAP number. Mealy, Moore, multi-tape and building-block machines are refused (E519).
+
 ## Questions they'll ask
 
 1. **"Can students cheat with it?"** — It checks claims; a teacher can grade by running a
@@ -109,3 +120,4 @@ tuple and δ-table (← → move between objects).
 <details class="selftest"><summary>4. How does a teacher put a live example in a page?</summary>The Embed button: an iframe with <code>#code=…&amp;embed=1</code>.</details>
 <details class="selftest"><summary>5. Which terminals show images with <code>--show</code>?</summary>kitty, Ghostty (kitty protocol), iTerm2, WezTerm (iTerm2 protocol), foot/mlterm/contour (sixel).</details>
 <details class="selftest"><summary>6. How do you start presentation mode, and what does B do?</summary>The Present button, the palette or Ctrl+Alt+P (⌘⌥P); B blanks the screen until the next key.</details>
+<details class="selftest"><summary>7. A student sends a JFLAP file. How do you test their DFA?</summary>Open it (Files → Open file…), then in a Delta tab: <code>import "their.jff" as S</code> and <code>check S ≡ reference</code>.</details>

@@ -210,14 +210,19 @@ The full check list (wasm build, size check, web lint/typecheck/test/build/e2e) 
 **Phase 7 in progress (2026-11-12).** Done: themes, delta-render in the Pad, STIX names, file
 watermark, presentation mode (deployed); notation hmu/linz for ε, union and blank (committed, not
 deployed); release setup (2.0.0-rc.1, cargo-dist musl/deb/brew/crates, /download page; NOT
-deployed: links need a release). **In progress: JFLAP.** Engine done and unit-tested
-(`jflap.rs`, `import "x.jff" [as M]` E517/E518/E519, `save M to "x.jff"`, deltac reads imports);
-Pad wiring half-done: `state/program.ts`, worker/WASM pass open .jff tabs as files. **Still to
-do for JFLAP:** Files drawer "Open file…" (.delta/.jff), e2e test, 01-LANGUAGE §8 + SEMANTICS
-§10.4 (import, jff), error docs E517–E519 in docs.rs, conformance cases, manual. Then C:
-a11y (axe), performance, TikZ/tectonic CI, papercuts (tm `text` drops `reject`), then D.
-**Waiting on the owner:** release secrets + tap repo; ⌘⌥P check in Chrome on a Mac; what
-"states" means for notation profiles (names vs TM tuple with F).
+deployed: links need a release). **JFLAP done (not deployed):** engine (`jflap.rs`), deltac,
+Pad "Open file…" (Files drawer and ⌘K; .delta/.jff; a .jff tab shows its machine, other tabs
+`import` it by name), e2e test, 01-LANGUAGE §8 "JFLAP files", SEMANTICS §10.4 `import`, E517–E519
+pages, conformance 74–77 (the harness now runs in `conformance/cases/`), manual "Using it".
+Papercut fixed: text drawings mark a TM's reject state (✗). **Next:** rest of C (a11y with axe,
+performance with numbers, TikZ/tectonic CI), then D (exit check).
+**Waiting on the owner:** release secrets (`HOMEBREW_TAP_TOKEN`, `CARGO_REGISTRY_TOKEN`) and the
+`NandishSinha1403/homebrew-tap` repo (neither existed on 2026-11-12, so no tag yet); then tag
+v2.0.0-rc.1, install with brew and the shell script, show the owner, and only then deploy
+/download. The ⌘⌥P check in Chrome on a Mac (the answer came back unfilled). Notation "states"
+(owner, 2026-11-12): under hmu/linz a TM may be written as (Q, Σ, Γ, δ, q0, B, F), accepting on
+entering a state in F, no move = reject, blank B (hmu) / □ (linz), tuple printed in that book's
+order; state names need no profile. Not built yet: needs a spec change first.
 
 1. Read `CLAUDE.md`, then this file.
 2. **Domain — done 2026-11-09.** The CNAME `delta` → `delta-17m.pages.dev` is live; the Pages

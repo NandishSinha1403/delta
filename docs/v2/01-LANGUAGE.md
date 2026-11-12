@@ -480,6 +480,7 @@ return e
 | `.tex` | A TikZ picture of the diagram | machines |
 | `.txt` | The text that `print` shows | any |
 | `.json` | The value as JSON (the `show` value of the output schema) | any |
+| `.jff` | A JFLAP 7 file, to open in JFLAP | machines and grammars |
 
 ```delta
 save M to "even-zeros.svg"
@@ -498,6 +499,33 @@ letter, no `..`. The engine itself never writes files. It emits a `save` output 
 writes it: `deltac` writes inside the current folder (creating subfolders), the Pad offers a
 download. Another extension, a path that leaves the folder, or a value with no diagram saved to
 an image is an error (E514, E515, E516).
+
+### JFLAP files
+
+`import` reads a machine or grammar from a JFLAP file (`.jff`) as an ordinary Delta value:
+
+```delta
+import "m1.jff"                    // binds m1
+import "lab3/pda.jff" as P         // binds P
+check P accepts "aabb"
+save P.minimize() to "small.jff"   // and back to JFLAP
+```
+
+Without `as`, the name is the file name without `.jff`, which must then be a Delta name
+(`import "m1.jff"` binds `m1`; `import "even-zeros.jff"` is E517: write `as`). The terminal reads
+the file from the folder the program runs in (the same paths as `save`); the Pad reads the files
+open in its tabs, by their names (Files → Open file…), and a `.jff` tab shows its machine.
+
+| JFLAP | Delta | Notes |
+|---|---|---|
+| Finite automaton | `dfa`, or `nfa` when it has a choice or an empty move | A read of several characters becomes a chain of new states |
+| Pushdown automaton | `pda` | JFLAP starts with `Z` on the stack, so a new start state pushes it |
+| Turing machine (one tape) | `tm` | Final states accept; halting elsewhere rejects; an empty cell is the blank |
+| Grammar | `cfg` | One character per symbol; upper-case letters are variables |
+
+JFLAP's λ is ε. State names that aren't Delta names become `q` and JFLAP's state number. Mealy and
+Moore machines, multi-tape and building-block Turing machines don't import (E519). A path that
+isn't `.jff` is E517 (modules across Delta files come in v2.1), a missing file E518.
 
 ---
 

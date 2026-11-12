@@ -429,10 +429,10 @@ edges […] }` (01 §5.6); for `μ(n₁, …) M { … }`, μ is the model instan
 - `check A ⊆ B`, `check L.is_empty()` ≡ one test each.
 - `assert c` ≡ a test that passes iff ⟦c⟧ = true. A non-bool is E2xx/E5xx.
 - `save e to p` evaluates e, then p. p must be a string; its extension (after the last `.`, ASCII
-  case-insensitive) is one of `svg`, `png`, `pdf`, `tex`, `txt`, `json`, else E514. p is split on
+  case-insensitive) is one of `svg`, `png`, `pdf`, `tex`, `txt`, `json`, `jff`, else E514. p is split on
   `/` (and `\`); it must not be empty, start with `/` or `\`, contain a drive letter (`C:`), or
-  have an empty, `.` or `..` part, else E515. The image formats and `tex` need a machine, else
-  E516. The result is one output `{ kind: "save", line, path, format, value, text }`, where `path`
+  have an empty, `.` or `..` part, else E515. The image formats and `tex` need a machine, and
+  `jff` a machine or a grammar, else E516 (`export/jflap`). The result is one output `{ kind: "save", line, path, format, value, text }`, where `path`
   is p with `\` turned into `/`, `format` the lower-case extension, `value` the `show` view of e
   and `text` what `print e` would print (the contents of a `.txt` file). `save e to p (theme: t)`
   with t ∈ {light, dark} adds `theme: t` to the output; any other option or value is E101. Without
@@ -442,6 +442,14 @@ edges […] }` (01 §5.6); for `μ(n₁, …) M { … }`, μ is the model instan
   `png` and `pdf` files carry the line "Delta by Nandish" in a strip under the drawing (the
   drawing is not moved or scaled); `tex`, `txt` and `json` files carry no mark. Two
   `save`s to the same path both appear, in order; the host keeps the last.
+- `import p [as N]` (`import/jflap`) binds N, or without `as` the last path part of p before its
+  extension, which must be an identifier (else E517). p is a string whose extension is `jff`
+  (ASCII case-insensitive), else E517. The host supplies the file's text (`deltac`: read
+  relative to its working folder, and only for a path `save` would accept; the Pad: an open tab
+  of that name); none is E518. The text is converted to Delta source declaring N (01 §8, "JFLAP files") and run
+  on its own, with the program's notation profile kept around it; a file that isn't JFLAP XML, a
+  type Delta can't hold, or source with an error is E519. N is then bound like `let N = …` to
+  that declaration's value, so it is an ordinary machine or grammar. `import` emits no output.
 
 **10.5 Statement separators.** A newline or `;` ends a statement in every context, including
 machine and model bodies; `}` ends the last statement of a block (01 §2).

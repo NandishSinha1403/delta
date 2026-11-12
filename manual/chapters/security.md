@@ -11,6 +11,7 @@ Readers: **operator**, **owner**.
 |---|---|---|
 | A program that runs forever or allocates without limit | Engine | Budgets (steps, states, depth, output); the worker is killed after 10 s |
 | A malicious share link | Pad | The program only runs in the engine, which has no file, network or DOM access; output is rendered as text, not HTML |
+| `import` reading outside the folder | `deltac` | Imports are read only for a path `save` would accept, and only if the resolved file is inside the current folder; the engine itself reads nothing (the host passes the files in) |
 | `save` writing outside the folder | `deltac` | The engine rejects absolute paths, drive letters and `..` (E515); the CLI checks again after resolving symlinks and refuses to write through a link |
 | A crafted SVG reaching the exporter | export | Only SVG that Delta's renderer produced is exported; resvg reads no system fonts or external images (features off) |
 | Leaked Cloudflare credentials | Operator's Mac | wrangler OAuth stays on the Mac; CI tokens will be GitHub secrets scoped to Pages; no tokens in the repo or this manual |

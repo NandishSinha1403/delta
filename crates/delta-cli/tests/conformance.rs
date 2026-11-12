@@ -58,6 +58,8 @@ fn run_case(name: &str) -> Result<(), String> {
     let mut child = Command::new(env!("CARGO_BIN_EXE_deltac"))
         .args(["run", "--json"])
         .arg(dir.join(format!("{name}.delta")))
+        // Run in the cases folder, so `import "x.jff"` finds the case's files there.
+        .current_dir(&dir)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()

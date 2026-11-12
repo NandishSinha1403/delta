@@ -68,6 +68,9 @@ description: Every diagnostic code, what it means, and an example.
 - [E514](/docs/errors/e514/): Unknown file format
 - [E515](/docs/errors/e515/): Path leaves the folder
 - [E516](/docs/errors/e516/): Nothing to draw
+- [E517](/docs/errors/e517/): Not a JFLAP file
+- [E518](/docs/errors/e518/): File not found
+- [E519](/docs/errors/e519/): Can't convert the JFLAP file
 - [B601](/docs/errors/b601/): Step budget reached
 - [B602](/docs/errors/b602/): States budget reached
 - [B603](/docs/errors/b603/): Depth budget reached

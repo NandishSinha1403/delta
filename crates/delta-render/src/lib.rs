@@ -39,6 +39,8 @@ pub struct Node {
     pub name: String,
     pub start: bool,
     pub accept: bool,
+    /// A Turing machine's reject state (marked in the text drawing).
+    pub reject: bool,
 }
 
 /// One arrow. Parallel arrows should already be merged into one label; a label may have

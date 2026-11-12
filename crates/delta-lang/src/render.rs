@@ -23,6 +23,8 @@ pub fn graph_of(value: &Json) -> Option<Graph> {
         .as_array()
         .map(|a| a.iter().filter_map(index).collect())
         .unwrap_or_default();
+    // Only a Turing machine has one; elsewhere `value["reject"]` is null and matches no state.
+    let reject = index(&value["reject"]).filter(|_| !value["reject"].is_null());
     // Parallel arrows become one arrow: "0,1" for one-symbol labels, one line each otherwise.
     let mut merged: BTreeMap<(usize, usize), Vec<String>> = BTreeMap::new();
     for e in value["edges"].as_array().into_iter().flatten() {
@@ -49,6 +51,7 @@ pub fn graph_of(value: &Json) -> Option<Graph> {
             name: name.clone(),
             start: start == Some(i),
             accept: accept.contains(&i),
+            reject: reject == Some(i),
         })
         .collect();
     let title = value["model"].as_str().unwrap_or("machine").to_string();
@@ -70,6 +73,7 @@ pub fn layout_json(view: &Json) -> Option<Json> {
             name: s["name"].as_str().unwrap_or("").to_string(),
             start: s["start"] == true,
             accept: s["accept"] == true,
+            reject: s["reject"] == true,
         })
         .collect();
     let edges = view["edges"]

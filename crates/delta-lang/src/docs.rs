@@ -702,6 +702,24 @@ pub const ERRORS: &[ErrorDoc] = &[
         example: "save {1, 2} to \"set.svg\"",
     },
     ErrorDoc {
+        code: "E517",
+        title: "Not a JFLAP file",
+        explain: "In v2.0 `import` reads JFLAP files (.jff) only; modules across Delta files come in v2.1. Without `as`, the file name must be a Delta name: write `import \"my file.jff\" as M` otherwise.",
+        example: "import \"lib.delta\"",
+    },
+    ErrorDoc {
+        code: "E518",
+        title: "File not found",
+        explain: "In the terminal, `import` reads the file from the folder the program runs in. In the Pad, open the .jff file first (Files → Open file…); it is then found by its tab name.",
+        example: "import \"missing.jff\"",
+    },
+    ErrorDoc {
+        code: "E519",
+        title: "Can't convert the JFLAP file",
+        explain: "The file isn't JFLAP XML, or it holds something Delta can't read: Mealy and Moore machines, multi-tape or building-block Turing machines. Finite automata, pushdown automata, one-tape Turing machines and grammars import.",
+        example: "",
+    },
+    ErrorDoc {
         code: "B601",
         title: "Step budget reached",
         explain: "The program stopped after the step budget. Outputs so far stay; raise it with budget { steps: … }.",

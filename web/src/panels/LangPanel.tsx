@@ -161,6 +161,7 @@ const MIME: Record<string, string> = {
   tex: 'text/x-tex',
   txt: 'text/plain',
   json: 'application/json',
+  jff: 'application/xml',
 };
 
 /** A `save x to "file"` output: the Pad never writes files, it offers the download. */

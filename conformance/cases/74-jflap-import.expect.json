@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "diagnostics": [],
+  "outputs": [
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true },
+    { "kind": "test", "pass": true },
+    { "kind": "show" },
+    { "kind": "save", "path": "m.jff", "format": "jff" }
+  ]
+}

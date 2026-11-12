@@ -74,9 +74,9 @@ function initialFiles(): Files {
 }
 
 /** A name not already used: base.delta, base-2.delta, … */
-export function uniqueName(base: string, taken: readonly string[]): string {
-  let name = `${base}.delta`;
-  for (let i = 2; taken.includes(name); i++) name = `${base}-${i}.delta`;
+export function uniqueName(base: string, taken: readonly string[], ext = 'delta'): string {
+  let name = `${base}.${ext}`;
+  for (let i = 2; taken.includes(name); i++) name = `${base}-${i}.${ext}`;
   return name;
 }
 
@@ -99,6 +99,8 @@ interface UiStore {
   openExample: (example: Example) => void;
   /** Opens a program from a share link as a new file. */
   openShared: (source: string) => void;
+  /** Opens a file from the device (.delta or .jff) in a tab; the same file twice reuses its tab. */
+  openLocal: (name: string, source: string) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
   /** Downloads: Light, Dark or Match Pad (the default). A `(theme: …)` in the program wins. */
@@ -205,6 +207,20 @@ export const useUiStore = create<UiStore>()((set, get) => {
       let name = 'shared.delta';
       for (let i = 2; taken.has(name); i++) name = `shared-${i}.delta`;
       const file = { id: newId(), name, source };
+      activate([...files, file], file.id);
+    },
+    openLocal: (name, source) => {
+      const { files } = get();
+      const same = files.find((f) => f.name === name && f.source === source);
+      if (same) {
+        activate(files, same.id);
+        return;
+      }
+      // A different file of the same name gets `-2`, so `import "x.jff"` keeps meaning the first.
+      const dot = name.lastIndexOf('.');
+      const base = dot > 0 ? name.slice(0, dot) : name;
+      const ext = dot > 0 ? name.slice(dot + 1) : 'delta';
+      const file = { id: newId(), name: uniqueName(base, files.map((f) => f.name), ext), source };
       activate([...files, file], file.id);
     },
     openExample: (example) => {
