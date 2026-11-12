@@ -121,7 +121,7 @@ function StackColumn({ items, label }: { items: string[]; label: string }) {
         {items.map((s, i) => (
           <li
             key={i}
-            className={`min-w-10 rounded px-3 py-0.5 text-center ${i === 0 ? 'border border-accent bg-navy text-accent' : 'bg-surface-3 text-text'}`}
+            className={`min-w-10 rounded px-3 py-0.5 text-center ${i === 0 ? 'border border-accent bg-navy text-text' : 'bg-surface-3 text-text'}`}
           >
             {s}
           </li>

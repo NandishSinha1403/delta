@@ -35,7 +35,8 @@ export function SymbolBar({ view }: Props) {
             key={s.symbol}
             type="button"
             title={`${s.name} (ASCII: ${s.ascii})`}
-            aria-label={`Insert ${s.name}, ASCII ${s.ascii}`}
+            // The name starts with what the button shows, so voice control can say it (WCAG 2.5.3).
+            aria-label={`Insert ${s.symbol === '*' ? '∗' : s.symbol} ${s.name}, ASCII ${s.ascii}`}
             className="grid h-9 min-w-9 flex-1 place-items-center rounded-md border border-border-strong bg-surface-2 font-mono text-base text-text select-none hover:border-accent hover:text-accent active:bg-navy pointer-coarse:h-11"
             // Keep focus (and the phone keyboard) in the editor.
             onPointerDown={(e) => {
@@ -65,7 +66,9 @@ export function SymbolBar({ view }: Props) {
             {/* The star is shown as the book prints it: a superscript after an expression. */}
             {s.symbol === '*' ? (
               <span className="font-serif text-lg leading-none">
-                <span className="text-faint">R</span>
+                <span aria-hidden="true" className="text-faint">
+                  R
+                </span>
                 <sup className="text-xs">∗</sup>
               </span>
             ) : (

@@ -105,6 +105,8 @@ export function TabPanel({
       role="tabpanel"
       id={`${idPrefix}-panel`}
       aria-labelledby={`${idPrefix}-tab-${activeId}`}
+      // Focusable, so its content can be scrolled from the keyboard (WCAG 2.1.1; ARIA tabs pattern).
+      tabIndex={0}
       className={className}
     >
       {children}

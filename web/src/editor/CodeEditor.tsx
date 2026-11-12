@@ -109,7 +109,7 @@ export function CodeEditor({ onView }: Props) {
       lintGutter(),
       codelens(openSteps),
       theme,
-      EditorView.contentAttributes.of({ 'aria-label': 'Delta code', autocapitalize: 'off', spellcheck: 'false' }),
+      EditorView.contentAttributes.of({ 'aria-label': 'Delta code', tabindex: '0', autocapitalize: 'off', spellcheck: 'false' }),
       EditorView.updateListener.of((u) => {
         if (u.docChanged) setSource(u.state.doc.toString());
         if (u.focusChanged) setEditorFocused(u.view.hasFocus);

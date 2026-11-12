@@ -18,10 +18,14 @@ async function audit(page: Page, include?: string) {
   expect(report, report.join('\n\n')).toEqual([]);
 }
 
-/** Waits for the first evaluation, so the panels hold real content. */
+/** Waits for the first evaluation, so the panels hold real content (phones show the code only). */
 async function ready(page: Page) {
-  await expect(page.getByRole('textbox', { name: 'Delta code' })).toBeVisible();
-  await expect(page.getByTestId('diagram')).toHaveAttribute('aria-label', /EndsAB/);
+  await expect(page.getByRole('textbox', { name: 'Delta code' })).toContainText('EndsAB');
+  // The status bar (tablet, desktop) says when the first evaluation is done; phones have none.
+  await page.waitForFunction(() => {
+    const status = document.querySelector('[data-testid="executed"]');
+    return !status || /Executed/.test(status.textContent ?? '');
+  });
 }
 
 for (const theme of ['dark', 'light'] as const) {
