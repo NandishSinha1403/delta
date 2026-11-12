@@ -207,22 +207,30 @@ The full check list (wasm build, size check, web lint/typecheck/test/build/e2e) 
 
 ## Next session: start here
 
-**Phase 7 in progress (2026-11-12).** Done: themes, delta-render in the Pad, STIX names, file
-watermark, presentation mode (deployed); notation hmu/linz for ε, union and blank (committed, not
-deployed); release setup (2.0.0-rc.1, cargo-dist musl/deb/brew/crates, /download page; NOT
-deployed: links need a release). **JFLAP done (not deployed):** engine (`jflap.rs`), deltac,
-Pad "Open file…" (Files drawer and ⌘K; .delta/.jff; a .jff tab shows its machine, other tabs
-`import` it by name), e2e test, 01-LANGUAGE §8 "JFLAP files", SEMANTICS §10.4 `import`, E517–E519
-pages, conformance 74–77 (the harness now runs in `conformance/cases/`), manual "Using it".
-Papercut fixed: text drawings mark a TM's reject state (✗). **Next:** rest of C (a11y with axe,
-performance with numbers, TikZ/tectonic CI), then D (exit check).
-**Waiting on the owner:** release secrets (`HOMEBREW_TAP_TOKEN`, `CARGO_REGISTRY_TOKEN`) and the
-`NandishSinha1403/homebrew-tap` repo (neither existed on 2026-11-12, so no tag yet); then tag
-v2.0.0-rc.1, install with brew and the shell script, show the owner, and only then deploy
-/download. The ⌘⌥P check in Chrome on a Mac (the answer came back unfilled). Notation "states"
-(owner, 2026-11-12): under hmu/linz a TM may be written as (Q, Σ, Γ, δ, q0, B, F), accepting on
-entering a state in F, no move = reject, blank B (hmu) / □ (linz), tuple printed in that book's
-order; state names need no profile. Not built yet: needs a spec change first.
+**Phase 7 exit check (2026-11-12): all roadmap items built; CI green on `8036ca5`** (rust, tikz,
+web: 163 Playwright passed at 6 viewports incl. 48 axe audits; 1 known flaky: presentation
+⌘⌥P on desktop-wide, passes on retry). Not deployed since the notation commit: hmu/linz, JFLAP,
+a11y colors, `sim/cost` (deploy from the Mac, or add the Cloudflare secrets so `deploy.yml` runs).
+- Notation hmu/linz (ε, union, blank) · JFLAP import/export (Pad "Open file…", 01 §8, E517–E519,
+  conformance 74–77) · TikZ export, compiled by tectonic 0.15.0 in CI (`scripts/check-tikz.sh`;
+  linz □ no longer needs amssymb) · presentation mode · themes.
+- Accessibility (axe WCAG 2.2 A/AA, `web/e2e/a11y.spec.ts`, both themes, Pad/palette/present/
+  embed): muted/faint/dim raised to 4.5:1 (dark #92969e/#8a8e95/#80848a, light #566573/#5e6a74/
+  #656e76), `--on-navy` (light #285e7a), focusable tab panels and editor, symbol names.
+- Performance (numbers, 2026-11-12, native release): every sample < 10 ms except the TM sample
+  (~65 ms); Pad startup JS 311 KB gz, engine .wasm 404 KB gz (budget 700), export .wasm 967 KB gz
+  (budget 1000: little room left). `sim/cost` (SEMANTICS §3): a configuration costs 1 + its tape
+  cells, so a runaway TM stops at "unknown" after ~4,500 moves, 0.71 s CPU, instead of minutes.
+  The deeper fix (rolling-hash tape, no per-step copy) is parked on branch `perf-tape-wip`.
+- Local checks (owner, 2026-11-12): only fmt, clippy and the touched crate's tests locally; the
+  full suite runs in GitHub Actions; check `uptime` first; no local benchmark over a few seconds.
+
+**Left before v2.0:** (1) notation "states" (owner's answer, 2026-11-12): under hmu/linz a TM may be
+written as (Q, Σ, Γ, δ, q0, B, F), accepting on entering a state in F, no move = reject, blank B
+(hmu) / □ (linz), tuple printed in that book's order; spec change first. (2) Deploy. (3) Release:
+waits for the owner's `HOMEBREW_TAP_TOKEN`, `CARGO_REGISTRY_TOKEN` and the
+`NandishSinha1403/homebrew-tap` repo; then tag v2.0.0-rc.1, install with brew and the shell
+script, show the owner, then deploy /download. (4) The owner's ⌘⌥P result in Chrome on a Mac.
 
 1. Read `CLAUDE.md`, then this file.
 2. **Domain — done 2026-11-09.** The CNAME `delta` → `delta-17m.pages.dev` is live; the Pages
