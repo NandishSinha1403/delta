@@ -29,6 +29,7 @@ pub mod prelude;
 pub mod render;
 pub mod rx;
 pub mod sim;
+pub mod tape;
 pub mod single_tape;
 pub mod transducers;
 pub mod value;

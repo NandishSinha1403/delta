@@ -5,6 +5,7 @@
 use crate::label::{Dir, LOp};
 use crate::machine::Machine;
 use crate::model::{AcceptMode, InputMode, Missing, StorageKind};
+pub use crate::tape::Tape;
 use crate::value::{Sym, sym_text};
 use std::collections::{HashMap, HashSet};
 
@@ -26,14 +27,6 @@ impl Verdict {
             Verdict::Unknown => "unknown",
         }
     }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct Tape {
-    /// Cells left of the head, nearest last.
-    pub left: Vec<Sym>,
-    /// The head's cell and everything to its right (never empty; trailing blanks trimmed).
-    pub right: Vec<Sym>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -63,15 +56,6 @@ pub struct RunResult {
 /// A stuck configuration under `missing error` (a runtime error E5xx).
 pub struct Stuck(pub String);
 
-fn trim_blanks(right: &mut Vec<Sym>, blank: &Sym) {
-    while right.len() > 1 && right.last() == Some(blank) {
-        right.pop();
-    }
-    if right.is_empty() {
-        right.push(blank.clone());
-    }
-}
-
 impl Machine {
     pub fn initial(&self, w: &[Sym]) -> Config {
         let mut stacks = Vec::new();
@@ -93,16 +77,12 @@ impl Machine {
                 }
                 StorageKind::Tape => {
                     let first = tapes.is_empty();
-                    let mut right = if first && self.eff.input == InputMode::OnTape {
+                    let cells = if first && self.eff.input == InputMode::OnTape {
                         w.to_vec()
                     } else {
                         Vec::new()
                     };
-                    trim_blanks(&mut right, &self.blank);
-                    tapes.push(Tape {
-                        left: Vec::new(),
-                        right,
-                    });
+                    tapes.push(Tape::new(cells, &self.blank));
                 }
                 StorageKind::Counter => counters.push(0),
                 StorageKind::Queue => {}
@@ -154,7 +134,7 @@ impl Machine {
                         }
                     }
                     InputMode::OnTape => {
-                        if c.tapes.get(*t)?.right.first() != Some(a) {
+                        if c.tapes.get(*t)?.head() != Some(a) {
                             return None;
                         }
                     }
@@ -201,40 +181,22 @@ impl Machine {
                     *n = n.saturating_add(1);
                 }
                 LOp::Write(t, x) => {
-                    let tape = c.tapes.get_mut(*t)?;
-                    if let Some(cell) = tape.right.first_mut() {
-                        *cell = x.clone();
-                    }
-                    trim_blanks(&mut tape.right, &self.blank);
+                    c.tapes.get_mut(*t)?.write(x, &self.blank);
                 }
                 LOp::Move(t, d) => {
-                    let blank = self.blank.clone();
                     let bounded = self.eff.bounded;
                     let tape = c.tapes.get_mut(*t)?;
                     match d {
                         Dir::S => {}
-                        Dir::L => {
-                            if let Some(x) = tape.left.pop() {
-                                tape.right.insert(0, x);
-                            }
-                        }
+                        Dir::L => tape.move_left(&self.blank),
                         Dir::R => {
-                            if bounded && tape.left.len() + 1 >= bounded_len {
+                            if bounded && tape.left().len() + 1 >= bounded_len {
                                 // the head stays within the input cells
                             } else {
-                                let x = if tape.right.is_empty() {
-                                    blank.clone()
-                                } else {
-                                    tape.right.remove(0)
-                                };
-                                tape.left.push(x);
-                                if tape.right.is_empty() {
-                                    tape.right.push(blank.clone());
-                                }
+                                tape.move_right(&self.blank);
                             }
                         }
                     }
-                    trim_blanks(&mut tape.right, &blank);
                 }
                 LOp::MoveInput(d) => match d {
                     Dir::S => {}
@@ -306,7 +268,7 @@ impl Machine {
             InputMode::OnTape => parts.push(q),
         }
         for t in &c.tapes {
-            parts.push(format!("{}▸{}", word(&t.left), word(&t.right)));
+            parts.push(format!("{}▸{}", word(t.left()), word(t.right())));
         }
         for s in &c.stacks {
             let top_first: Vec<Sym> = s.iter().rev().cloned().collect();
@@ -344,11 +306,14 @@ impl Machine {
             return Ok(self.run_fa(w, fuel));
         }
         let start = self.initial(w);
-        let mut seen: HashMap<Config, usize> = HashMap::new();
+        // Seen configurations by fingerprint, not by value: a Turing machine's configuration
+        // holds its whole tape, so keeping every one costs steps × tape length in memory.
+        let mut seen: HashMap<u128, usize> = HashMap::new();
         let mut graph: Vec<Vec<usize>> = Vec::new();
-        let mut nodes: Vec<Config> = Vec::new();
-        seen.insert(start.clone(), 0);
-        nodes.push(start.clone());
+        // A configuration is kept only until it is expanded (then its slot is `None`).
+        let mut nodes: Vec<Option<Config>> = Vec::new();
+        seen.insert(fingerprint(&start), 0);
+        nodes.push(Some(start));
         graph.push(Vec::new());
         let mut frontier = vec![0usize];
         let mut steps: Vec<Vec<String>> = Vec::new();
@@ -360,14 +325,14 @@ impl Machine {
                 steps.push(
                     frontier
                         .iter()
-                        .filter_map(|i| nodes.get(*i))
+                        .filter_map(|i| nodes.get(*i).and_then(Option::as_ref))
                         .map(|c| self.config_text(c, w))
                         .collect(),
                 );
                 configs.push(
                     frontier
                         .iter()
-                        .filter_map(|i| nodes.get(*i))
+                        .filter_map(|i| nodes.get(*i).and_then(Option::as_ref))
                         .cloned()
                         .collect(),
                 );
@@ -383,7 +348,8 @@ impl Machine {
                         output: None,
                     });
                 }
-                let Some(c) = nodes.get(i).cloned() else {
+                // `Option::take` moves the value out and leaves `None`: no copy of the tape.
+                let Some(c) = nodes.get_mut(i).and_then(Option::take) else {
                     continue;
                 };
                 if self.accepting(&c, w) {
@@ -405,12 +371,13 @@ impl Machine {
                     };
                     if let Some(c2) = self.apply(&c, &e.label.ops, e.to, w) {
                         any = true;
-                        let j = match seen.get(&c2) {
+                        let key = fingerprint(&c2);
+                        let j = match seen.get(&key) {
                             Some(&j) => j,
                             None => {
                                 let j = nodes.len();
-                                seen.insert(c2.clone(), j);
-                                nodes.push(c2);
+                                seen.insert(key, j);
+                                nodes.push(Some(c2));
                                 graph.push(Vec::new());
                                 next.push(j);
                                 j
@@ -511,6 +478,21 @@ impl Machine {
             output: None,
         }
     }
+}
+
+/// A configuration's 128-bit fingerprint: two independent 64-bit hashes. Two different
+/// configurations of one run share one with probability about n²/2¹²⁹, which is never in practice.
+fn fingerprint(c: &Config) -> u128 {
+    // `Hash` feeds a value into a `Hasher`; `DefaultHasher::new()` always starts from the same
+    // keys, so a run's fingerprints are the same every time.
+    use std::hash::{DefaultHasher, Hash, Hasher};
+    let half = |salt: u8| {
+        let mut h = DefaultHasher::new();
+        salt.hash(&mut h);
+        c.hash(&mut h);
+        h.finish()
+    };
+    (u128::from(half(0)) << 64) | u128::from(half(1))
 }
 
 /// Is there a cycle in the explored configuration graph?

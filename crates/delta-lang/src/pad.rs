@@ -468,7 +468,7 @@ fn config_json(m: &Machine, names: &[String], c: &crate::sim::Config) -> Json {
     let tapes: Vec<Json> = c
         .tapes
         .iter()
-        .map(|t| json!({ "cells": word(&t.left).into_iter().chain(word(&t.right)).collect::<Vec<_>>(), "head": t.left.len() }))
+        .map(|t| json!({ "cells": word(t.left()).into_iter().chain(word(t.right())).collect::<Vec<_>>(), "head": t.left().len() }))
         .collect();
     let stacks: Vec<Json> = c
         .stacks
